@@ -1,5 +1,4 @@
 /* eslint-disable no-unused-vars */
-/* eslint-disable react/prop-types */
 import React, { useMemo } from "react";
 import { Table } from "antd";
 import "./index.scss";
@@ -20,7 +19,7 @@ const Ctable = ({
   scrollY,
   locale,
   rowSelection,
-  enableFilter = true, 
+  enableFilter = true,
   ...restProps
 }) => {
   const rowHeight = 56;
@@ -35,12 +34,12 @@ const Ctable = ({
         title: col.headerName,
         dataIndex: col.field,
         key: col.field,
-        align: col.align || "left", 
-        width: col.width, 
-        fixed: col.fixed, 
+        align: col.align || "left",
+        width: col.width,
+        fixed: col.fixed,
         render: col.cellRenderer
           ? (value, record) => col.cellRenderer({ value, data: record })
-          : undefined, 
+          : undefined,
         filterIcon: col.filterIcon,
       };
 
@@ -77,7 +76,7 @@ const Ctable = ({
         align: "center",
         render: (_, __, index) => index + 1,
         fixed: columns[0]?.fixed === "left" ? "left" : undefined,
-        filterable: false, 
+        filterable: false,
       },
       ...columns,
     ];

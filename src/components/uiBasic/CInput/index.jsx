@@ -1,4 +1,3 @@
-/* eslint-disable react/prop-types */
 import { Input } from "antd";
 import { useState } from "react";
 import "./index.scss";

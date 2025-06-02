@@ -1,5 +1,4 @@
-/* eslint-disable react/prop-types */
-import  { useState } from "react";
+import { useState } from "react";
 import { DatePicker } from "antd";
 import { BiCalendar } from "react-icons/bi";
 import "./index.scss";
@@ -20,7 +19,11 @@ const CdatePicker = ({
 }) => {
   const [isFocused, setIsFocused] = useState(false);
 
-  const parsedValue = dayjs.isDayjs(value) ? value : value ? dayjs(value) : null;
+  const parsedValue = dayjs.isDayjs(value)
+    ? value
+    : value
+    ? dayjs(value)
+    : null;
   const parsedDefaultValue = dayjs.isDayjs(defaultValue)
     ? defaultValue
     : defaultValue
@@ -35,14 +38,14 @@ const CdatePicker = ({
 
   return (
     <div
-      className={`custom-select-container has-prefix${isLabelFloating ? " focused" : ""}${
-        disabled ? " disabled" : ""
-      }`}
+      className={`custom-select-container has-prefix${
+        isLabelFloating ? " focused" : ""
+      }${disabled ? " disabled" : ""}`}
     >
       {label && <label className="floating-label">{label}</label>}
       <div className="datepicker-prefix-wrapper">
         <span className="datepicker-prefix-icon">
-        <BiCalendar style={{ color: "#128DBA", fontSize: 20 }} />
+          <BiCalendar style={{ color: "#128DBA", fontSize: 20 }} />
         </span>
         <DatePicker
           defaultValue={parsedDefaultValue}
@@ -66,6 +69,5 @@ const CdatePicker = ({
     </div>
   );
 };
-
 
 export default CdatePicker;

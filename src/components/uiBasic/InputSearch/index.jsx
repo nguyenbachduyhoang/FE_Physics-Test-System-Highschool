@@ -1,4 +1,3 @@
-/* eslint-disable react/prop-types */
 import { useState } from "react";
 import { CiSearch } from "react-icons/ci";
 import { AiOutlineClose } from "react-icons/ai";
@@ -37,7 +36,7 @@ const InputSearch = ({
   const handleClear = () => {
     setInputValue("");
     if (onSearch) {
-      onSearch(""); 
+      onSearch("");
     }
   };
 

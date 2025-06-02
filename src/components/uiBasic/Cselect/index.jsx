@@ -1,4 +1,3 @@
-/* eslint-disable react/prop-types */
 /* eslint-disable no-unused-vars */
 import { useEffect, useState } from "react";
 import { Select, Tooltip } from "antd";
@@ -65,24 +64,23 @@ const Cselect = ({
   };
   return (
     <div
-      className={`custom-select-container${prefix ? " has-prefix" : ""} ${isLabelFloating || defaultValue || isFocused ? "focused" : ""
-        } ${disabled ? "disabled" : ""}`}
+      className={`custom-select-container${prefix ? " has-prefix" : ""} ${
+        isLabelFloating || defaultValue || isFocused ? "focused" : ""
+      } ${disabled ? "disabled" : ""}`}
     >
-      {label &&
+      {label && (
         <label className={`floating-label${prefix ? " floatingIcon" : ""}`}>
           {label}
         </label>
-      }
+      )}
       <div className="select-prefix-wrapper">
-        {prefix && (
-          <span className="select-prefix-icon">
-            {prefix}
-          </span>
-        )}
+        {prefix && <span className="select-prefix-icon">{prefix}</span>}
         <Select
           allowClear={allowClear}
           defaultValue={defaultValue}
-          className={`custom-select${prefix ? " with-prefix" : ""} ${className || ""}`}
+          className={`custom-select${prefix ? " with-prefix" : ""} ${
+            className || ""
+          }`}
           options={options}
           value={value}
           onChange={(val, option) => {

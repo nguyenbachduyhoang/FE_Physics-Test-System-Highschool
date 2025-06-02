@@ -1,4 +1,3 @@
-/* eslint-disable react/prop-types */
 import { useState, useEffect } from "react";
 import { Input } from "antd";
 import "./index.scss";
@@ -37,7 +36,9 @@ const CInputLabelPass = ({
   };
 
   return (
-    <div className={`input-with-label${inputProps.prefix ? " has-prefix" : ""}`}>
+    <div
+      className={`input-with-label${inputProps.prefix ? " has-prefix" : ""}`}
+    >
       <div className="input-wrapper">
         <Input.Password
           {...inputProps}
