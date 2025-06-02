@@ -1,0 +1,39 @@
+.unit-selector {
+  display: flex;
+  align-items: center;
+  height: 100%;
+  margin-right: -7px;
+
+  .unit-divider {
+    height: 20px;
+    margin: 0 8px;
+    border-inline-start: 1px solid rgba(5, 5, 5, 0.16);
+  }
+
+  .ant-select {
+    .ant-select-selector {
+      padding: 0 !important;
+      border: none !important;
+      box-shadow: none !important;
+    }
+
+    &:hover, &:focus {
+      .ant-select-selector {
+        background: transparent !important;
+      }
+    }
+
+    .ant-select-selection-item {
+      font-size: 14px;
+      color:#999;
+    }
+  }
+
+  .ant-select-selection-placeholder {
+    color: #bfbfbf !important;
+    font-weight: 400;
+  }
+  .ant-select-selection-item {
+    color: rgba(0, 0, 0, 0.88) !important;
+  }
+} 

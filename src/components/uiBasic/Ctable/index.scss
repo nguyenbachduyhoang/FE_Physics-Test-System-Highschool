@@ -1,0 +1,80 @@
+@import "../../../main.scss";
+
+.ctable-custom {
+  border-radius: 10px;
+  overflow: hidden;
+  .ant-table {
+    border-radius: 10px;
+    overflow: hidden;
+    background: $white;
+  }
+  .ant-table-container {
+    border-radius: 10px;
+    overflow: hidden;
+  }
+  .ant-table-thead > tr > th {
+    background: #0F6E95 !important; 
+    color: $white !important;
+    font-weight: 600;
+    font-size: 15px;
+    border-bottom: 1px solid $border;
+    // icon filter/sort
+    .ant-table-column-sorters,
+    .ant-table-filter-trigger {
+      color: $white !important;
+    }
+  }
+  .ant-table-tbody > tr > td {
+    background: $white;
+    font-size: 15px;
+    border-bottom: 1px solid $border;
+    color: $text-secondary;
+    transition: background 0.2s;
+  }
+  .ant-table-tbody > tr.ant-table-row:hover > td {
+    background: lighten($primary, 55%) !important;
+  }
+  .ant-table-tbody > tr > td:first-child,
+  .ant-table-thead > tr > th:first-child {
+    border-left: none;
+  }
+  .ant-table-tbody > tr > td:last-child,
+  .ant-table-thead > tr > th:last-child {
+    border-right: none;
+  }
+  .ant-table-tbody > tr:last-child > td {
+    border-bottom: none;
+  }
+  // Checkbox
+  .ant-checkbox-inner {
+    border-radius: 4px;
+    border: 2px solid $primary;
+  }
+  .ant-checkbox-checked .ant-checkbox-inner {
+    background-color: $primary;
+    border-color: $primary;
+  }
+  // Expand icon
+  .ant-table-row-expand-icon {
+    background: $primary-transparent;
+    border-radius: 4px;
+    border: 1px solid $primary;
+    color: $primary;
+  }
+  .ant-table-thead > tr > th .header-nowrap {
+    white-space: nowrap;
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+  }
+}
+// Đổi màu nút OK trong filter dropdown của Ant Design Table
+.ant-table-filter-dropdown-btns .ant-btn-primary {
+  background: $primary !important; // hoặc màu primary của bạn
+  border-color: $primary !important;
+  color: #fff !important;
+}
+
+.datepicker-prefix-wrapper .ant-picker {
+  padding-left: 36px !important;
+}
