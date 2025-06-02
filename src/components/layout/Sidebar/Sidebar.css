@@ -1,0 +1,44 @@
+.sidebar {
+    width: 250px;
+    padding: 1.5rem;
+    background-color: #fff;
+    border-right: 1px solid #ddd;
+    height: calc(100vh - 120px);
+  }
+  
+  .sidebar h3 {
+    margin-top: 0;
+    color: #4a6fa5;
+  }
+  
+  .filter-group {
+    margin-bottom: 1rem;
+  }
+  
+  .filter-group label {
+    display: block;
+    margin-bottom: 0.5rem;
+    font-weight: bold;
+  }
+  
+  .filter-group select {
+    width: 100%;
+    padding: 0.5rem;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+  }
+  
+  .generate-btn {
+    width: 100%;
+    padding: 0.75rem;
+    background-color: #4a6fa5;
+    color: white;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    margin-top: 1rem;
+  }
+  
+  .generate-btn:hover {
+    background-color: #3a5a80;
+  }
