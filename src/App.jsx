@@ -8,6 +8,7 @@ import Footer from "./components/common/Footer/Footer";
 import "./App.css";
 import { createBrowserRouter, RouterProvider } from "react-router-dom";
 import Login from "./pages/login";
+import ExamInterface from "./pages/Quiz/PhysicsTestSystem";
 
 const Layout = ({ children }) => {
   return (
@@ -37,6 +38,10 @@ const router = createBrowserRouter([
       </Layout>
     ),
   },
+  {
+    path: "/quiz",
+    element: <ExamInterface />,
+  }
 ]);
 
 const App = () => {
