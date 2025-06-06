@@ -1,0 +1,102 @@
+@use "../../main.scss" as *;
+.header-container {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  background: linear-gradient(90deg, #26B2A5 0%, #128DBA 100%);
+  padding: 0 24px;
+  height: 64px;
+  box-sizing: border-box;
+}
+
+.header-left {
+  display: flex;
+  align-items: center;
+  min-width: 320px;
+}
+
+.header-logo {
+  width: 48px;
+  height: 48px;
+  object-fit: contain;
+  background: transparent;
+}
+
+.header-divider {
+  height: 32px;
+  border-color: #fff;
+  margin: 0 16px;
+}
+
+.header-title {
+  color: #fff;
+  font-size: 22px;
+  font-weight: 700;
+  letter-spacing: 0.5px;
+}
+
+.header-menu {
+  display: flex;
+  align-items: center;
+  flex: 1;
+  margin-left: 32px;
+}
+
+.header-menu-item {
+  display: flex;
+  align-items: center;
+  color: #fff;
+  font-weight: 600;
+  font-size: 17px;
+  gap: 8px;
+  cursor: pointer;
+  padding: 0 8px;
+  transition: color 0.2s;
+  &:hover {
+    color: #ffe082;
+  }
+}
+
+.header-search {
+  min-width: 240px;
+  margin-left: auto;
+}
+
+.header-search-input {
+  background: transparent !important; // hoặc #26B2A5
+  color: #fff !important;
+  border-radius: 8px;
+  height: 36px;
+
+  input {
+    background: transparent !important;
+    color: #fff !important;
+    &::placeholder {
+      color: #fff !important;
+      opacity: 1;
+    }
+  }
+  
+}
+.header-actions {
+  display: flex;
+  align-items: center;
+  gap: 40px; /* hoặc 20px, 24px tùy ý */
+}
+.logout-button {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 32px;
+  border-radius: 5px;
+  background: #ef4444;
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
+  color: $white;
+  cursor: pointer;
+  transition: all 0.2s ease;
+
+  &:hover {
+    background: #b91c1c;
+  }
+}

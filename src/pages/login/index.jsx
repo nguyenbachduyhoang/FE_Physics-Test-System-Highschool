@@ -14,7 +14,7 @@ import { useNavigate } from "react-router-dom";
 function Login() {
   const navigate = useNavigate();
   const onFinish = (values) => {
-    navigate("/home");
+    navigate("/thiMau");
   };
   const recaptchaRef = useRef();
   const [captchaValue, setCaptchaValue] = useState(null);

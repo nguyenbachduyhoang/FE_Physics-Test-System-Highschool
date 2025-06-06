@@ -21,7 +21,7 @@
     border-radius: 8px 0 0 8px;
   }
 
-  &__button {
+  &-button {
     background: #1790c7;
     border: none;
     outline: none;
@@ -36,7 +36,7 @@
     transition: background 0.2s;
   }
 
-  &__clear {
+  &-clear {
     position: absolute;
     right: 56px;
     top: 50%;
