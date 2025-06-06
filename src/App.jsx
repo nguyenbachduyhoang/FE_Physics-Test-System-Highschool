@@ -1,28 +1,12 @@
-// App.jsx
 import React from "react";
-// import Header from "./components/common/Header/Header";
-import Navbar from "./components/layout/Navbar/Navbar";
-import Sidebar from "./components/layout/Sidebar/Sidebar";
 import Home from "./pages/Home/Home";
-import Footer from "./components/common/Footer/Footer";
-import "./App.css";
 import { createBrowserRouter, RouterProvider } from "react-router-dom";
 import Login from "./pages/login";
-
-const Layout = ({ children }) => {
-  return (
-    <div className="app">
-      <Navbar />
-      <div className="main-layout">
-   
-          <Sidebar />
-        
-        <div className="content-area">{children}</div>
-      </div>
-      <Footer />
-    </div>
-  );
-};
+import PhysicsTestSystem from "./pages/Quiz";
+import ThiMau from "./pages/ThiMau";
+import Layout from "./components/layout";
+import Result from "./pages/Result";
+import History from "./pages/History";
 
 const router = createBrowserRouter([
   {
@@ -30,12 +14,30 @@ const router = createBrowserRouter([
     element: <Login />,
   },
   {
-    path: "/home",
-    element: (
-      <Layout>
-        <Home />
-      </Layout>
-    ),
+    path: "/",
+    element: <Layout />,
+    children: [
+      {
+        path: "home",
+        element: <Home />,
+      },
+      {
+        path: "quiz",
+        element: <PhysicsTestSystem />,
+      },
+      {
+        path: "thiMau",
+        element: <ThiMau />,
+      },
+      {
+        path: "result",
+        element: <Result />,
+      },
+      {
+        path: "history",
+        element: <History />,
+      },
+    ],
   },
 ]);
 

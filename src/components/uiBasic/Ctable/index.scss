@@ -1,4 +1,4 @@
-@import "../../../main.scss";
+@use "../../../main.scss" as *;
 
 .ctable-custom {
   border-radius: 10px;
@@ -13,7 +13,7 @@
     overflow: hidden;
   }
   .ant-table-thead > tr > th {
-    background: #0F6E95 !important; 
+    background: #0f6e95 !important;
     color: $white !important;
     font-weight: 600;
     font-size: 15px;

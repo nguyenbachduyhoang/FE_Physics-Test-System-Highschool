@@ -1,0 +1,79 @@
+.footer {
+  width: 100%;
+  background: #3a414a;
+  color: #fff;
+  display: flex;
+  justify-content: space-between;
+  padding: 24px;
+  border-top: 2px solid #e5e7eb;
+  font-family: "Montserrat", Arial, sans-serif;
+  flex-wrap: wrap;
+  gap: 24px;
+}
+
+.footer-col {
+  flex: 1 1 220px;
+  min-width: 200px;
+  max-width: 320px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.footer-title {
+  color: #21c8af;
+  font-size: 22px;
+  font-weight: 700;
+  margin-bottom: 8px;
+  &.brand {
+    font-size: 24px;
+    margin-bottom: 12px;
+  }
+}
+
+.footer-desc {
+  color: #fff;
+  font-size: 16px;
+  font-weight: 600;
+  margin-bottom: 8px;
+  line-height: 1.5;
+}
+
+.footer-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  color: #bfc5cb;
+  font-size: 16px;
+  font-weight: 600;
+  li {
+    margin-bottom: 4px;
+    color: #bfc5cb;
+    &.active {
+      color: #21c8af;
+    }
+  }
+}
+
+.footer-contact {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  color: #fff;
+  font-size: 16px;
+  font-weight: 600;
+  li {
+    display: flex;
+    align-items: center;
+    margin-bottom: 6px;
+    gap: 8px;
+    .footer-icon {
+      color: #21c8af;
+      font-size: 18px;
+    }
+    b {
+      color: #fff;
+      font-weight: 700;
+    }
+  }
+}

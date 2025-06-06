@@ -55,7 +55,7 @@ const InputSearch = ({
       />
       {inputValue && (
         <span
-          className="search__clear"
+          className="search-clear"
           onClick={handleClear}
           role="button"
           tabIndex={0}
@@ -66,7 +66,7 @@ const InputSearch = ({
           <AiOutlineClose size={18} />
         </span>
       )}
-      <button className="search__button" onClick={handleSearch} tabIndex={-1}>
+      <button className="search-button" onClick={handleSearch} tabIndex={-1}>
         <CiSearch size={22} />
       </button>
     </div>

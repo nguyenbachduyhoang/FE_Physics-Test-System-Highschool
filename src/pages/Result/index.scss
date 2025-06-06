@@ -1,0 +1,144 @@
+.result {
+  padding: 12px;
+
+  .title {
+    color: #19d6b4;
+    text-align: center;
+    font-size: 2rem;
+    font-weight: 700;
+    margin-bottom: 1.5rem;
+  }
+}
+
+.stats {
+  display: flex;
+  justify-content: space-between;
+  gap: 1.5rem;
+  margin-bottom: 2rem;
+
+  &-card {
+    flex: 1;
+    background: #fff;
+    border-radius: 1rem;
+    padding: 12px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+    height: 9rem;
+  }
+
+  &-label {
+    color: #222;
+    font-weight: 500;
+  }
+
+  &-value {
+    color: #16bfae;
+    font-weight: 700;
+    font-size: 1.25rem;
+  }
+}
+
+.section-title {
+  color: #19d6b4;
+  font-size: 1.3rem;
+  font-weight: 700;
+  margin: 2rem 0 1rem;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.tip {
+  border-radius: 0.5rem;
+  padding: 0.75rem 1rem;
+  margin-bottom: 0.5rem;
+  color: #222;
+  display: flex;
+  align-items: center;
+  box-shadow: 0 2px 2px rgba(0, 0, 0, 0.3);
+  gap: 0.5rem;
+  border-left: 4px solid #ffe082;
+}
+
+.link {
+  color: #19d6b4;
+  text-decoration: underline;
+  font-weight: 600;
+}
+
+.questions {
+  margin-top: 1rem;
+}
+
+.question {
+  background: #fff;
+  border-radius: 0.5rem;
+  padding: 1rem;
+  margin-bottom: 1rem;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+
+  &-title {
+    font-weight: 600;
+    color: #222;
+    margin-bottom: 0.5rem;
+  }
+
+  &-answer {
+    margin: 0.5rem 0;
+  }
+
+  &-analysis {
+    color: #222;
+    margin-top: 0.5rem;
+    font-style: italic;
+  }
+}
+
+.label {
+  font-weight: 500;
+}
+
+.correct {
+  color: #19d6b4;
+  font-weight: 600;
+}
+
+.incorrect {
+  color: #e53935;
+  font-weight: 600;
+}
+
+.actions {
+  display: flex;
+  justify-content: center;
+  gap: 1.5rem;
+  margin-top: 2rem;
+}
+
+.btn {
+  border: none;
+  border-radius: 0.5rem;
+  padding: 0.75rem 2rem;
+  font-size: 1.1rem;
+  font-weight: 600;
+  cursor: pointer;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+
+  &--primary {
+    background: #19d6b4;
+    color: #fff;
+  }
+
+  &--danger {
+    background: #b71c1c;
+    color: #fff;
+  }
+}
+
+.stats-icon {
+  color: #2dd4bf;
+  font-size: 28px;
+  margin-bottom: 8px;
+}
