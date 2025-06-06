@@ -1,20 +1,43 @@
 import React from 'react';
-import './Footer.css';
+import './Footer.scss';
 
 const Footer = () => {
   return (
     <footer className="footer">
-      <div className="footer-content">
-        <p>© 2024 PhyGen - Công cụ tạo đề thi Vật Lý</p>
-        <div className="links">
-          <a href="#">Liên hệ</a>
-          <a href="#">Hướng dẫn</a>
+      <div className="footer-container">
+        <div className="footer-column">
+          <h3 className="footer-title">Phygen</h3>
+          <p className="footer-text">Công cụ tạo đề thi Vật lý thông minh, hỗ trợ giáo viên nâng cao chất lượng giảng dạy.</p>
         </div>
-      </div>
-      <div className="social-media">
-        <a href="#" className="social-icon">Facebook</a>
-        <a href="#" className="social-icon">Twitter</a>
-        <a href="#" className="social-icon">Instagram</a>
+
+        <div className="footer-column">
+          <h4 className="footer-heading">Sản phẩm</h4>
+          <ul className="footer-list">
+            <li>Tạo đề thi</li>
+            <li>Ngân hàng câu hỏi</li>
+            <li>Phân tích kết quả</li>
+            <li>API tích hợp</li>
+          </ul>
+        </div>
+
+        <div className="footer-column">
+          <h4 className="footer-heading">Hỗ trợ</h4>
+          <ul className="footer-list">
+            <li>Hướng dẫn sử dụng</li>
+            <li>Câu hỏi thường gặp</li>
+            <li>Liên hệ</li>
+            <li>Báo lỗi</li>
+          </ul>
+        </div>
+
+        <div className="footer-column">
+          <h4 className="footer-heading">Liên hệ</h4>
+          <ul className="footer-list">
+            <li>📧 support@phygen.vn</li>
+            <li>📞 1900 1234</li>
+            <li>📍 TP Hồ Chí Minh</li>
+          </ul>
+        </div>
       </div>
     </footer>
   );

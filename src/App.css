@@ -9,6 +9,7 @@
 .main-layout {
   display: flex;
   flex: 1;
+  gap: 20px; /* Ensure spacing between Sidebar and Home */
 }
 
 /* Sidebar giữ nguyên kích thước */

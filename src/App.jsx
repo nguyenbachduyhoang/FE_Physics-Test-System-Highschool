@@ -14,9 +14,9 @@ const Layout = ({ children }) => {
     <div className="app">
       <Navbar />
       <div className="main-layout">
-        <div className="sidebar">
+   
           <Sidebar />
-        </div>
+        
         <div className="content-area">{children}</div>
       </div>
       <Footer />
