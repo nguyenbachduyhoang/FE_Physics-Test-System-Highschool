@@ -1,0 +1,77 @@
+// RESET CSS
+* {
+  box-sizing: border-box;
+}
+body {
+  margin: 0;
+  padding: 0;
+  font-family: "Inter", "Roboto", Arial, sans-serif;
+  background: #f3f4f6;
+}
+
+$font-size: 11px;
+$height: 38px;
+$overall-width: 360px;
+$selection-width: 135px;
+
+// small size variables
+$small-font: 11px;
+$small-height: 26px;
+
+// theme variables
+$primary: #128dba;
+$primary-transparent: rgba(94, 209, 245, 0.4);
+$secondary: #26b2a5;
+$secondary-transparent: rgba(0, 99, 165, 0.4);
+$active-text: #ffffff;
+$inactive-text: #9ca3af;
+
+// text color variables
+$text-primary: rgba(0, 0, 0, 0.85);
+$text-secondary: #051f2a;
+$text-tertiary: #9ca3af;
+$text-quaternary: #4b5563;
+$text-grey: #6b7280;
+$text-caption: #9ca3af;
+$form-label: #0d5b79;
+
+// misc variables
+$gutter: 12px;
+$demo-background: #10171f;
+$container-background: #293848;
+$red: #ef4444;
+$yellow: #ffc107;
+$green: #15803d;
+$white: #fff;
+$black: #000;
+$grey: #d1d5db;
+
+// component variables
+$disabled-placeholder: rgba(0, 0, 0, 0.25);
+$divider: rgba(5, 5, 5, 0.06);
+$hover-primary: rgba(240, 81, 35, 0.1);
+$hover-secondary: #f1f1f1;
+// $shadow-form: rgb(34 41 47 / 10%);
+$shadow-cart: rgba(56, 56, 56, 0.06);
+$shadow-dropdown: rgba(0, 0, 0, 0.02);
+$shadow-cart-hover: rgba(56, 56, 56, 0.07);
+$shadow-purchased: rgba(51, 56, 56, 0.06);
+$shadow-purchased-hover: rgba(51, 56, 56, 0.07);
+$shadow-button: rgba(0, 0, 0, 0.04);
+$overlay-image: rgba(106, 111, 119, 0.1);
+$border-default: #e5e5e5;
+$border-input: #d9d9d9;
+$border: #d1d5db;
+
+// FONT
+@import url("https://fonts.googleapis.com/css2?family=Inter:wght@400;600&display=swap");
+
+// SCROLLBAR (optional, đẹp cho login)
+*::-webkit-scrollbar {
+  width: 8px;
+  background: transparent;
+}
+*::-webkit-scrollbar-thumb {
+  background: linear-gradient(135deg, $secondary, $primary);
+  border-radius: 8px;
+}

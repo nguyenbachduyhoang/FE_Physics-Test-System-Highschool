@@ -1,0 +1,132 @@
+@import '../../main.scss';
+
+.home-wrapper {
+  padding: 2rem;
+  font-family: "Inter", sans-serif;
+  border: 1px solid #ccc;
+  border-radius: 12px; /* Add border-radius to Home */
+  /* Removed margin-left to avoid overlapping with Sidebar */
+
+  .main-box {
+    .welcome-card {
+      background: #e8f8f8;
+      border: 1px solid #cceeee;
+      padding: 2rem;
+      border-radius: 12px;
+      text-align: center;
+      box-shadow: 0 4px 10px rgba(0, 0, 0, 0.05);
+      margin-bottom: 2rem;
+
+      h2 {
+        font-size: 1.6rem;
+        color: #007a7a;
+        margin-bottom: 1rem;
+
+        span {
+          color: #00bfbf;
+        }
+      }
+
+      p {
+        font-size: 1rem;
+        color: #444;
+        margin-bottom: 1.5rem;
+        line-height: 1.5;
+      }
+
+      .create-button {
+        background: #00b67a;
+        color: white;
+        padding: 0.75rem 1.5rem;
+        border: none;
+        border-radius: 8px;
+        font-weight: 600;
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
+
+        &:hover {
+          background: #009e69;
+        }
+
+        svg {
+          font-size: 1rem;
+        }
+      }
+    }
+
+    .stats {
+      display: flex;
+      gap: 1rem;
+      margin-bottom: 2rem;
+
+      .stat-box {
+        flex: 1;
+        background: white;
+        border-radius: 12px;
+        padding: 1rem 1.5rem;
+        display: flex;
+        align-items: center;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+
+        svg {
+          font-size: 2rem;
+          margin-right: 1rem;
+          color: #00bfbf;
+        }
+
+        h3 {
+          font-size: 1.4rem;
+          color: #222;
+          margin: 0;
+        }
+
+        p {
+          margin: 0;
+          font-size: 0.95rem;
+          color: #777;
+        }
+      }
+    }
+
+    .features-section {
+      h3 {
+        text-align: left;
+        font-size: 1.3rem;
+        margin-bottom: 1rem;
+        color: #00bfbf;
+      }
+
+      .features {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+        gap: 1.5rem;
+
+        .feature-box {
+          border: 1px solid #00bfbf;
+          background: white;
+          border-radius: 12px;
+          padding: 1rem;
+          text-align: center;
+
+          svg {
+            font-size: 1.8rem;
+            color: #00bfbf;
+            margin-bottom: 0.5rem;
+          }
+
+          h4 {
+            font-size: 1.1rem;
+            margin-bottom: 0.5rem;
+            color: #007a7a;
+          }
+
+          p {
+            font-size: 0.95rem;
+            color: #555;
+          }
+        }
+      }
+    }
+  }
+}
