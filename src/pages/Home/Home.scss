@@ -34,6 +34,11 @@
     font-size: 16px;
     cursor: pointer;
   }
+  &-btn:hover {
+    background: #16bfae;
+    color: #fff;
+    box-shadow: 0 2px 8px #b2f5ea;
+  }
   &-recent-title {
     color: #2dd4bf;
     font-weight: 800;
@@ -86,7 +91,7 @@
   &-welcome-desc {
     font-size: 16px;
     padding: 0 24px;
-    color: #FFC107;
+    color: #ffc107;
     font-weight: 900;
   }
   &-welcome-btn {
@@ -102,6 +107,11 @@
     align-items: center;
     justify-content: center;
     gap: 8px;
+  }
+  &-welcome-btn:hover {
+    background: #16bfae;
+    color: #fff;
+    box-shadow: 0 2px 8px #b2f5ea;
   }
   &-stats {
     display: flex;
@@ -147,6 +157,7 @@
   &-features {
     display: flex;
     gap: 12px;
+    padding: 12px;
   }
   &-feature-box {
     flex: 1;
@@ -170,51 +181,52 @@
     font-size: 18px;
   }
   &-feature-box-desc {
-    color: #222;
+    color: #fec551;
+    font-weight: bold;
     font-size: 15px;
     text-align: center;
   }
 }
-.custom-create-exam-modal .ant-modal-content { 
-  background: #1E2D3B; 
-  color: #26b2a5; 
-  border-radius: 24px; 
+.custom-create-exam-modal .ant-modal-content {
+  background: #1e2d3b;
+  color: #26b2a5;
+  border-radius: 24px;
   width: 45vw;
   padding: 12px;
-} 
+}
 
-.custom-create-exam-modal .modal-title { 
-  color: #26B2A5; 
-  text-align: center; 
-  font-size: 2rem; 
-  font-weight: 600; 
+.custom-create-exam-modal .modal-title {
+  color: #26b2a5;
+  text-align: center;
+  font-size: 2rem;
+  font-weight: 600;
   padding: 12px;
-} 
+}
 
-.custom-create-exam-modal .modal-row { 
-  display: flex; 
-  justify-content: space-between; 
-  align-items: center; 
+.custom-create-exam-modal .modal-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
   padding: 12px;
-} 
+}
 
-.custom-create-exam-modal .modal-label { 
-  color: #26B2A5; 
-  font-weight: 500; 
+.custom-create-exam-modal .modal-label {
+  color: #26b2a5;
+  font-weight: 500;
   font-size: 1.5rem;
-} 
+}
 
 .custom-create-exam-modal .modal-input,
 .custom-create-exam-modal .modal-select {
   font-size: 1.1rem;
   height: 38px;
-  border-radius: 6px; 
-  border: 1px solid #fff; 
-  background: #1E2D3B !important; /* Thêm !important để override */
-  color: #fff !important; 
-  padding: 5px 10px; 
+  border-radius: 6px;
+  border: 1px solid #fff;
+  background: #1e2d3b !important; /* Thêm !important để override */
+  color: #fff !important;
+  padding: 5px 10px;
   outline: none; /* Loại bỏ outline khi focus */
-} 
+}
 
 /* Style riêng cho select để tránh conflict */
 .custom-create-exam-modal .modal-select {
@@ -225,41 +237,46 @@
 
 /* Style cho option trong select */
 .custom-create-exam-modal .modal-select option {
-  background: #1E2D3B !important;
+  background: #1e2d3b !important;
   color: #fff !important;
   padding: 5px;
 }
 
 /* Style khi select được focus */
 .custom-create-exam-modal .modal-select:focus {
-  border-color: #26B2A5;
+  border-color: #26b2a5;
   box-shadow: 0 0 0 2px rgba(38, 178, 165, 0.2);
 }
 
-.custom-create-exam-modal .modal-switch-row { 
-  display: flex; 
-  justify-content: space-between; 
-  align-items: center; 
+.custom-create-exam-modal .modal-switch-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
   padding: 12px;
-} 
+}
 
-.custom-create-exam-modal .modal-btn-row { 
-  text-align: center; 
-  display: flex; 
+.custom-create-exam-modal .modal-btn-row {
+  text-align: center;
+  display: flex;
   justify-content: center;
-  align-items: center; 
+  align-items: center;
   padding: 12px;
-} 
+}
+.modal-btn:hover {
+  background: #16bfae;
+  color: #fff;
+  box-shadow: 0 2px 8px #b2f5ea;
+}
 
-.custom-create-exam-modal .modal-btn { 
-  background: #26B2A5; 
-  color: #fff; 
-  border: none; 
-  border-radius: 8px; 
-  font-weight: 600; 
-  gap: 8px; 
+.custom-create-exam-modal .modal-btn {
+  background: #26b2a5;
+  color: #fff;
+  border: none;
+  border-radius: 8px;
+  font-weight: 600;
+  gap: 8px;
   padding: 12px 20px;
-  cursor: pointer; 
+  cursor: pointer;
   font-size: 1.4rem;
   display: flex;
   align-items: center;

@@ -1,6 +1,18 @@
 import React, { useState } from "react";
 import LayoutContent from "../../components/layoutContent";
-import { FaChalkboardTeacher, FaSearch, FaClock, FaEye, FaRedo, FaShare, FaFilter, FaTrophy, FaCalendarAlt, FaBookOpen, FaChevronDown } from "react-icons/fa";
+import {
+  FaChalkboardTeacher,
+  FaSearch,
+  FaClock,
+  FaEye,
+  FaRedo,
+  FaShare,
+  FaFilter,
+  FaTrophy,
+  FaCalendarAlt,
+  FaBookOpen,
+  FaChevronDown,
+} from "react-icons/fa";
 import "./index.scss";
 
 const stats = [
@@ -21,32 +33,32 @@ const historyList = [
     time: "15 phút",
     date: "Hôm nay, 18:30",
     difficulty: "Trung bình",
-    accuracy: 97.5
+    accuracy: 97.5,
   },
   {
     id: 2,
     score: 9.0,
     total: 10,
-    subject: "Toán học - Lớp 10",
+    subject: "Vật lý - Lớp 10",
     correct: 36,
     totalQuestions: 40,
     time: "20 phút",
     date: "Hôm qua, 14:20",
     difficulty: "Khó",
-    accuracy: 90
+    accuracy: 90,
   },
   {
     id: 3,
     score: 8.5,
     total: 10,
-    subject: "Hóa học - Lớp 10",
+    subject: "Vật lý - Lớp 10",
     correct: 34,
     totalQuestions: 40,
     time: "18 phút",
     date: "2 ngày trước, 16:45",
     difficulty: "Dễ",
-    accuracy: 85
-  }
+    accuracy: 85,
+  },
 ];
 
 const classes = ["Lớp", "10", "11", "12"];
@@ -57,9 +69,13 @@ const HistoryContent = () => {
   const [subjectFilter, setSubjectFilter] = useState("Tất cả môn học");
   const [timeFilter, setTimeFilter] = useState("Tất cả thời gian");
 
-  const filteredHistory = historyList.filter(item => {
-    const matchesSearch = item.subject.toLowerCase().includes(search.toLowerCase());
-    const matchesSubject = subjectFilter === "Tất cả môn học" || item.subject.includes(subjectFilter);
+  const filteredHistory = historyList.filter((item) => {
+    const matchesSearch = item.subject
+      .toLowerCase()
+      .includes(search.toLowerCase());
+    const matchesSubject =
+      subjectFilter === "Tất cả môn học" ||
+      item.subject.includes(subjectFilter);
     return matchesSearch && matchesSubject;
   });
 
@@ -101,15 +117,17 @@ const HistoryContent = () => {
             className="search-input"
           />
         </div>
-        
+
         <div className="filter-group">
           <div className="filter-select">
             <select
               value={subjectFilter}
               onChange={(e) => setSubjectFilter(e.target.value)}
             >
-              {classes.map(subject => (
-                <option key={subject} value={subject}>{subject}</option>
+              {classes.map((subject) => (
+                <option key={subject} value={subject}>
+                  {subject}
+                </option>
               ))}
             </select>
             <FaChevronDown className="select-arrow" />
@@ -120,8 +138,10 @@ const HistoryContent = () => {
               value={timeFilter}
               onChange={(e) => setTimeFilter(e.target.value)}
             >
-              {timeFilters.map(filter => (
-                <option key={filter} value={filter}>{filter}</option>
+              {timeFilters.map((filter) => (
+                <option key={filter} value={filter}>
+                  {filter}
+                </option>
               ))}
             </select>
             <FaChevronDown className="select-arrow" />
@@ -131,26 +151,46 @@ const HistoryContent = () => {
 
       {/* History List */}
       <div className="list">
-        {filteredHistory.map(item => (
+        {filteredHistory.map((item) => (
           <div className="item" key={item.id}>
             <div className="item-header">
               <div className="item-left">
-                <div className={`score score-${item.score >= 9 ? 'excellent' : item.score >= 7 ? 'good' : 'average'}`}>
+                <div
+                  className={`score score-${
+                    item.score >= 9
+                      ? "excellent"
+                      : item.score >= 7
+                      ? "good"
+                      : "average"
+                  }`}
+                >
                   {item.score}/10
                 </div>
                 <div className="item-info">
                   <h3 className="subject">{item.subject}</h3>
                   <div className="item-badges">
-                    <span className={`difficulty difficulty-${item.difficulty === 'Dễ' ? 'easy' : item.difficulty === 'Trung bình' ? 'medium' : 'hard'}`}>
+                    <span
+                      className={`difficulty difficulty-${
+                        item.difficulty === "Dễ"
+                          ? "easy"
+                          : item.difficulty === "Trung bình"
+                          ? "medium"
+                          : "hard"
+                      }`}
+                    >
                       {item.difficulty}
                     </span>
-                    <span className="accuracy">{item.accuracy}% độ chính xác</span>
+                    <span className="accuracy">
+                      {item.accuracy}% độ chính xác
+                    </span>
                   </div>
                 </div>
               </div>
-              
+
               <div className="item-right">
-                <div className="correct">{item.correct}/{item.totalQuestions} câu đúng</div>
+                <div className="correct">
+                  {item.correct}/{item.totalQuestions} câu đúng
+                </div>
                 <div className="date">
                   <FaCalendarAlt />
                   {item.date}
@@ -165,7 +205,7 @@ const HistoryContent = () => {
                 <span>{item.accuracy}%</span>
               </div>
               <div className="progress-bar">
-                <div 
+                <div
                   className="progress-fill"
                   style={{ width: `${item.accuracy}%` }}
                 ></div>
