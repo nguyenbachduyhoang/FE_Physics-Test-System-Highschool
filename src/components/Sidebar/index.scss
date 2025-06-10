@@ -1,0 +1,326 @@
+// components/AdminSidebar/index.scss
+
+.admin-sidebar-antd {
+  display: flex;
+  width: 280px;
+  height: 100vh;
+  backdrop-filter: blur(10px);
+  border-right: 1px solid rgba(255, 255, 255, 0.2);
+  box-shadow: 2px 0 20px rgba(0, 0, 0, 0.1);
+  position: relative;
+  z-index: 1000;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  display: flex;
+  flex-direction: column;
+  flex-shrink: 0;
+
+  &.collapsed {
+    width: 80px;
+
+    .logo-text,
+    .sidebar-footer {
+      opacity: 0;
+      pointer-events: none;
+    }
+  }
+
+  // Logo Section
+  .sidebar-logo {
+    padding: 14px;
+    border-bottom: 1px solid rgba(0, 0, 0, 0.1);
+    position: relative;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+
+    .logo-content {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      flex: 1;
+    }
+
+    .logo-icon {
+      width: 40px;
+      height: 40px;
+      background: linear-gradient(135deg, #667eea, #764ba2);
+      border-radius: 12px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+
+      svg {
+        width: 20px;
+        height: 20px;
+        color: white;
+      }
+    }
+
+    .logo-text {
+      transition: all 0.3s ease;
+
+      .logo-title {
+        font-size: 20px;
+        font-weight: 700;
+        color: white;
+        margin-bottom: 2px;
+      }
+
+      .logo-subtitle {
+        font-size: 11px;
+        color: #6b7280;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        font-weight: 500;
+      }
+    }
+
+    .sidebar-toggle {
+      &:hover {
+        background: rgba(107, 114, 128, 0.1) !important;
+      }
+    }
+  }
+
+  // Menu Section
+  .sidebar-menu {
+    flex: 1;
+    overflow-y: auto;
+    padding: 8px 0;
+
+    .custom-menu {
+      border: none !important;
+      background: transparent !important;
+      font-size: 14px;
+
+      // Menu item styling
+      .ant-menu-item {
+        height: 44px !important;
+        line-height: 44px !important;
+        margin: 2px 8px !important;
+        border-radius: 8px !important;
+        padding: 0 16px !important;
+        color: #6b7280 !important;
+        font-weight: 500;
+        border-left: 3px solid transparent;
+        transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1) !important;
+
+        &:hover {
+          background: linear-gradient(
+            90deg,
+            rgba(224, 231, 255, 0.6),
+            transparent
+          ) !important;
+          color: #4c51bf !important;
+          transform: translateX(4px);
+          border-left-color: transparent;
+        }
+
+        &.ant-menu-item-selected {
+          background: linear-gradient(
+            90deg,
+            rgba(224, 231, 255, 0.8),
+            transparent
+          ) !important;
+          color: #4c51bf !important;
+          font-weight: 600;
+          border-left-color: #4c51bf;
+          position: relative;
+
+          &::after {
+            content: "";
+            position: absolute;
+            right: 16px;
+            top: 50%;
+            transform: translateY(-50%);
+            width: 6px;
+            height: 6px;
+            background: #4c51bf;
+            border-radius: 50%;
+          }
+
+          &:hover {
+            background: linear-gradient(
+              90deg,
+              rgba(224, 231, 255, 0.8),
+              transparent
+            ) !important;
+            color: #4c51bf !important;
+          }
+        }
+
+        // Icon styling
+        .anticon {
+          font-size: 18px;
+          transition: all 0.2s ease;
+        }
+
+        &:hover .anticon {
+          transform: scale(1.1);
+        }
+
+        &.ant-menu-item-selected .anticon {
+          transform: scale(1.1);
+        }
+      }
+
+      // Collapsed menu styling
+      &.ant-menu-inline-collapsed {
+        .ant-menu-item {
+          padding: 0 !important;
+          text-align: center;
+          justify-content: center;
+          margin: 2px 12px !important;
+
+          &::after {
+            display: none !important;
+          }
+        }
+      }
+
+      // Remove default Ant Design focus outline
+      .ant-menu-item:active,
+      .ant-menu-item:focus {
+        background: transparent !important;
+      }
+
+      .ant-menu-item-selected:active,
+      .ant-menu-item-selected:focus {
+        background: linear-gradient(
+          90deg,
+          rgba(224, 231, 255, 0.8),
+          transparent
+        ) !important;
+      }
+    }
+  }
+
+  // Footer
+  .sidebar-footer {
+    padding: 20px;
+    border-top: 1px solid rgba(0, 0, 0, 0.1);
+    background: rgba(249, 250, 251, 0.5);
+    transition: all 0.3s ease;
+
+    .footer-version {
+      font-size: 12px;
+      font-weight: 600;
+      color: #4c51bf;
+      margin-bottom: 4px;
+    }
+
+    .footer-copyright {
+      font-size: 10px;
+      color: #9ca3af;
+      line-height: 1.3;
+    }
+  }
+
+  // Custom scrollbar
+  .sidebar-menu::-webkit-scrollbar {
+    width: 4px;
+  }
+
+  .sidebar-menu::-webkit-scrollbar-track {
+    background: transparent;
+  }
+
+  .sidebar-menu::-webkit-scrollbar-thumb {
+    background: rgba(156, 163, 175, 0.3);
+    border-radius: 2px;
+
+    &:hover {
+      background: rgba(156, 163, 175, 0.5);
+    }
+  }
+}
+
+// Dark mode support
+@media (prefers-color-scheme: dark) {
+  .admin-sidebar-antd {
+    background: rgba(17, 24, 39, 0.95);
+    border-right-color: rgba(75, 85, 99, 0.3);
+
+    .sidebar-logo {
+      border-bottom-color: rgba(75, 85, 99, 0.3);
+      .logo-title {
+        color: #f9fafb;
+      }
+
+      .logo-subtitle {
+        color: #9ca3af;
+      }
+    }
+
+    .custom-menu {
+      .ant-menu-item {
+        color: #d1d5db !important;
+
+        &:hover {
+          color: #818cf8 !important;
+          background: linear-gradient(
+            90deg,
+            rgba(129, 140, 248, 0.1),
+            transparent
+          ) !important;
+        }
+
+        &.ant-menu-item-selected {
+          color: #818cf8 !important;
+          background: linear-gradient(
+            90deg,
+            rgba(129, 140, 248, 0.15),
+            transparent
+          ) !important;
+          border-left-color: #818cf8;
+
+          &::after {
+            background: #818cf8;
+          }
+
+          &:hover {
+            background: linear-gradient(
+              90deg,
+              rgba(129, 140, 248, 0.15),
+              transparent
+            ) !important;
+            color: #818cf8 !important;
+          }
+        }
+      }
+    }
+
+    .sidebar-footer {
+      background: rgba(31, 41, 55, 0.5);
+      border-top-color: rgba(75, 85, 99, 0.3);
+
+      .footer-version {
+        color: #818cf8;
+      }
+
+      .footer-copyright {
+        color: #6b7280;
+      }
+    }
+  }
+}
+
+// Overlay for mobile
+.sidebar-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0, 0, 0, 0.5);
+  z-index: 2;
+  opacity: 0;
+  visibility: hidden;
+  transition: all 0.3s ease;
+
+  &.active {
+    opacity: 1;
+    visibility: visible;
+  }
+}
