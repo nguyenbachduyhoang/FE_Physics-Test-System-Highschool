@@ -1,0 +1,41 @@
+.admin-users-page {
+  padding: 32px;
+  background: #f7f7fb;
+
+  .users-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 24px;
+    h1 {
+      font-size: 2rem;
+      margin: 0;
+      font-weight: bold;
+    }
+  }
+
+  .users-table {
+    background: #fff;
+    border-radius: 12px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.04);
+    padding: 16px;
+    .ant-table-thead > tr > th {
+      background: #f0f4fa;
+      font-weight: 600;
+    }
+    .ant-table-tbody > tr > td {
+      vertical-align: middle;
+    }
+    .ant-avatar {
+      box-shadow: 0 1px 4px rgba(0,0,0,0.08);
+    }
+    .ant-tag {
+      font-size: 13px;
+      padding: 2px 10px;
+      border-radius: 8px;
+    }
+    .ant-btn {
+      border-radius: 6px;
+    }
+  }
+}
