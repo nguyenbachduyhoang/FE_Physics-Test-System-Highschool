@@ -69,7 +69,7 @@ const AdminSidebar = ({ isCollapsed, onToggleCollapse }) => {
   // Hàm xử lý đăng xuất
   const handleLogout = () => {
     localStorage.removeItem("token");
-    navigate("/login");
+    navigate("/");
   };
 
   return (
