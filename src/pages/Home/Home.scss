@@ -32,6 +32,7 @@
     padding: 12px;
     font-weight: 600;
     font-size: 16px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
     cursor: pointer;
   }
   &-btn:hover {
@@ -76,6 +77,8 @@
     display: flex;
     align-items: center;
     flex-direction: column;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+
   }
   &-welcome-title {
     color: #16bfae;
@@ -107,6 +110,7 @@
     align-items: center;
     justify-content: center;
     gap: 8px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
   }
   &-welcome-btn:hover {
     background: #16bfae;
@@ -137,10 +141,15 @@
     color: #16bfae;
     font-weight: 700;
     font-size: 20px;
+    margin: 0;
+    padding: 12px;
   }
   &-stat-label {
-    color: #222;
-    font-weight: 500;
+    font-weight: bold;
+    font-size: 17px;
+    color: #fec551;
+    padding: 12px;
+    margin: 0;
   }
   &-feature-title {
     color: #2dd4bf;

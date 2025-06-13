@@ -27,17 +27,19 @@ const Header = () => {
           <HomeOutlined />
           <span>Trang chủ</span>
         </Link>
-        <Divider type="vertical" className="header-divider" />
-        <span className="header-menu-item">
+        {/* <Divider type="vertical" className="header-divider" /> */}
+        {/* <span className="header-menu-item">
           <Link to="/home" className="header-menu-item" style={{ textDecoration: 'none' }}>
             <FileTextOutlined />
             <span>Tạo đề thi</span>
           </Link>
-        </span>
+        </span> */}
         <Divider type="vertical" className="header-divider" />
         <span className="header-menu-item">
+        <Link to="/thiMau" className="header-menu-item" style={{ textDecoration: 'none' }}>
           <BankOutlined />
-          <span>Ngân hàng câu hỏi</span>
+          <span>Xem đề thi mẫu</span>
+          </Link>
         </span>
         <Divider type="vertical" className="header-divider" />
         <span className="header-menu-item">
