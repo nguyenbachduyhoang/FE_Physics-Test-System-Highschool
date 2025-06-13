@@ -203,14 +203,13 @@ const Home = () => {
       >
         <div>
           <h2 className="modal-title">Thiết lập bài kiểm tra</h2>
-
           <div className="modal-row">
-            <span className="modal-label">Câu hỏi (tối đa 10)</span>
+            <span className="modal-label">Câu hỏi (tối đa 50)</span>
             <input
               className="modal-input"
               type="number"
               min={1}
-              max={10}
+              max={50}
               defaultValue={10}
             />
           </div>
