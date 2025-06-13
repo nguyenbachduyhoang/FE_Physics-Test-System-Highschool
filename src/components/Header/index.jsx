@@ -17,7 +17,7 @@ const Header = () => {
     <div className="header-container">
       <div className="header-left">
         <Link to="/home">
-          <img src="/logo/33.png" alt="Logo 1" className="header-logo" />
+          <img src="/images/33.png" alt="Logo 1" className="header-logo" />
         </Link>
         <Divider type="vertical" className="header-divider" />
         <span className="header-title">Physics Test System</span>

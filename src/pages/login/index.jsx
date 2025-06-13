@@ -29,7 +29,7 @@ function Login() {
         <Col xs={24} sm={24} md={8} className="right-section">
           <div className="login-card">
             <p className="title">Đăng Nhập</p>
-            <img src="/logo/22.png" alt="Logo 1" />
+            <img src="/images/22.png" alt="Logo 1" />
 
             <Form
               name="login"
