@@ -5,10 +5,8 @@ import { LockOutlined, UserOutlined } from "@ant-design/icons";
 import CInputLabel from "../../components/uiBasic/CInputLabel";
 import CInputLabelPass from "../../components/uiBasic/CInputLabelPass";
 import "./index.scss";
-import ReCAPTCHA from "react-google-recaptcha";
 import { useRef, useState } from "react";
 import { FcGoogle } from "react-icons/fc";
-import { FaFacebook } from "react-icons/fa";
 import { useNavigate } from "react-router-dom";
 
 function Login() {
@@ -90,7 +88,7 @@ function Login() {
                   </div>
                 </Col>
 
-                <Col span={24}>
+                {/* <Col span={24}>
                   <Form.Item
                     style={{ width: "100%" }}
                     className="recaptcha"
@@ -109,7 +107,7 @@ function Login() {
                       onChange={handleCaptchaChange}
                     />
                   </Form.Item>
-                </Col>
+                </Col> */}
 
                 <Col span={24}>
                   <Form.Item>
