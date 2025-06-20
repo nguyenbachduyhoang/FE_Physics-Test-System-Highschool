@@ -3,6 +3,7 @@ import { Pagination, Modal } from "antd";
 import "./index.scss";
 import LayoutContent from "../../components/layoutContent";
 import { useNavigate } from "react-router-dom";
+import { uploadFile } from "../../quiz-uploads/firebaseStorage";
 
 const PhysicsTestSystem = () => {
   const [timeLeft, setTimeLeft] = useState(20 * 60);
@@ -14,6 +15,7 @@ const PhysicsTestSystem = () => {
   const [currentPage, setCurrentPage] = useState(1);
   const [scrollToQuestion, setScrollToQuestion] = useState(null);
   const [showConfirmSubmit, setShowConfirmSubmit] = useState(false);
+  const [uploadedFiles, setUploadedFiles] = useState({}); // 2. State
 
   const QUESTIONS_PER_PAGE = 10; // Số câu hỏi trên mỗi trang
   const API_URL = "https://684276aee1347494c31cddbd.mockapi.io/question";
@@ -97,6 +99,22 @@ const PhysicsTestSystem = () => {
 
   const handleSubmit = () => {
     navigate("/result");
+  };
+
+  const handleFileUpload = async (questionId, file) => {
+    // 3. Hàm upload
+    try {
+      const url = await uploadFile(file);
+      setUploadedFiles((prev) => ({
+        ...prev,
+        [questionId]: url,
+      }));
+      alert("Upload thành công!");
+    } catch (err) {
+      alert("Upload thất bại!");
+      console.log("Error:", err);
+      
+    }
   };
 
   return (
@@ -227,6 +245,28 @@ const PhysicsTestSystem = () => {
                       />
                       <span>Lát kiểm tra lại</span>
                     </label>
+                  </div>
+                  {/* 4. Thêm input upload file */}
+                  <div style={{ marginTop: 8 }}>
+                    <input
+                      type="file"
+                      onChange={(e) => {
+                        if (e.target.files[0]) {
+                          handleFileUpload(question.id, e.target.files[0]);
+                        }
+                      }}
+                    />
+                    {uploadedFiles[question.id] && (
+                      <div>
+                        <a
+                          href={uploadedFiles[question.id]}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                        >
+                          Xem file đã upload
+                        </a>
+                      </div>
+                    )}
                   </div>
                 </div>
               ))

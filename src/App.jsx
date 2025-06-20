@@ -13,6 +13,7 @@ import Exams from "./pages/Admin/exams";
 import Reports from "./pages/Admin/reports";
 import AdminDashboard from "./pages/Admin/dashboard";
 import AdminLayout from "./pages/Admin/AdminLayout";
+import { Toaster } from "react-hot-toast";
 
 const router = createBrowserRouter([
   {
@@ -59,7 +60,12 @@ const router = createBrowserRouter([
 ]);
 
 const App = () => {
-  return <RouterProvider router={router} />;
+  return (
+    <>
+      <RouterProvider router={router} />
+      <Toaster />
+    </>
+  );
 };
 
 export default App;
