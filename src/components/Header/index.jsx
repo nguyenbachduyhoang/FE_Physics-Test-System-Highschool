@@ -11,8 +11,16 @@ import {
 import "./index.scss";
 import { Link } from 'react-router-dom';
 import { useNavigate } from "react-router-dom";
+import { authService } from "../../services/authService";
+
 const Header = () => {
   const navigate = useNavigate();
+
+  const handleLogout = async () => {
+    await authService.logout();
+    navigate("/"); // Redirect to login page after logout
+  };
+
   return (
     <div className="header-container">
       <div className="header-left">
@@ -57,7 +65,7 @@ const Header = () => {
             placeholder="Tìm kiếm"
           />
         </div>
-        <div className="logout-button" onClick={() => navigate("/")}>
+        <div className="logout-button" onClick={handleLogout}>
           <LogoutOutlined />
         </div>
       </div>

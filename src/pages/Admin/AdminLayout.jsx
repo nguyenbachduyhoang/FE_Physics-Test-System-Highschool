@@ -24,9 +24,9 @@ export default function AdminLayout() {
         fetchRole();
     }, []);
 
-    if (role !== "admin") {
-        return <div>Bạn không có quyền truy cập trang này.</div>;
-    }
+    // if (role !== "admin") {
+    //     return <div>Bạn không có quyền truy cập trang này.</div>;
+    // }
 
     return (
         <div className="admin-layout">

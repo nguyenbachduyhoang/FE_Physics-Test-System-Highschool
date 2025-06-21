@@ -86,7 +86,7 @@
   // Menu Section
   .sidebar-menu {
     flex: 1;
-    overflow-y: auto;
+    overflow: hidden;
     padding: 8px 0;
 
     .custom-menu {

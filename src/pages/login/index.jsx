@@ -11,48 +11,72 @@ import { useNavigate } from "react-router-dom";
 import { GoogleOAuthProvider } from "@react-oauth/google";
 import { signInWithPopup } from "firebase/auth";
 import { auth, provider } from "../../firebase"; 
-import { doc, setDoc, getDoc } from "firebase/firestore";
-import { db } from "../../firebase";
-import axios from "axios";
 import toast from "react-hot-toast";
+import { authService } from "../../services/authService";
 
 function Login() {
   const navigate = useNavigate();
   const onFinish = (values) => {
     handleLogin(values);
   };
-  const recaptchaRef = useRef();
-  const [captchaValue, setCaptchaValue] = useState(null);
-  const handleCaptchaChange = (value) => {
-    setCaptchaValue(value);
-  };
+  const [loading, setLoading] = useState(false);
+
 
   const handleGoogleLogin = async () => {
     try {
       const result = await signInWithPopup(auth, provider);
       const user = result.user;
-      const userRef = doc(db, "users", user.uid);
-      const userSnap = await getDoc(userRef);
-
+      const idToken = await user.getIdToken();
+      const data = await authService.googleLogin({
+        idToken: idToken,
+        email: user.email,
+        fullName: user.displayName
+      });
+      
+      if (data.isNewUser) {
+        const registrationData = {
+          email: data.email,
+          fullName: data.name || user.displayName,
+          phone: '',
+          address: ''
+        };
+        
+        const completeData = await authService.completeGoogleRegistration(registrationData);
+        authService.setAuthData(completeData);
+        toast.success(`Đăng ký thành công! Chào mừng ${data.name || user.displayName}`);
+      } else {
+        // Existing user login
+        authService.setAuthData(data);
+        const userName = data.user?.fullName || data.user?.full_name || user.displayName;
+        toast.success(`Đăng nhập Google thành công! Chào mừng ${userName}`);
+      }
       
       navigate("/home");
     } catch (error) {
+      const errorMessage = error.response?.data?.message || error.message || "Đăng nhập Google thất bại!";
+      toast.error(errorMessage);
       console.error("Google login error:", error);
     }
   };
 
   const handleLogin = async (values) => {
+    setLoading(true);
     try {
-      const res = await axios.post("http://103.252.92.182/auth/login", {
-        username: values.username,
-        password: values.password,
-      });
-      localStorage.setItem("token", res.data.access_token);
-      toast.success("Đăng nhập thành công!");
+      console.time('Login API Call'); // Measure API call time
+      const data = await authService.login(values.username, values.password);
+      console.timeEnd('Login API Call');
+      
+      // Set auth data using service
+      authService.setAuthData(data);
+      
+      toast.success(`Đăng nhập thành công! Chào mừng ${data.user.full_name}`);
       navigate("/home");
     } catch (err) {
-      toast.error("Đăng nhập thất bại!");
-      console.error(err);
+      const errorMessage = err.response?.data?.message || "Đăng nhập thất bại!";
+      toast.error(errorMessage);
+      console.error("Login error:", err.response?.data || err);
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -132,8 +156,10 @@ function Login() {
                         className="login-button"
                         htmlType="submit"
                         block
+                        loading={loading}
+                        disabled={loading}
                       >
-                        Đăng nhập
+                        {loading ? "Đang đăng nhập..." : "Đăng nhập"}
                       </Button>
                     </Form.Item>
                   </Col>
