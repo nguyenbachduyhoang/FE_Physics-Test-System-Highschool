@@ -1,0 +1,342 @@
+import axios from 'axios';
+
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 
+  (window.location.hostname === 'localhost' ? 'http://localhost:5298' : 'https://be-phygens-production.up.railway.app');
+
+const questionAPI = axios.create({
+  baseURL: API_BASE_URL,
+  headers: {
+    'Content-Type': 'application/json',
+  },
+});
+
+// Add token to requests
+questionAPI.interceptors.request.use((config) => {
+  const token = localStorage.getItem('token');
+  if (token) {
+    config.headers.Authorization = `Bearer ${token}`;
+  }
+  return config;
+});
+
+// Handle auth errors
+questionAPI.interceptors.response.use(
+  (response) => response,
+  (error) => {
+    if (error.response?.status === 401) {
+      localStorage.removeItem('token');
+      localStorage.removeItem('user');
+      window.location.href = '/login';
+    }
+    return Promise.reject(error);
+  }
+);
+
+export const questionBankService = {
+  // =============== AI QUESTION GENERATION APIs ===============
+  
+  // Generate single question using AI
+  generateQuestion: async (questionData) => {
+    const response = await questionAPI.post('/ai-question/generate', questionData);
+    return response.data.success ? response.data.data : response.data;
+  },
+
+  // Generate multiple questions in batch
+  generateBatchQuestions: async (batchData) => {
+    const response = await questionAPI.post('/ai-question/generate-batch', batchData);
+    return response.data.success ? response.data.data : response.data;
+  },
+
+  // Improve existing question using AI
+  improveQuestion: async (questionId, improvementRequest) => {
+    const response = await questionAPI.post(`/ai-question/improve/${questionId}`, improvementRequest);
+    return response.data.success ? response.data.data : response.data;
+  },
+
+  // Get AI-suggested topics for question generation
+  suggestTopics: async (criteria) => {
+    const response = await questionAPI.post('/ai-question/suggest-topics', criteria);
+    return response.data.success ? response.data.data : response.data;
+  },
+
+  // Validate question quality using AI
+  validateQuestion: async (questionId) => {
+    const response = await questionAPI.post(`/ai-question/validate/${questionId}`);
+    return response.data.success ? response.data.data : response.data;
+  },
+
+  // Test AI connection and configuration
+  testAIConnection: async () => {
+    const response = await questionAPI.post('/ai-question/test-connection');
+    return response.data.success ? response.data.data : response.data;
+  },
+
+  // Get AI configuration status
+  getAIConfig: async () => {
+    const response = await questionAPI.get('/ai-question/config');
+    return response.data.success ? response.data.data : response.data;
+  },
+
+  // =============== CHAPTER & TOPIC MANAGEMENT ===============
+  
+  // Get all chapters for question categorization
+  getChapters: async () => {
+    try {
+      const response = await questionAPI.get('/ai-question/chapters');
+      if (response.data.success) {
+        const data = response.data.data;
+        if (data && data.$values && Array.isArray(data.$values)) {
+          console.log('Found $values array with', data.$values.length, 'chapters');
+          return data.$values;
+        } else if (Array.isArray(data)) {
+          console.log('Found direct array with', data.length, 'chapters');
+          return data;
+        } else {
+          console.warn('Unexpected data format:', data);
+          return [];
+        }
+      } else {
+        console.error('API returned success=false:', response.data.message);
+        return [];
+      }
+    } catch (error) {
+      console.error('Chapters API error:', error.message);
+      return [];
+    }
+  },
+
+  // Get chapters by grade
+  getChaptersByGrade: async (grade) => {
+    try {
+      const response = await questionAPI.get('/ai-question/chapters', {
+        params: { grade }
+      });
+      const data = response.data.success ? response.data.data : response.data;
+      return Array.isArray(data) ? data : [];
+    } catch (error) {
+      console.warn('Chapters API not available:', error.message);
+      return [];
+    }
+  },
+
+  // =============== QUESTION CRUD (Future Implementation) ===============
+  
+  // Get all questions with filters
+  getQuestions: async (filters = {}) => {
+    try {
+      // Sử dụng AI endpoint để lấy questions
+      const response = await questionAPI.get('/ai-question', { params: filters });
+      return response.data.success ? response.data.data : response.data;
+    } catch (err) {
+      // Fallback: return empty array nếu API chưa sẵn sàng
+      console.warn('Questions API not available:', err.message);
+      return [];
+    }
+  },
+
+  // Get question by ID
+  getQuestionById: async (id) => {
+    // This endpoint doesn't exist yet in backend, preparing for future
+    const response = await questionAPI.get(`/questions/${id}`);
+    return response.data.success ? response.data.data : response.data;
+  },
+
+  // Create new question manually
+  createQuestion: async (questionData) => {
+    // This endpoint doesn't exist yet in backend, preparing for future
+    const response = await questionAPI.post('/questions', questionData);
+    return response.data.success ? response.data.data : response.data;
+  },
+
+  // Update question
+  updateQuestion: async (id, questionData) => {
+    // This endpoint doesn't exist yet in backend, preparing for future
+    const response = await questionAPI.put(`/questions/${id}`, questionData);
+    return response.data.success ? response.data.data : response.data;
+  },
+
+  // Delete question
+  deleteQuestion: async (id) => {
+    // This endpoint doesn't exist yet in backend, preparing for future
+    const response = await questionAPI.delete(`/questions/${id}`);
+    return response.data;
+  },
+
+  // =============== QUESTION SEARCH & FILTER ===============
+  
+  // Search questions by text
+  searchQuestions: async (searchText, filters = {}) => {
+    // This endpoint doesn't exist yet in backend, preparing for future
+    const response = await questionAPI.get('/questions/search', {
+      params: { q: searchText, ...filters }
+    });
+    return response.data.success ? response.data.data : response.data;
+  },
+
+  // Get questions by chapter
+  getQuestionsByChapter: async (chapterId) => {
+    // This endpoint doesn't exist yet in backend, preparing for future
+    const response = await questionAPI.get('/questions/by-chapter', {
+      params: { chapterId }
+    });
+    return response.data.success ? response.data.data : response.data;
+  },
+
+  // Get questions by difficulty level
+  getQuestionsByDifficulty: async (difficulty) => {
+    // This endpoint doesn't exist yet in backend, preparing for future
+    const response = await questionAPI.get('/questions/by-difficulty', {
+      params: { difficulty }
+    });
+    return response.data.success ? response.data.data : response.data;
+  },
+
+  // =============== QUESTION QUALITY & FEEDBACK ===============
+  
+  // Submit quality feedback for a question
+  submitQuestionFeedback: async (questionId, feedback) => {
+    // This endpoint doesn't exist yet in backend, preparing for future
+    const response = await questionAPI.post(`/questions/${questionId}/feedback`, feedback);
+    return response.data.success ? response.data.data : response.data;
+  },
+
+  // Get question statistics and analytics
+  getQuestionStatistics: async (questionId) => {
+    // This endpoint doesn't exist yet in backend, preparing for future
+    const response = await questionAPI.get(`/questions/${questionId}/statistics`);
+    return response.data.success ? response.data.data : response.data;
+  },
+
+  // =============== BULK OPERATIONS ===============
+  
+  // Import questions from file (CSV, Excel)
+  importQuestions: async (fileData) => {
+    // This endpoint doesn't exist yet in backend, preparing for future
+    const formData = new FormData();
+    formData.append('file', fileData);
+    
+    const response = await questionAPI.post('/questions/import', formData, {
+      headers: { 'Content-Type': 'multipart/form-data' }
+    });
+    return response.data.success ? response.data.data : response.data;
+  },
+
+  // Export questions to file
+  exportQuestions: async (filters = {}) => {
+    // This endpoint doesn't exist yet in backend, preparing for future
+    const response = await questionAPI.get('/questions/export', {
+      params: filters,
+      responseType: 'blob'
+    });
+    return response.data;
+  },
+
+  // Bulk delete questions
+  bulkDeleteQuestions: async (questionIds) => {
+    // This endpoint doesn't exist yet in backend, preparing for future
+    const response = await questionAPI.delete('/questions/bulk-delete', {
+      data: { questionIds }
+    });
+    return response.data;
+  },
+
+  // Bulk update questions
+  bulkUpdateQuestions: async (updates) => {
+    // This endpoint doesn't exist yet in backend, preparing for future
+    const response = await questionAPI.put('/questions/bulk-update', updates);
+    return response.data.success ? response.data.data : response.data;
+  },
+
+  // =============== UTILITY FUNCTIONS ===============
+  
+  // Format question data for display
+  formatQuestionData: (question) => {
+    return {
+      ...question,
+      createdAt: question.createdAt ? new Date(question.createdAt).toLocaleString('vi-VN') : '',
+      difficulty: formatDifficulty(question.difficultyLevel),
+      chapterName: question.topic?.chapter?.chapterName || question.topic?.topicName || 'Chưa phân loại',
+      topicName: question.topic?.topicName || 'Chưa có chủ đề',
+      answerCount: question.answerChoices?.length || 0,
+      hasExplanation: !!question.explanation?.explanationText
+    };
+  },
+
+  // Format difficulty level for display
+  formatDifficulty: (difficulty) => {
+    const difficultyMap = {
+      'easy': 'Dễ',
+      'medium': 'Trung bình',
+      'hard': 'Khó'
+    };
+    return difficultyMap[difficulty] || difficulty;
+  },
+
+  // Validate question data
+  validateQuestionData: (questionData) => {
+    const errors = [];
+    
+    if (!questionData.questionText?.trim()) {
+      errors.push('Nội dung câu hỏi không được để trống');
+    }
+    
+    if (!questionData.topicId) {
+      errors.push('Phải chọn chủ đề cho câu hỏi');
+    }
+    
+    if (!questionData.difficultyLevel) {
+      errors.push('Phải chọn độ khó cho câu hỏi');
+    }
+    
+    if (!questionData.answerChoices || questionData.answerChoices.length < 2) {
+      errors.push('Câu hỏi phải có ít nhất 2 lựa chọn');
+    }
+    
+    const correctAnswers = questionData.answerChoices?.filter(choice => choice.isCorrect);
+    if (!correctAnswers || correctAnswers.length === 0) {
+      errors.push('Phải có ít nhất 1 đáp án đúng');
+    }
+    
+    return {
+      isValid: errors.length === 0,
+      errors
+    };
+  },
+
+  // Generate question preview text
+  generatePreviewText: (questionData) => {
+    const text = questionData.questionText || '';
+    return text.length > 100 ? text.substring(0, 100) + '...' : text;
+  },
+
+  // Format API response for consistent error handling
+  handleApiResponse: (response) => {
+    if (response.success || response.data) {
+      return response.data || response;
+    }
+    throw new Error(response.message || 'API call failed');
+  },
+
+  // Format error for user display
+  formatError: (error) => {
+    if (error.response?.data?.message) {
+      return error.response.data.message;
+    }
+    if (error.response?.data?.errors) {
+      return Object.values(error.response.data.errors).flat().join(', ');
+    }
+    return error.message || 'Đã xảy ra lỗi không xác định';
+  }
+};
+
+// Helper function for difficulty formatting (outside of object to avoid reference error)
+const formatDifficulty = (difficulty) => {
+  const difficultyMap = {
+    'easy': 'Dễ',
+    'medium': 'Trung bình', 
+    'hard': 'Khó'
+  };
+  return difficultyMap[difficulty] || difficulty;
+};
+
+export default questionBankService;

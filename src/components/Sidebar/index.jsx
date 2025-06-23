@@ -14,7 +14,7 @@ import {
 import { useNavigate, useLocation } from "react-router-dom";
 import "./index.scss";
 
-const AdminSidebar = ({ isCollapsed, onToggleCollapse }) => {
+const AdminSidebar = () => {
   const [collapsed, setCollapsed] = useState(false);
   const navigate = useNavigate();
   const location = useLocation();
@@ -66,12 +66,6 @@ const AdminSidebar = ({ isCollapsed, onToggleCollapse }) => {
     if (item) navigate(item.path);
   };
 
-  // Hàm xử lý đăng xuất
-  const handleLogout = () => {
-    localStorage.removeItem("token");
-    navigate("/");
-  };
-
   return (
     <div className={`admin-sidebar-antd ${collapsed ? "collapsed" : ""}`}>
       <div className="sidebar-logo">
@@ -107,34 +101,6 @@ const AdminSidebar = ({ isCollapsed, onToggleCollapse }) => {
         />
       </div>
 
-      {/* Nút Đăng xuất */}
-      {!collapsed && (
-        <div>
-          <button
-            onClick={handleLogout}
-            style={{
-              background: "#151d30",
-              color: "red",
-              border: "none",
-              borderRadius: "8px",
-              padding: "8px 20px",
-              fontWeight: 600,
-              cursor: "pointer",
-              fontSize: "1rem",
-              display: "flex",
-              alignItems: "center",
-              gap: 8,
-              justifyContent: "center",
-              width: "100%",
-              marginBottom: 12,
-              transition: "background 0.18s",
-            }}
-          >
-            <LogoutOutlined style={{ fontSize: 18 }} />
-            Đăng xuất
-          </button>
-        </div>
-      )}
 
       {/* Footer */}
       {!collapsed && (

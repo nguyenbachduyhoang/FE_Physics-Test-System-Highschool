@@ -12,7 +12,7 @@ import { GoogleOAuthProvider } from "@react-oauth/google";
 import { signInWithPopup } from "firebase/auth";
 import { auth, provider } from "../../firebase"; 
 import toast from "react-hot-toast";
-import { authService } from "../../services/authService";
+import { authService } from "../../services";
 
 function Login() {
   const navigate = useNavigate();
@@ -24,6 +24,14 @@ function Login() {
 
   const handleGoogleLogin = async () => {
     try {
+      // Force account selection by signing out first
+      await auth.signOut();
+      
+      // Configure provider to force account selection
+      provider.setCustomParameters({
+        prompt: 'select_account'
+      });
+      
       const result = await signInWithPopup(auth, provider);
       const user = result.user;
       const idToken = await user.getIdToken();
@@ -44,14 +52,28 @@ function Login() {
         const completeData = await authService.completeGoogleRegistration(registrationData);
         authService.setAuthData(completeData);
         toast.success(`Đăng ký thành công! Chào mừng ${data.name || user.displayName}`);
+        
+        // Redirect based on role
+        const userRole = completeData.user?.role;
+        if (userRole === 'admin') {
+          navigate("/admin");
+        } else {
+          navigate("/home");
+        }
       } else {
         // Existing user login
         authService.setAuthData(data);
         const userName = data.user?.fullName || data.user?.full_name || user.displayName;
         toast.success(`Đăng nhập Google thành công! Chào mừng ${userName}`);
+        
+        // Redirect based on role
+        const userRole = data.user?.role;
+        if (userRole === 'admin') {
+          navigate("/admin");
+        } else {
+          navigate("/home");
+        }
       }
-      
-      navigate("/home");
     } catch (error) {
       const errorMessage = error.response?.data?.message || error.message || "Đăng nhập Google thất bại!";
       toast.error(errorMessage);
@@ -62,7 +84,7 @@ function Login() {
   const handleLogin = async (values) => {
     setLoading(true);
     try {
-      console.time('Login API Call'); // Measure API call time
+      console.time('Login API Call');
       const data = await authService.login(values.username, values.password);
       console.timeEnd('Login API Call');
       
@@ -70,7 +92,14 @@ function Login() {
       authService.setAuthData(data);
       
       toast.success(`Đăng nhập thành công! Chào mừng ${data.user.full_name}`);
+      
+      // Redirect based on role
+      const userRole = data.user?.role;
+      if (userRole === 'admin') {
+        navigate("/admin");
+      } else {
       navigate("/home");
+      }
     } catch (err) {
       const errorMessage = err.response?.data?.message || "Đăng nhập thất bại!";
       toast.error(errorMessage);
