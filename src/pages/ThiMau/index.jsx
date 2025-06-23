@@ -1,16 +1,60 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import LayoutContent from "../../components/layoutContent";
 import "./index.scss";
 import { FaBookOpen, FaPlay, FaGraduationCap, FaMapMarkerAlt, FaEye } from "react-icons/fa";
-import { Radio, Modal } from "antd";
+import { Radio, Modal, Spin, Alert } from "antd";
 import { useNavigate } from "react-router-dom";
+import { examService } from "../../services";
+import toast from "react-hot-toast";
 
 const ThiMau = () => {
   const [isModalVisible, setIsModalVisible] = useState(false);
   const [selectedTest, setSelectedTest] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+  const [tests, setTests] = useState([]);
   const navigate = useNavigate();
 
-  const tests = [
+  // Load real exams from API
+  useEffect(() => {
+    loadExams();
+  }, []);
+
+  const loadExams = async () => {
+    try {
+      setLoading(true);
+      const examsData = await examService.getAllExams();
+      
+      // Transform exam data to match expected format
+      const transformedTests = examsData.map(exam => ({
+        id: exam.examId,
+        title: exam.examName,
+        subject: exam.description || "Đề thi vật lý",
+        class: "10-12", // Default since we don't have grade level in exam data
+        topic: exam.examType || "Vật lý",
+        difficulty: "Trung bình", // Default
+        attempts: 0, // Default since we don't track this yet
+        stats: [
+          { label: "Câu hỏi", value: exam.questions?.length || 0 },
+          { label: "Phút", value: exam.durationMinutes || 45 },
+          { label: "Điểm TB", value: 0 }, // Default
+          { label: "Lượt làm", value: 0 }, // Default
+        ],
+        questions: exam.questions || []
+      }));
+      
+      setTests(transformedTests);
+      setError(null);
+    } catch (err) {
+      console.error('Load exams error:', err);
+      setError(examService.formatError(err));
+      toast.error('Không thể tải danh sách đề thi');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const mockTests = [
     {
       id: 1,
       title: "Đề Thi Cơ Học Lớp 10",
@@ -317,7 +361,7 @@ const ThiMau = () => {
                         </button>
                         <button
                           className="btn btn-take-test"
-                          onClick={() => navigate("/quiz")}
+                          onClick={() => navigate(`/quiz/${test.id}`)}
                         >
                           <FaPlay /> Làm bài
                         </button>

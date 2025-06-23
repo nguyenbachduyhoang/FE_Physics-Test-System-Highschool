@@ -1,41 +1,99 @@
 .admin-users-page {
-  padding: 32px;
-  background: #f7f7fb;
+  padding: 20px;
+  background-color: #f5f5f5;
+  min-height: 100vh;
 
   .users-header {
     display: flex;
-    align-items: center;
     justify-content: space-between;
-    margin-bottom: 24px;
+    align-items: center;
+    margin-bottom: 20px;
+    background: white;
+    padding: 20px;
+    border-radius: 8px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+
     h1 {
-      font-size: 2rem;
       margin: 0;
-      font-weight: bold;
+      color: #333;
+      font-size: 24px;
+    }
+
+    .users-actions {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+  }
+
+  .users-stats {
+    background: white;
+    padding: 16px 20px;
+    border-radius: 8px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+    margin-bottom: 20px;
+    display: flex;
+    gap: 32px;
+
+    .stat-item {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+
+      .stat-label {
+        color: #666;
+        font-size: 14px;
+      }
+
+      .stat-value {
+        font-weight: bold;
+        color: #1890ff;
+        font-size: 16px;
+      }
     }
   }
 
   .users-table {
-    background: #fff;
-    border-radius: 12px;
-    box-shadow: 0 2px 8px rgba(0,0,0,0.04);
-    padding: 16px;
+    background: white;
+    border-radius: 8px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+
     .ant-table-thead > tr > th {
-      background: #f0f4fa;
+      background-color: #fafafa;
       font-weight: 600;
     }
-    .ant-table-tbody > tr > td {
-      vertical-align: middle;
+
+    .ant-table-tbody > tr:hover > td {
+      background-color: #f5f5f5;
     }
-    .ant-avatar {
-      box-shadow: 0 1px 4px rgba(0,0,0,0.08);
+  }
+
+  .ant-modal {
+    .ant-modal-header {
+      border-bottom: 1px solid #f0f0f0;
     }
-    .ant-tag {
-      font-size: 13px;
-      padding: 2px 10px;
-      border-radius: 8px;
+
+    .ant-form-item-label > label {
+      font-weight: 500;
     }
-    .ant-btn {
-      border-radius: 6px;
+  }
+
+  @media (max-width: 768px) {
+    padding: 16px;
+
+    .users-header {
+      flex-direction: column;
+      gap: 16px;
+      align-items: stretch;
+
+      .users-actions {
+        justify-content: center;
+      }
+    }
+
+    .users-stats {
+      flex-direction: column;
+      gap: 12px;
     }
   }
 }

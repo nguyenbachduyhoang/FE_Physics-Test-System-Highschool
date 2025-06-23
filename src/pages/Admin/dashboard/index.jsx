@@ -3,11 +3,19 @@
 import React, { useState, useEffect } from "react";
 import "./index.scss";
 import { BarChart, Bar, LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend } from 'recharts';
+import { Spin, Alert, Card, Row, Col, Tag } from 'antd';
+import { UserOutlined, QuestionCircleOutlined, FileTextOutlined, EyeOutlined } from '@ant-design/icons';
 import AdminSidebar from "../../../components/Sidebar";
+import {analyticsService } from "../../../services";
+import toast from "react-hot-toast";
+import SafeTable from "../../../components/uiBasic/SafeTable";
 
 const AdminDashboard = () => {
   const [activeSection, setActiveSection] = useState("dashboard");
   const [isCollapsed, setIsCollapsed] = useState(false);
+  const [loading, setLoading] = useState(true);
+  const [dashboardData, setDashboardData] = useState(null);
+  const [error, setError] = useState(null);
   const [stats, setStats] = useState({
     totalUsers: 2847,
     totalQuestions: 15672,
@@ -91,6 +99,41 @@ const AdminDashboard = () => {
     { name: 'T7', users: 349, questions: 4300, exams: 210 },
   ];
 
+  // Fetch dashboard data from API
+  useEffect(() => {
+    fetchDashboardData();
+  }, []);
+
+  const fetchDashboardData = async () => {
+    try {
+      setLoading(true);
+      setError(null);
+      
+      // Sử dụng analyticsService cho dashboard data
+      const data = await analyticsService.getDashboard();
+      setDashboardData(data);
+      
+      // Cập nhật stats với dữ liệu thực từ API
+      if (data) {
+        setStats(prev => ({
+          ...prev,
+          totalUsers: data.totalUsers || prev.totalUsers,
+          totalQuestions: data.totalQuestions || prev.totalQuestions,
+          totalExams: data.totalExams || prev.totalExams,
+          todayVisits: data.totalAttempts || data.todayVisits || prev.todayVisits,
+        }));
+      }
+      
+      console.log('Dashboard data:', data);
+    } catch (err) {
+      console.error('Dashboard error:', err);
+      setError(analyticsService.formatError(err));
+      toast.error('Không thể tải dữ liệu dashboard');
+    } finally {
+      setLoading(false);
+    }
+  };
+
   // Simulate real-time stats updates
   useEffect(() => {
     const interval = setInterval(() => {
@@ -112,80 +155,108 @@ const AdminDashboard = () => {
     setIsCollapsed(!isCollapsed);
   };
 
-  const handleQuickAction = (action) => {
-    console.log(`Quick action: ${action}`);
-    // Implement quick actions here
+  const getStatusColor = (status) => {
+    switch (status?.toLowerCase()) {
+      case 'completed': return 'green';
+      case 'in_progress': return 'blue';
+      case 'failed': return 'red';
+      default: return 'default';
+    }
   };
 
-  const getStatusBadge = (status) => {
-    const statusConfig = {
-      active: { text: "Hoạt động", class: "status-active" },
-      inactive: { text: "Không hoạt động", class: "status-inactive" },
-      pending: { text: "Chờ xác thực", class: "status-pending" },
-    };
-    const config = statusConfig[status] || statusConfig.active;
+  const formatScore = (score, maxScore) => {
+    const percentage = maxScore > 0 ? (score / maxScore * 100).toFixed(1) : 0;
+    return `${score}/${maxScore} (${percentage}%)`;
+  };
+
+  // Recent attempts table columns
+  const recentAttemptsColumns = [
+    {
+      title: 'Học sinh',
+      dataIndex: 'userName',
+      key: 'userName',
+      render: (text) => <strong>{text}</strong>
+    },
+    {
+      title: 'Đề thi',
+      dataIndex: 'examName',
+      key: 'examName',
+      ellipsis: true
+    },
+    {
+      title: 'Điểm số',
+      key: 'score',
+      render: (_, record) => formatScore(record.score, record.maxScore)
+    },
+    {
+      title: 'Trạng thái',
+      dataIndex: 'status',
+      key: 'status',
+      render: (status) => (
+        <Tag color={getStatusColor(status)}>
+          {status === 'completed' ? 'Hoàn thành' : 
+           status === 'in_progress' ? 'Đang làm' : 
+           status === 'failed' ? 'Thất bại' : status}
+        </Tag>
+      )
+    },
+    {
+      title: 'Thời gian',
+      dataIndex: 'createdAt',
+      key: 'createdAt',
+      render: (date) => new Date(date).toLocaleString('vi-VN')
+    }
+  ];
+
+  if (loading) {
     return (
-      <span className={`status-badge ${config.class}`}>{config.text}</span>
+      <div className="admin-dashboard" style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '50vh' }}>
+        <Spin size="large" tip="Đang tải dữ liệu dashboard..." />
+      </div>
     );
-  };
+  }
 
-  const getActivityIcon = (type) => {
-    const icons = {
-      question: "❓",
-      user: "👤",
-      exam: "📝",
-      warning: "⚠️",
-    };
-    return icons[type] || "📋";
-  };
+  if (error) {
+    return (
+      <div className="admin-dashboard" style={{ padding: '20px' }}>
+        <Alert
+          message="Lỗi tải dữ liệu"
+          description={error}
+          type="error"
+          showIcon
+          action={
+            <button onClick={fetchDashboardData} className="ant-btn ant-btn-primary">
+              Thử lại
+            </button>
+          }
+        />
+      </div>
+    );
+  }
 
   const renderDashboardContent = () => (
     <>
-      {/* Stats Grid */}
-      <div className="stats-grid">
-        <div className="stat-card">
-          <div className="stat-header">
-            <div className="stat-title">Tổng số người dùng</div>
-            <div className="stat-icon stat-icon--blue">👥</div>
-          </div>
-          <div className="stat-number">{stats.totalUsers.toLocaleString()}</div>
-          <div className="stat-change positive">
-            ↗ +12.5% so với tháng trước
-          </div>
-        </div>
-
-        <div className="stat-card">
-          <div className="stat-header">
-            <div className="stat-title">Câu hỏi trong hệ thống</div>
-            <div className="stat-icon stat-icon--green">❓</div>
-          </div>
-          <div className="stat-number">
-            {stats.totalQuestions.toLocaleString()}
-          </div>
-          <div className="stat-change positive">↗ +8.2% tuần này</div>
-        </div>
-
-        <div className="stat-card">
-          <div className="stat-header">
-            <div className="stat-title">Đề thi đã tạo</div>
-            <div className="stat-icon stat-icon--yellow">📝</div>
-          </div>
-          <div className="stat-number">{stats.totalExams.toLocaleString()}</div>
-          <div className="stat-change positive">↗ +15.3% hôm nay</div>
-        </div>
-
-        <div className="stat-card">
-          <div className="stat-header">
-            <div className="stat-title">Lượt truy cập hôm nay</div>
-            <div className="stat-icon stat-icon--purple">📈</div>
-          </div>
-          <div className="stat-number">
-            {stats.todayVisits.toLocaleString()}
-          </div>
-          <div className="stat-change negative">↘ -2.1% so với hôm qua</div>
-        </div>
-      </div>
-
+      <Row gutter={[16, 16]} style={{ marginTop: '24px' }}>
+        <Col span={24}>
+          <Card 
+            title="📊 Lượt thi gần đây" 
+            extra={
+              <button onClick={fetchDashboardData} className="ant-btn ant-btn-link">
+                Làm mới
+              </button>
+            }
+          >
+            <SafeTable
+              columns={recentAttemptsColumns}
+              dataSource={dashboardData?.recentAttempts || []}
+              rowKey="attemptId"
+              pagination={{ pageSize: 10 }}
+              size="small"
+              scroll={{ x: 800 }}
+            />
+          </Card>
+        </Col>
+      </Row>
       {/* Content Grid - Users and Activities */}
       <div className="content-grid">
         <div className="content-section">
@@ -207,7 +278,7 @@ const AdminDashboard = () => {
                     <td className="user-name">{user.name}</td>
                     <td className="user-email">{user.email}</td>
                     <td>{user.role}</td>
-                    <td>{getStatusBadge(user.status)}</td>
+                    {/* <td>{getStatusBadge(user.status)}</td> */}
                     <td>{user.joinDate}</td>
                   </tr>
                 ))}
@@ -224,7 +295,7 @@ const AdminDashboard = () => {
                 <div
                   className={`activity-icon activity-icon--${activity.type}`}
                 >
-                  {getActivityIcon(activity.type)}
+                  {/* {getActivityIcon(activity.type)} */}
                 </div>
                 <div className="activity-content">
                   <div className="activity-title">{activity.title}</div>
@@ -235,28 +306,28 @@ const AdminDashboard = () => {
             ))}
           </div>
           <div className="quick-actions">
-            <button
-              className="action-btn"
+            <button 
+              className="action-btn" 
               onClick={() => handleQuickAction("addUser")}
             >
               <span className="action-icon">➕</span>
               Thêm người dùng
             </button>
-            <button
+            <button 
               className="action-btn"
               onClick={() => handleQuickAction("createExam")}
             >
               <span className="action-icon">📝</span>
               Tạo đề thi mẫu
             </button>
-            <button
+            <button 
               className="action-btn"
               onClick={() => handleQuickAction("importQuestions")}
             >
               <span className="action-icon">📥</span>
               Import câu hỏi
             </button>
-            <button
+            <button 
               className="action-btn"
               onClick={() => handleQuickAction("viewReport")}
             >
@@ -321,9 +392,11 @@ const AdminDashboard = () => {
   );
 
   return (
-      <div className="admin-dashboard-content">
+    <div className="admin-dashboard">
+      <div className="dashboard-content">
         {renderDashboardContent()}
       </div>
+    </div>
   );
 };
 

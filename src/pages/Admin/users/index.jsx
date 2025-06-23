@@ -1,88 +1,137 @@
 import React, { useEffect, useState } from "react";
-import { Table, Tag, Button, Avatar, Space, Modal, Form, Input, Select, message } from "antd";
-import { UserOutlined, PlusOutlined, EditOutlined, DeleteOutlined } from "@ant-design/icons";
-import axios from "axios";
+import { Tag, Button, Avatar, Space, Modal, Form, Input, Select, Pagination, Spin } from "antd";
+import SafeTable from "../../../components/uiBasic/SafeTable";
+import { UserOutlined, PlusOutlined, EditOutlined, DeleteOutlined, SearchOutlined } from "@ant-design/icons";
+import { userService } from "../../../services";
+import toast from "react-hot-toast";
 import "./index.scss";
 
 const { Option } = Select;
+const { Search } = Input;
 
 export default function UsersPage() {
   const [users, setUsers] = useState([]);
   const [loading, setLoading] = useState(false);
   const [editingUser, setEditingUser] = useState(null);
   const [isModalVisible, setIsModalVisible] = useState(false);
+  const [pagination, setPagination] = useState({
+    current: 1,
+    pageSize: 10,
+    total: 0
+  });
+  const [searchTerm, setSearchTerm] = useState('');
+  const [sortBy, setSortBy] = useState('username');
+  const [sortDirection, setSortDirection] = useState('asc');
   const [form] = Form.useForm();
 
-  // Fetch all users
-  const fetchUsers = async () => {
+  // Fetch users with pagination and filters
+  const fetchUsers = async (page = 1, pageSize = 10, search = '', sort = 'username', direction = 'asc') => {
     setLoading(true);
     try {
-      const res = await axios.get("http://103.252.92.182/users");
-      setUsers(res.data);
+      const params = {
+        page,
+        pageSize,
+        search,
+        sortBy: sort,
+        sortDirection: direction
+      };
+      
+      const response = await userService.getAllUsers(params);
+      console.log('Users response:', response);
+      
+      if (response && response.items && Array.isArray(response.items)) {
+        setUsers(response.items);
+        setPagination({
+          current: response.currentPage || 1,
+          pageSize: response.pageSize || 10,
+          total: response.totalCount || 0
+        });
+      } else if (response && Array.isArray(response)) {
+        // Fallback for different response format
+        setUsers(response);
+        setPagination(prev => ({ ...prev, total: response.length }));
+      } else {
+        // Đảm bảo luôn là array
+        setUsers([]);
+        setPagination(prev => ({ ...prev, total: 0 }));
+      }
     } catch (err) {
-      message.error("Lỗi tải danh sách người dùng");
-    }
+      console.error('Fetch users error:', err);
+      const errorMessage = userService.formatError(err);
+      toast.error(`Lỗi tải danh sách người dùng: ${errorMessage}`);
+    } finally {
     setLoading(false);
+    }
   };
 
   useEffect(() => {
     fetchUsers();
   }, []);
 
+  // Handle search
+  const handleSearch = (value) => {
+    setSearchTerm(value);
+    fetchUsers(1, pagination.pageSize, value, sortBy, sortDirection);
+  };
+
+  // Handle pagination change
+  const handleTableChange = (paginationInfo, filters, sorter) => {
+    let newSortBy = sortBy;
+    let newSortDirection = sortDirection;
+    
+    if (sorter && sorter.field) {
+      newSortBy = sorter.field;
+      newSortDirection = sorter.order === 'descend' ? 'desc' : 'asc';
+      setSortBy(newSortBy);
+      setSortDirection(newSortDirection);
+    }
+    
+    fetchUsers(paginationInfo.current, paginationInfo.pageSize, searchTerm, newSortBy, newSortDirection);
+  };
+
   // Add or update user
   const handleOk = async () => {
     try {
       const values = await form.validateFields();
-      const token = localStorage.getItem("token");
-      console.log("Token:", token); // Thêm dòng này trước khi gọi API
+      
       if (editingUser) {
         // Update user
-        await axios.patch(
-          `http://103.252.92.182/users/${editingUser.userId}`,
-          values,
-          {
-            headers: {
-              Authorization: `Bearer ${token}`,
-            },
-          }
-        );
-        message.success("Cập nhật thành công!");
+        await userService.updateUser(editingUser.id, values);
+        toast.success("Cập nhật người dùng thành công!");
       } else {
         // Create user
-        await axios.post("http://103.252.92.182/users", values);
-        message.success("Thêm mới thành công!");
+        await userService.createUser(values);
+        toast.success("Thêm người dùng thành công!");
       }
+      
       setIsModalVisible(false);
       setEditingUser(null);
       form.resetFields();
-      fetchUsers();
+      fetchUsers(pagination.current, pagination.pageSize, searchTerm, sortBy, sortDirection);
     } catch (err) {
-      message.error("Có lỗi xảy ra!");
+      console.error('Save user error:', err);
+      const errorMessage = userService.formatError(err);
+      toast.error(`Lỗi lưu người dùng: ${errorMessage}`);
     }
   };
 
   // Delete user
   const handleDelete = async (userId) => {
-    console.log("Delete userId:", userId); // Thêm dòng này
     Modal.confirm({
-      title: "Bạn chắc chắn muốn xóa người dùng này?",
-      content: `ID: ${userId}`,
+      title: "Xác nhận xóa người dùng",
+      content: `Bạn chắc chắn muốn xóa người dùng này? Hành động này không thể hoàn tác.`,
+      okText: "Xóa",
+      okType: "danger",
+      cancelText: "Hủy",
       onOk: async () => {
         try {
-          const token = localStorage.getItem("token");
-          await axios.delete(
-            `http://103.252.92.182/users/${userId}`,
-            {
-              headers: {
-                Authorization: `Bearer ${token}`,
-              },
-            }
-          );
-          message.success("Xóa thành công!");
-          fetchUsers();
+          await userService.deleteUser(userId);
+          toast.success("Xóa người dùng thành công!");
+          fetchUsers(pagination.current, pagination.pageSize, searchTerm, sortBy, sortDirection);
         } catch (err) {
-          message.error("Xóa thất bại!");
-          console.log("Delete error:", err?.response?.data || err); // Thêm dòng này
+          console.error('Delete user error:', err);
+          const errorMessage = userService.formatError(err);
+          toast.error(`Lỗi xóa người dùng: ${errorMessage}`);
         }
       },
     });
@@ -92,7 +141,13 @@ export default function UsersPage() {
   const handleEdit = (user) => {
     setEditingUser(user);
     setIsModalVisible(true);
-    form.setFieldsValue(user);
+    form.setFieldsValue({
+      username: user.username,
+      email: user.email,
+      fullName: user.fullName,
+      role: user.role,
+      isActive: user.isActive
+    });
   };
 
   // Open modal for add
@@ -102,55 +157,97 @@ export default function UsersPage() {
     form.resetFields();
   };
 
+  // Format role display
+  const getRoleColor = (role) => {
+    switch (role) {
+      case 'admin': return 'red';
+      case 'teacher': return 'blue';
+      case 'student': return 'green';
+      default: return 'default';
+    }
+  };
+
+  const getRoleText = (role) => {
+    switch (role) {
+      case 'admin': return 'Quản trị viên';
+      case 'teacher': return 'Giáo viên';
+      case 'student': return 'Học sinh';
+      default: return role;
+    }
+  };
+
   const columns = [
     {
       title: "",
       dataIndex: "avatarUrl",
       key: "avatarUrl",
-      render: (avatar) => <Avatar src={avatar} icon={<UserOutlined />} />,
+      render: () => <Avatar icon={<UserOutlined />} />,
       width: 48,
     },
     {
       title: "Tên đăng nhập",
       dataIndex: "username",
       key: "username",
+      sorter: true,
       render: (text) => <b>{text}</b>,
+    },
+    {
+      title: "Họ tên",
+      dataIndex: "fullName",
+      key: "fullName",
+      sorter: true,
     },
     {
       title: "Email",
       dataIndex: "email",
       key: "email",
+      sorter: true,
     },
     {
       title: "Vai trò",
       dataIndex: "role",
       key: "role",
-      render: (role) => <Tag color={role === "teacher" ? "blue" : "purple"}>{role}</Tag>,
+      render: (role) => (
+        <Tag color={getRoleColor(role)}>
+          {getRoleText(role)}
+        </Tag>
+      ),
     },
     {
       title: "Trạng thái",
-      dataIndex: "status",
-      key: "status",
-      render: (status) => {
-        let color = "green";
-        if (status === "pending") color = "gold";
-        if (status === "disabled") color = "red";
-        return <Tag color={color}>{status}</Tag>;
-      },
+      dataIndex: "isActive",
+      key: "isActive",
+      render: (isActive) => (
+        <Tag color={isActive ? "green" : "red"}>
+          {isActive ? "Hoạt động" : "Không hoạt động"}
+        </Tag>
+      ),
     },
     {
       title: "Ngày tạo",
       dataIndex: "createdAt",
       key: "createdAt",
-      render: (date) => date && date.slice(0, 10),
+      sorter: true,
+      render: (date) => date ? new Date(date).toLocaleDateString('vi-VN') : '',
     },
     {
       title: "Thao tác",
       key: "action",
       render: (_, record) => (
         <Space>
-          <Button icon={<EditOutlined />} size="small" onClick={() => handleEdit(record)} />
-          <Button icon={<DeleteOutlined />} size="small" danger onClick={() => handleDelete(record.userId)} />
+          <Button 
+            icon={<EditOutlined />} 
+            size="small" 
+            onClick={() => handleEdit(record)}
+            title="Chỉnh sửa"
+          />
+          <Button 
+            icon={<DeleteOutlined />} 
+            size="small" 
+            danger 
+            onClick={() => handleDelete(record.id)}
+            title="Xóa"
+          />
         </Space>
       ),
     },
@@ -160,48 +257,135 @@ export default function UsersPage() {
     <div className="admin-users-page">
       <div className="users-header">
         <h1>Quản lý người dùng</h1>
+        <div className="users-actions">
+          <Search
+            placeholder="Tìm kiếm theo tên, email..."
+            allowClear
+            enterButton={<SearchOutlined />}
+            size="middle"
+            onSearch={handleSearch}
+            style={{ width: 300, marginRight: 16 }}
+          />
         <Button type="primary" icon={<PlusOutlined />} onClick={handleAdd}>
           Thêm người dùng
         </Button>
       </div>
-      <Table
+      </div>
+
+      <div className="users-stats">
+        <div className="stat-item">
+          <span className="stat-label">Tổng số người dùng:</span>
+          <span className="stat-value">{pagination.total}</span>
+        </div>
+        <div className="stat-item">
+          <span className="stat-label">Hiển thị:</span>
+          <span className="stat-value">
+            {users.length} / {pagination.total}
+          </span>
+        </div>
+      </div>
+
+      <SafeTable
         columns={columns}
         dataSource={users}
-        rowKey="userId"
+        rowKey="id"
         loading={loading}
-        pagination={false}
+        pagination={{
+          current: pagination.current,
+          pageSize: pagination.pageSize,
+          total: pagination.total,
+          showSizeChanger: true,
+          showQuickJumper: true,
+          showTotal: (total, range) => 
+            `${range[0]}-${range[1]} của ${total} người dùng`,
+          pageSizeOptions: ['10', '20', '50', '100']
+        }}
+        onChange={handleTableChange}
         className="users-table"
+        scroll={{ x: 800 }}
       />
 
       <Modal
         title={editingUser ? "Cập nhật người dùng" : "Thêm người dùng"}
         open={isModalVisible}
         onOk={handleOk}
-        onCancel={() => setIsModalVisible(false)}
+        onCancel={() => {
+          setIsModalVisible(false);
+          setEditingUser(null);
+          form.resetFields();
+        }}
         destroyOnClose
+        width={600}
+        okText={editingUser ? "Cập nhật" : "Thêm"}
+        cancelText="Hủy"
       >
         <Form form={form} layout="vertical">
-          <Form.Item name="username" label="Tên đăng nhập" rules={[{ required: true }]}>
-            <Input />
+          <Form.Item 
+            name="username" 
+            label="Tên đăng nhập" 
+            rules={[
+              { required: true, message: 'Vui lòng nhập tên đăng nhập!' },
+              { min: 3, message: 'Tên đăng nhập phải có ít nhất 3 ký tự!' }
+            ]}
+          >
+            <Input placeholder="Nhập tên đăng nhập" />
           </Form.Item>
-          <Form.Item name="email" label="Email" rules={[{ required: true, type: "email" }]}>
-            <Input />
+
+          <Form.Item 
+            name="fullName" 
+            label="Họ tên" 
+            rules={[
+              { required: true, message: 'Vui lòng nhập họ tên!' }
+            ]}
+          >
+            <Input placeholder="Nhập họ tên đầy đủ" />
           </Form.Item>
-          <Form.Item name="role" label="Vai trò" rules={[{ required: true }]}>
-            <Select>
+
+          <Form.Item 
+            name="email" 
+            label="Email" 
+            rules={[
+              { required: true, message: 'Vui lòng nhập email!' },
+              { type: "email", message: 'Email không hợp lệ!' }
+            ]}
+          >
+            <Input placeholder="Nhập địa chỉ email" />
+          </Form.Item>
+
+          {!editingUser && (
+            <Form.Item 
+              name="password" 
+              label="Mật khẩu" 
+              rules={[
+                { required: true, message: 'Vui lòng nhập mật khẩu!' },
+                { min: 6, message: 'Mật khẩu phải có ít nhất 6 ký tự!' }
+              ]}
+            >
+              <Input.Password placeholder="Nhập mật khẩu" />
+            </Form.Item>
+          )}
+
+          <Form.Item 
+            name="role" 
+            label="Vai trò" 
+            rules={[{ required: true, message: 'Vui lòng chọn vai trò!' }]}
+          >
+            <Select placeholder="Chọn vai trò">
               <Option value="student">Học sinh</Option>
               <Option value="teacher">Giáo viên</Option>
+              <Option value="admin">Quản trị viên</Option>
             </Select>
           </Form.Item>
-          <Form.Item name="status" label="Trạng thái" rules={[{ required: true }]}>
-            <Select>
-              <Option value="active">Hoạt động</Option>
-              <Option value="pending">Chờ xác thực</Option>
-              <Option value="disabled">Không hoạt động</Option>
+
+          <Form.Item 
+            name="isActive" 
+            label="Trạng thái" 
+            rules={[{ required: true, message: 'Vui lòng chọn trạng thái!' }]}
+          >
+            <Select placeholder="Chọn trạng thái">
+              <Option value={true}>Hoạt động</Option>
+              <Option value={false}>Không hoạt động</Option>
             </Select>
-          </Form.Item>
-          <Form.Item name="avatarUrl" label="Avatar URL">
-            <Input />
           </Form.Item>
         </Form>
       </Modal>

@@ -1,7 +1,7 @@
 import axios from 'axios';
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 
-  (window.location.hostname === 'localhost' ? 'http://localhost:5298/api' : 'https://be-phygens-production.up.railway.app/api');
+  (window.location.hostname === 'localhost' ? 'http://localhost:5298' : 'https://be-phygens-production.up.railway.app');
 
 const authAPI = axios.create({
   baseURL: API_BASE_URL,
@@ -115,8 +115,18 @@ export const authService = {
   // Get current user info
   getCurrentUser: () => {
     const user = localStorage.getItem('user');
-    return user ? JSON.parse(user) : null;
+    const parsedUser = user ? JSON.parse(user) : null;
+    
+    // Debug log for role checking
+    if (parsedUser) {
+      console.log('Current user:', parsedUser);
+      console.log('User role:', parsedUser.role);
+    }
+    
+    return parsedUser;
   },
+
+
 
   // Check if user is authenticated
   isAuthenticated: () => {
@@ -128,6 +138,40 @@ export const authService = {
     return localStorage.getItem('token');
   },
 
+  // Change password
+  changePassword: async (passwordData) => {
+    const response = await authAPI.put('/auth/password', passwordData);
+    return response.data;
+  },
+
+  // Verify authentication
+  verifyAuth: async () => {
+    const response = await authAPI.get('/auth/verify');
+    return response.data.success ? response.data.data : response.data;
+  },
+
+  // Get user role
+  getUserRole: async () => {
+    const response = await authAPI.get('/auth/role');
+    return response.data.success ? response.data.data : response.data;
+  },
+
+  // Debug APIs (for development)
+  createAdminUser: async (adminData) => {
+    const response = await authAPI.post('/auth/debug/create-admin', adminData);
+    return response.data;
+  },
+
+  hashPassword: async (password) => {
+    const response = await authAPI.post('/auth/debug/hash', { password });
+    return response.data;
+  },
+
+  getDebugUser: async (username) => {
+    const response = await authAPI.get(`/auth/debug/user/${username}`);
+    return response.data;
+  },
+
   // Set auth data
   setAuthData: (loginResponse) => {
     const token = loginResponse.access_token || loginResponse.token;
@@ -135,9 +179,9 @@ export const authService = {
       throw new Error('No token received from login response');
     }
     
-    // The request interceptor will read from localStorage to set the auth header.
     localStorage.setItem('token', token);
     localStorage.setItem('user', JSON.stringify(loginResponse.user));
+    authAPI.defaults.headers.common['Authorization'] = `Bearer ${token}`;
   },
 };
 

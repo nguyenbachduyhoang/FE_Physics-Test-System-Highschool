@@ -13,27 +13,52 @@ import Exams from "./pages/Admin/exams";
 import Reports from "./pages/Admin/reports";
 import AdminDashboard from "./pages/Admin/dashboard";
 import AdminLayout from "./pages/Admin/AdminLayout";
+import TestAPIPage from "./pages/Admin/test-api";
+import ProtectedRoute from "./components/ProtectedRoute";
+import AuthRedirect from "./components/AuthRedirect";
 import { Toaster } from "react-hot-toast";
 
 const router = createBrowserRouter([
   {
     path: "/",
-    element: <Login />,
+    element: (
+      <AuthRedirect>
+        <Login />
+      </AuthRedirect>
+    ),
+  },
+  {
+    path: "/login",
+    element: (
+      <AuthRedirect>
+        <Login />
+      </AuthRedirect>
+    ),
   },
   {
     path: "/admin",
-    element: <AdminLayout />,
+    element: (
+      <ProtectedRoute requiredRole="admin">
+        <AdminLayout />
+      </ProtectedRoute>
+    ),
     children: [
       { path: "", element: <AdminDashboard /> }, 
+      { path: "dashboard", element: <AdminDashboard /> }, 
       { path: "users", element: <Users /> }, 
       { path: "questions", element: <Questions /> }, 
       { path: "exams", element: <Exams /> }, 
-      { path: "reports", element: <Reports /> }, 
+      { path: "reports", element: <Reports /> },
+      { path: "test-api", element: <TestAPIPage /> }, 
     ],
   },
   {
     path: "/",
-    element: <Layout />,
+    element: (
+      <ProtectedRoute>
+        <Layout />
+      </ProtectedRoute>
+    ),
     children: [
       {
         path: "home",
@@ -41,6 +66,10 @@ const router = createBrowserRouter([
       },
       {
         path: "quiz",
+        element: <PhysicsTestSystem />,
+      },
+      {
+        path: "quiz/:examId",
         element: <PhysicsTestSystem />,
       },
       {
