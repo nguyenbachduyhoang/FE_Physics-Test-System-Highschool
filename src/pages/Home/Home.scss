@@ -20,9 +20,11 @@
     gap: 8px;
     justify-content: center;
   }
+
   &-input {
     padding: 12px 0;
   }
+
   &-btn {
     width: 100%;
     background: #2dd4bf;
@@ -34,23 +36,55 @@
     font-size: 16px;
     box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
     cursor: pointer;
+    margin-bottom: 5px;
   }
+
   &-btn:hover {
     background: #16bfae;
     color: #fff;
     box-shadow: 0 2px 8px #b2f5ea;
   }
+
+  &-recent {
+    margin-top: 8px;
+  }
+
   &-recent-title {
     color: #2dd4bf;
     font-weight: 800;
+    font-size: 20px;
     display: flex;
-    align-content: center;
+    align-items: center;
     gap: 12px;
+    margin-bottom: 5px;
   }
+
   &-recent-list {
     padding: 0;
     list-style: none;
+    max-height: 280px; // Giới hạn chiều cao để hiển thị khoảng 5 items
+    overflow-y: auto;
+    
+    // Custom scrollbar styles
+    &::-webkit-scrollbar {
+      width: 6px;
+    }
+    
+    &::-webkit-scrollbar-track {
+      background: #f1f1f1;
+      border-radius: 10px;
+    }
+    
+    &::-webkit-scrollbar-thumb {
+      background: #2dd4bf;
+      border-radius: 10px;
+    }
+    
+    &::-webkit-scrollbar-thumb:hover {
+      background: #16bfae;
+    }
   }
+
   &-recent-item {
     display: flex;
     padding: 12px 0;
@@ -60,12 +94,110 @@
     font-size: 17px;
     gap: 12px;
   }
+
   &-recent-icon {
     color: #2dd4bf;
     font-size: 18px;
   }
+
   &-recent-text {
     font-size: 16px;
+  }
+
+  &-recent-carousel {
+    height: 280px; // Cố định chiều cao cho carousel
+    position: relative;
+    
+    .ant-carousel {
+      height: 100%;
+      
+      .slick-list {
+        height: 100%;
+        
+        .slick-track {
+          height: 100%;
+          
+          .slick-slide {
+            height: 56px; // Chiều cao mỗi item (tương đương padding: 12px * 2 + line-height)
+            
+            > div {
+              height: 100%;
+              display: flex !important;
+              align-items: center;
+            }
+          }
+        }
+      }
+
+      // Custom dots style
+      .slick-dots {
+        bottom: -25px;
+        left: 50%;
+        transform: translateX(-50%);
+        display: flex !important;
+        flex-direction: row;
+        gap: 8px;
+        justify-content: center;
+        
+        li {
+          margin: 0;
+          height: auto;
+          
+          button {
+            width: 16px;
+            height: 16px;
+            border-radius: 50%;
+            background: #d9d9d9;
+            border: 2px solid #2dd4bf;
+            opacity: 0.7;
+            transition: all 0.3s ease;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            
+            &:hover {
+              background: #2dd4bf;
+              opacity: 1;
+              transform: scale(1.2);
+            }
+          }
+        }
+        
+        li.slick-active button {
+          background: #2dd4bf;
+          opacity: 1;
+          transform: scale(1.1);
+        }
+      }
+
+      // Custom arrows style
+      .slick-arrow {
+        width: 20px;
+        height: 20px;
+        color: #2dd4bf;
+        font-size: 12px;
+        z-index: 2;
+        
+        &:before {
+          font-size: 12px;
+          color: #2dd4bf;
+        }
+        
+        &:hover:before {
+          color: #16bfae;
+        }
+      }
+      
+      .slick-prev {
+        top: -5px;
+        right: 8px;
+        left: auto;
+      }
+      
+      .slick-next {
+        bottom: -5px;
+        right: 8px;
+        top: auto;
+      }
+    }
   }
 }
 
@@ -80,6 +212,7 @@
     box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
 
   }
+
   &-welcome-title {
     color: #16bfae;
     font-weight: 700;
@@ -88,15 +221,18 @@
     align-items: center;
     gap: 8px;
   }
+
   &-welcome-brand {
     color: #16bfae;
   }
+
   &-welcome-desc {
     font-size: 16px;
     padding: 0 24px;
     color: #ffc107;
     font-weight: 900;
   }
+
   &-welcome-btn {
     background: #19d6b4;
     color: #fff;
@@ -112,6 +248,7 @@
     gap: 8px;
     box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
   }
+
   &-welcome-btn:hover {
     background: #16bfae;
     color: #fff;
@@ -129,57 +266,58 @@
     padding: 8px 16px;
     margin: 12px 0;
     font-size: 14px;
-    
+
     .ai-status-indicator {
       font-size: 8px;
     }
-    
+
     .ai-status-text {
       color: #4caf50;
       font-weight: 600;
     }
-    
+
     .ai-status-model {
       color: #4caf50;
       opacity: 0.8;
       font-size: 12px;
-         }
-   }
+    }
+  }
 
-   &-ai-achievements {
-     display: flex;
-     justify-content: center;
-     gap: 16px;
-     margin: 12px 0;
-     flex-wrap: wrap;
-     
-     .achievement-item {
-       display: flex;
-       align-items: center;
-       gap: 6px;
-       background: rgba(255, 193, 7, 0.1);
-       border: 1px solid rgba(255, 193, 7, 0.3);
-       border-radius: 12px;
-       padding: 6px 12px;
-       font-size: 12px;
-       
-       .achievement-icon {
-         font-size: 14px;
-       }
-       
-       .achievement-text {
-         color: #ffc107;
-         font-weight: 600;
-       }
-     }
-   }
+  &-ai-achievements {
+    display: flex;
+    justify-content: center;
+    gap: 16px;
+    margin: 12px 0;
+    flex-wrap: wrap;
 
-   &-stats {
+    .achievement-item {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      background: rgba(255, 193, 7, 0.1);
+      border: 1px solid rgba(255, 193, 7, 0.3);
+      border-radius: 12px;
+      padding: 6px 12px;
+      font-size: 12px;
+
+      .achievement-icon {
+        font-size: 14px;
+      }
+
+      .achievement-text {
+        color: #ffc107;
+        font-weight: 600;
+      }
+    }
+  }
+
+  &-stats {
     display: flex;
     gap: 15px;
     padding: 12px;
     padding-bottom: 0;
   }
+
   &-stat-box {
     flex: 1;
     background: #fff;
@@ -190,10 +328,12 @@
     align-items: center;
     box-shadow: 0 2px 8px #e6e6e6;
   }
+
   &-stat-icon {
     color: #2dd4bf;
     font-size: 28px;
   }
+
   &-stat-value {
     color: #16bfae;
     font-weight: 700;
@@ -201,6 +341,7 @@
     margin: 0;
     padding: 12px;
   }
+
   &-stat-label {
     font-weight: bold;
     font-size: 17px;
@@ -208,6 +349,7 @@
     padding: 12px;
     margin: 0;
   }
+
   &-feature-title {
     color: #2dd4bf;
     font-weight: 700;
@@ -217,14 +359,17 @@
     align-items: center;
     gap: 8px;
   }
+
   &-feature-icon {
     color: #2dd4bf;
   }
+
   &-features {
     display: flex;
     gap: 12px;
-    padding: 12px;
+    padding: 0 12px;
   }
+
   &-feature-box {
     flex: 1;
     background: #fff;
@@ -237,15 +382,18 @@
     border: 2px solid transparent;
     border-left: 4px solid #2dd4bf;
   }
+
   &-feature-box-icon {
     color: #2dd4bf;
     font-size: 28px;
   }
+
   &-feature-box-title {
     color: #16bfae;
     font-weight: 700;
     font-size: 18px;
   }
+
   &-feature-box-desc {
     color: #fec551;
     font-weight: bold;
@@ -253,118 +401,9 @@
     text-align: center;
   }
 
-  // AI Demo Section
-  &-ai-demo {
-    padding: 12px;
-  }
 
-  &-ai-demo-card {
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-    border-radius: 20px;
-    padding: 24px;
-    margin-top: 12px;
-    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
-    border: 1px solid rgba(255, 255, 255, 0.1);
-  }
-
-  &-ai-demo-header {
-    display: flex;
-    align-items: center;
-    gap: 12px;
-    margin-bottom: 16px;
-    
-    h4 {
-      color: #fff;
-      margin: 0;
-      font-size: 18px;
-      font-weight: 600;
-    }
-  }
-
-  &-ai-demo-badge {
-    background: rgba(255, 255, 255, 0.2);
-    color: #fff;
-    padding: 4px 12px;
-    border-radius: 12px;
-    font-size: 12px;
-    font-weight: bold;
-    backdrop-filter: blur(10px);
-  }
-
-  &-ai-demo-content {
-    background: rgba(255, 255, 255, 0.1);
-    border-radius: 12px;
-    padding: 20px;
-    margin-bottom: 16px;
-    backdrop-filter: blur(10px);
-
-    p {
-      color: #fff;
-      margin: 8px 0;
-      font-size: 14px;
-    }
-  }
-
-  &-ai-demo-question {
-    margin: 16px 0;
-    padding: 16px;
-    background: rgba(255, 255, 255, 0.05);
-    border-radius: 8px;
-    border-left: 4px solid #ffc107;
-
-    p {
-      font-weight: 600;
-      margin-bottom: 12px;
-    }
-  }
-
-  &-ai-demo-choices {
-    display: flex;
-    flex-direction: column;
-    gap: 8px;
-
-    .choice {
-      padding: 8px 12px;
-      background: rgba(255, 255, 255, 0.1);
-      border-radius: 6px;
-      font-size: 14px;
-      color: #fff;
-      
-      &:first-child {
-        background: rgba(76, 175, 80, 0.3);
-        font-weight: bold;
-      }
-    }
-  }
-
-  &-ai-demo-explanation {
-    margin-top: 16px;
-    padding: 12px;
-    background: rgba(76, 175, 80, 0.2);
-    border-radius: 8px;
-    border-left: 4px solid #4caf50;
-
-    p {
-      margin: 0;
-      font-style: italic;
-    }
-  }
-
-  &-ai-demo-stats {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    color: rgba(255, 255, 255, 0.8);
-    font-size: 12px;
-    
-    span {
-      background: rgba(255, 255, 255, 0.1);
-      padding: 4px 8px;
-      border-radius: 8px;
-      backdrop-filter: blur(5px);
-    }
-  }
 }
+
 .custom-create-exam-modal .ant-modal-content {
   background: #1e2d3b;
   color: #26b2a5;
@@ -400,27 +439,24 @@
   height: 38px;
   border-radius: 6px;
   border: 1px solid #fff;
-  background: #1e2d3b !important; /* Thêm !important để override */
+  background: #1e2d3b !important;
   color: #fff !important;
   padding: 5px 10px;
-  outline: none; /* Loại bỏ outline khi focus */
+  outline: none;
 }
 
-/* Style riêng cho select để tránh conflict */
 .custom-create-exam-modal .modal-select {
   min-width: 0px;
   max-width: 140px;
   cursor: pointer;
 }
 
-/* Style cho option trong select */
 .custom-create-exam-modal .modal-select option {
   background: #1e2d3b !important;
   color: #fff !important;
   padding: 5px;
 }
 
-/* Style khi select được focus */
 .custom-create-exam-modal .modal-select:focus {
   border-color: #26b2a5;
   box-shadow: 0 0 0 2px rgba(38, 178, 165, 0.2);
@@ -440,6 +476,7 @@
   align-items: center;
   padding: 12px;
 }
+
 .modal-btn:hover {
   background: #16bfae;
   color: #fff;

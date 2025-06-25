@@ -37,8 +37,84 @@ export const analyticsService = {
   
   // Get dashboard overview data
   getDashboard: async () => {
-    const response = await analyticsAPI.get('/analytics/dashboard');
-    return response.data.success ? response.data.data : response.data;
+    try {
+      const response = await analyticsAPI.get('/analytics/dashboard');
+      return response.data.success ? response.data.data : response.data;
+    } catch (error) {
+      console.warn('Dashboard API not available, returning fallback data:', error.message);
+      return {
+        totalExams: 0,
+        totalUsers: 0,
+        totalQuestions: 0,
+        totalChapters: 0,
+        recentActivities: []
+      };
+    }
+  },
+
+  // Get recent activities
+  getRecentActivities: async (limit = 10) => {
+    try {
+      const response = await analyticsAPI.get('/analytics/recent-activities', {
+        params: { limit }
+      });
+      return response.data.success ? response.data.data : response.data;
+    } catch (error) {
+      console.warn('Recent activities API not available:', error.message);
+      return [];
+    }
+  },
+
+  // Get filtered exams
+  getFilteredExams: async (filters = {}) => {
+    try {
+      const response = await analyticsAPI.get('/analytics/filtered-exams', {
+        params: filters
+      });
+      return response.data.success ? response.data.data : response.data;
+    } catch (error) {
+      console.warn('Filtered exams API not available:', error.message);
+      return [];
+    }
+  },
+
+  // Get exam statistics
+  getExamStats: async () => {
+    try {
+      const response = await analyticsAPI.get('/analytics/exam-stats');
+      return response.data.success ? response.data.data : response.data;
+    } catch (error) {
+      console.warn('Exam stats API not available:', error.message);
+      return {
+        totalExams: 0,
+        publishedExams: 0,
+        draftExams: 0,
+        totalQuestions: 0,
+        aiGeneratedQuestions: 0,
+        examsByType: {}
+      };
+    }
+  },
+
+  // Get sample exams with filters
+  getSampleExams: async (filters = {}) => {
+    try {
+      console.log('🔍 Getting sample exams with filters:', filters);
+      const response = await analyticsAPI.get('/analytics/sample-exams', {
+        params: {
+          grade: filters.grade,
+          subject: filters.subject,
+          difficulty: filters.difficulty,
+          limit: filters.limit || 10
+        }
+      });
+      
+      const sampleExams = response.data.success ? response.data.data : response.data;
+      return Array.isArray(sampleExams) ? sampleExams : [];
+    } catch (error) {
+      console.warn('❌ Sample exams API not available:', error.message);
+      return [];
+    }
   },
 
   // Get dashboard data for specific time period

@@ -1,8 +1,8 @@
 import React, { useState, useEffect } from "react";
-import { Tag, Button, Space, Modal, Form, Input, Select, InputNumber, Spin, Card } from "antd";
+import { Tag, Button, Space, Modal, Form, Input, Select, InputNumber, Spin, Card, Divider } from "antd";
 import SafeTable from "../../../components/uiBasic/SafeTable";
-import { PlusOutlined, EditOutlined, DeleteOutlined, EyeOutlined, ReloadOutlined } from "@ant-design/icons";
-import { examService } from "../../../services";
+import { PlusOutlined, EditOutlined, DeleteOutlined, EyeOutlined, ReloadOutlined, RobotOutlined } from "@ant-design/icons";
+import { examService, questionBankService } from "../../../services";
 import toast from "react-hot-toast";
 import "./index.scss";
 
@@ -15,6 +15,12 @@ export default function ExamsPage() {
   const [isModalVisible, setIsModalVisible] = useState(false);
   const [editingExam, setEditingExam] = useState(null);
   const [form] = Form.useForm();
+  
+  // AI Smart Exam states
+  const [isAIModalVisible, setIsAIModalVisible] = useState(false);
+  const [aiForm] = Form.useForm();
+  const [chapters, setChapters] = useState([]);
+  const [generatingAI, setGeneratingAI] = useState(false);
 
   // Fetch exams from API
   const fetchExams = async () => {
@@ -32,8 +38,20 @@ export default function ExamsPage() {
     }
   };
 
+  // Fetch chapters for AI generation
+  const fetchChapters = async () => {
+    try {
+      const chaptersData = await questionBankService.getChapters();
+      setChapters(Array.isArray(chaptersData) ? chaptersData : []);
+    } catch (err) {
+      console.error('Fetch chapters error:', err);
+      toast.error('Lỗi tải danh sách chương');
+    }
+  };
+
   useEffect(() => {
     fetchExams();
+    fetchChapters();
   }, []);
 
   // Handle create/update exam
@@ -141,6 +159,45 @@ export default function ExamsPage() {
     setEditingExam(null);
     setIsModalVisible(true);
     form.resetFields();
+  };
+
+  // Handle AI Smart Exam Generation
+  const handleAIGenerate = () => {
+    setIsAIModalVisible(true);
+    aiForm.resetFields();
+  };
+
+  const handleAIGenerateOk = async () => {
+    try {
+      const values = await aiForm.validateFields();
+      setGeneratingAI(true);
+
+      console.log('Generating smart exam with values:', values);
+
+      const smartExamData = {
+        name: values.examName,
+        description: values.description,
+        examType: values.examType || 'smart_exam',
+        questionCount: values.questionCount,
+        difficultyLevel: values.difficultyLevel,
+        chapterId: values.chapterId
+      };
+
+      const generatedExam = await examService.generateSmartExam(smartExamData);
+      
+      console.log('Generated exam:', generatedExam);
+      toast.success(`Tạo đề thi AI thành công! Đã tạo ${generatedExam.totalQuestions || 0} câu hỏi`);
+      
+      setIsAIModalVisible(false);
+      aiForm.resetFields();
+      await fetchExams(); // Refresh exam list
+    } catch (err) {
+      console.error('AI generate exam error:', err);
+      const errorMessage = examService.formatError(err);
+      toast.error(`Lỗi tạo đề thi AI: ${errorMessage}`);
+    } finally {
+      setGeneratingAI(false);
+    }
   };
 
   // Get status color and text
@@ -257,6 +314,13 @@ export default function ExamsPage() {
             style={{ marginRight: 8 }}
           >
             Làm mới
+          </Button>
+          <Button 
+            icon={<RobotOutlined />} 
+            onClick={handleAIGenerate}
+            style={{ marginRight: 8, backgroundColor: '#52c41a', borderColor: '#52c41a', color: 'white' }}
+          >
+            Tạo đề thi AI
           </Button>
           <Button type="primary" icon={<PlusOutlined />} onClick={handleAdd}>
             Tạo đề thi mới
@@ -385,6 +449,128 @@ export default function ExamsPage() {
             </Form.Item>
           )}
         </Form>
+      </Modal>
+
+      {/* AI Smart Exam Generation Modal */}
+      <Modal
+        title={
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+            <RobotOutlined style={{ color: '#52c41a' }} />
+            <span>Tạo đề thi bằng AI</span>
+          </div>
+        }
+        open={isAIModalVisible}
+        onOk={handleAIGenerateOk}
+        onCancel={() => {
+          setIsAIModalVisible(false);
+          aiForm.resetFields();
+        }}
+        destroyOnClose
+        width={700}
+        okText="Tạo đề thi AI"
+        cancelText="Hủy"
+        confirmLoading={generatingAI}
+      >
+        <Spin spinning={generatingAI} tip="Đang tạo đề thi bằng AI...">
+          <div style={{ marginBottom: 16, padding: 12, backgroundColor: '#f6ffed', border: '1px solid #b7eb8f', borderRadius: 6 }}>
+            <p style={{ margin: 0, color: '#389e0d' }}>
+              <strong>🤖 Tạo đề thi thông minh với AI</strong>
+            </p>
+            <p style={{ margin: '4px 0 0 0', fontSize: '14px', color: '#52c41a' }}>
+              AI sẽ tự động tạo câu hỏi dựa trên chương và độ khó bạn chọn.
+            </p>
+          </div>
+
+          <Form form={aiForm} layout="vertical">
+            <Form.Item
+              name="examName"
+              label="Tên đề thi"
+              rules={[
+                { required: true, message: 'Vui lòng nhập tên đề thi!' },
+                { min: 5, message: 'Tên đề thi phải có ít nhất 5 ký tự!' }
+              ]}
+            >
+              <Input placeholder="VD: Đề thi Vật lý 12 - Chương 1" />
+            </Form.Item>
+
+            <Form.Item
+              name="description"
+              label="Mô tả"
+              rules={[{ required: true, message: 'Vui lòng nhập mô tả!' }]}
+            >
+              <TextArea 
+                rows={2} 
+                placeholder="Mô tả ngắn gọn về đề thi này"
+              />
+            </Form.Item>
+
+            <div style={{ display: 'flex', gap: 16 }}>
+              <Form.Item
+                name="chapterId"
+                label="Chương học"
+                rules={[{ required: true, message: 'Vui lòng chọn chương!' }]}
+                style={{ flex: 1 }}
+              >
+                <Select placeholder="Chọn chương học">
+                  {chapters.map(chapter => (
+                    <Option 
+                      key={chapter.chapterId || chapter.ChapterId} 
+                      value={chapter.chapterId || chapter.ChapterId}
+                    >
+                      {chapter.chapterName || chapter.ChapterName} - Lớp {chapter.grade || chapter.Grade}
+                    </Option>
+                  ))}
+                </Select>
+              </Form.Item>
+
+              <Form.Item
+                name="questionCount"
+                label="Số câu hỏi"
+                rules={[
+                  { required: true, message: 'Vui lòng nhập số câu hỏi!' },
+                  { type: 'number', min: 5, max: 50, message: 'Số câu hỏi từ 5-50!' }
+                ]}
+                style={{ flex: 1 }}
+              >
+                <InputNumber 
+                  min={5} 
+                  max={50} 
+                  placeholder="10"
+                  style={{ width: '100%' }}
+                />
+              </Form.Item>
+            </div>
+
+            <div style={{ display: 'flex', gap: 16 }}>
+              <Form.Item
+                name="difficultyLevel"
+                label="Độ khó"
+                rules={[{ required: true, message: 'Vui lòng chọn độ khó!' }]}
+                style={{ flex: 1 }}
+              >
+                <Select placeholder="Chọn độ khó">
+                  <Option value="easy">Dễ</Option>
+                  <Option value="medium">Trung bình</Option>
+                  <Option value="hard">Khó</Option>
+                </Select>
+              </Form.Item>
+
+              <Form.Item
+                name="examType"
+                label="Loại đề thi"
+                initialValue="practice"
+                style={{ flex: 1 }}
+              >
+                <Select>
+                  <Option value="practice">Luyện tập</Option>
+                  <Option value="test">Kiểm tra</Option>
+                  <Option value="midterm">Giữa kỳ</Option>
+                  <Option value="final">Cuối kỳ</Option>
+                </Select>
+              </Form.Item>
+            </div>
+          </Form>
+        </Spin>
       </Modal>
     </div>
   );

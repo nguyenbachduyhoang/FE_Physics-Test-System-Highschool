@@ -35,16 +35,48 @@ questionAPI.interceptors.response.use(
 export const questionBankService = {
   // =============== AI QUESTION GENERATION APIs ===============
   
-  // Generate single question using AI
-  generateQuestion: async (questionData) => {
-    const response = await questionAPI.post('/ai-question/generate', questionData);
-    return response.data.success ? response.data.data : response.data;
+  // Generate single question using AI (sử dụng API thực tế)
+  generateQuestion: async (questionCriteria) => {
+    try {
+      const requestData = {
+        chapterId: questionCriteria.chapterId,
+        difficultyLevel: questionCriteria.difficultyLevel || 'medium',
+        questionType: questionCriteria.questionType || 'multiple_choice',
+        specificTopic: questionCriteria.specificTopic || '',
+        saveToDatabase: questionCriteria.saveToDatabase || false
+      };
+
+      console.log('🤖 Generating question with criteria:', requestData);
+      const response = await questionAPI.post('/ai-question/generate', requestData);
+      
+      if (response.data.success) {
+        console.log('✅ Generated question successfully');
+        return response.data.data;
+      } else {
+        throw new Error(response.data.message || 'AI question generation failed');
+      }
+    } catch (error) {
+      console.error('❌ Question generation error:', error);
+      throw error;
+    }
   },
 
-  // Generate multiple questions in batch
-  generateBatchQuestions: async (batchData) => {
-    const response = await questionAPI.post('/ai-question/generate-batch', batchData);
-    return response.data.success ? response.data.data : response.data;
+  // Generate multiple questions in batch (sử dụng API thực tế)
+  generateBatchQuestions: async (batchCriteria) => {
+    try {
+      console.log('🤖 Generating batch questions with criteria:', batchCriteria);
+      const response = await questionAPI.post('/ai-question/generate-batch', batchCriteria);
+      
+      if (response.data.success) {
+        console.log('✅ Generated batch questions successfully');
+        return response.data.data;
+      } else {
+        throw new Error(response.data.message || 'Batch question generation failed');
+      }
+    } catch (error) {
+      console.error('❌ Batch question generation error:', error);
+      throw error;
+    }
   },
 
   // Improve existing question using AI
@@ -65,10 +97,15 @@ export const questionBankService = {
     return response.data.success ? response.data.data : response.data;
   },
 
-  // Test AI connection and configuration
+  // Test AI connection (sử dụng API thực tế)
   testAIConnection: async () => {
-    const response = await questionAPI.post('/ai-question/test-connection');
-    return response.data.success ? response.data.data : response.data;
+    try {
+      const response = await questionAPI.post('/ai-question/test-connection');
+      return response.data.success ? response.data.data : response.data;
+    } catch (error) {
+      console.error('AI connection test failed:', error);
+      throw error;
+    }
   },
 
   // Get AI configuration status

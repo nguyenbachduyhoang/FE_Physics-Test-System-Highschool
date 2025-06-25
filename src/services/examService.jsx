@@ -87,24 +87,61 @@ export const examService = {
 
   // Generate smart exam from criteria (creates matrix and exam in one call)
   generateSmartExam: async (smartExamCriteria) => {
-    // Step 1: Create exam matrix first
+    // Import questionBankService để get chapters
+    const { questionBankService } = await import('./questionBankService');
+    
+    // Get available chapters
+    const chaptersArray = await questionBankService.getChapters();
+    
+    if (!Array.isArray(chaptersArray) || chaptersArray.length === 0) {
+      throw new Error('Không có chapters trong database. Vui lòng seed sample data trước.');
+    }
+    
+    // Use specific chapter ID if provided, otherwise use first available chapter
+    const chapterId = smartExamCriteria.chapterId || chaptersArray[0]?.chapterId || chaptersArray[0]?.ChapterId;
+    
+    if (!chapterId) {
+      throw new Error('Không tìm thấy Chapter ID hợp lệ.');
+    }
+    
+    // ❌ VALIDATE: NO default values allowed - all must come from user input
+    if (!smartExamCriteria.name?.trim()) {
+      throw new Error('❌ TÊN ĐỀ THI không được để trống!');
+    }
+    
+    if (!smartExamCriteria.questionCount || smartExamCriteria.questionCount <= 0) {
+      throw new Error('❌ SỐ LƯỢNG CÂU HỎI phải lớn hơn 0! Không được sử dụng giá trị mặc định.');
+    }
+    
+    if (!smartExamCriteria.difficultyLevel || !['easy', 'medium', 'hard'].includes(smartExamCriteria.difficultyLevel.toLowerCase())) {
+      throw new Error('❌ ĐỘ KHÓ phải là easy, medium hoặc hard! Không được để trống hoặc sử dụng giá trị mặc định.');
+    }
+
+    // Step 1: Create exam matrix first using real backend endpoint
     const matrixData = {
-      examName: smartExamCriteria.name,
-      examType: smartExamCriteria.examType || 'smart_exam',
-      description: smartExamCriteria.description,
+      examName: smartExamCriteria.name.trim(),
+      examType: 'smart_exam',
+      description: smartExamCriteria.description?.trim() || 'Đề thi thông minh được tạo bằng AI',
       chapterDetails: [{
-        chapterId: 1, // Default chapter for now
-        questionCount: smartExamCriteria.questionCount || 10,
-        difficultyLevel: smartExamCriteria.difficultyLevel || 'medium'
+        chapterId: chapterId, // Use dynamic chapter ID from database
+        questionCount: smartExamCriteria.questionCount, // ❌ REMOVED: No fallback to 10
+        difficultyLevel: smartExamCriteria.difficultyLevel.toLowerCase() // ❌ REMOVED: No fallback to 'medium'
       }]
     };
 
+    console.log('🔄 Creating exam matrix with data:', matrixData);
     const matrixResponse = await examAPI.post('/smart-exam/create-matrix', matrixData);
     const matrix = matrixResponse.data.success ? matrixResponse.data.data : matrixResponse.data;
 
-    // Step 2: Generate exam from matrix
+    console.log('✅ Created exam matrix:', matrix);
+
+    // Step 2: Generate exam from matrix using REAL backend endpoint
+    console.log('🔄 Generating exam from matrix ID:', matrix.matrixId);
     const examResponse = await examAPI.post(`/smart-exam/generate-exam/${matrix.matrixId}`);
-    return examResponse.data.success ? examResponse.data.data : examResponse.data;
+    const generatedExam = examResponse.data.success ? examResponse.data.data : examResponse.data;
+    
+    console.log('✅ Generated exam:', generatedExam);
+    return generatedExam;
   },
 
   // Get all exam matrices
