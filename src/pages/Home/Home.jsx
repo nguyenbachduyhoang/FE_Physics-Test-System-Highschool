@@ -1,3 +1,4 @@
+/* eslint-disable no-unused-vars */
 import React, { useState, useEffect } from "react";
 import "./Home.scss";
 import {
@@ -38,11 +39,6 @@ const mockData = {
       { label: "Khó", value: "hard" },
     ],
   },
-  stats: [
-    { icon: <FaRocket />, value: "14,700+", label: "Đề thi đã tạo" },
-    { icon: <FaUsers />, value: "2,450+", label: "Giáo viên tin dùng" },
-    { icon: <FaChartLine />, value: "97%", label: "Độ chính xác AI" },
-  ],
   features: [
     {
       icon: <FaMagic />,
@@ -90,22 +86,127 @@ const Home = () => {
   const [loading, setLoading] = useState(true);
   const [dashboardData, setDashboardData] = useState(null);
   const [chapters, setChapters] = useState([]);
+  const [filteredChapters, setFilteredChapters] = useState([]);
   const [creatingExam, setCreatingExam] = useState(false);
-  const [aiConnectionStatus, setAiConnectionStatus] = useState(null);
+  const [aiConnectionStatus] = useState(null);
+  const [selectedGrade, setSelectedGrade] = useState(null);
+  const [recentExams, setRecentExams] = useState([]);
+  
+  // Filter states for sidebar (will be passed to thiMau page)
+  const [filterGrade, setFilterGrade] = useState(null);
+  const [filterTopic, setFilterTopic] = useState(null);
+  const [filterDifficulty, setFilterDifficulty] = useState(null);
+  
+  // Dynamic options loaded from API
+  const [gradeOptions, setGradeOptions] = useState([]);
+  const [topicOptions, setTopicOptions] = useState([]);
+  const [difficultyOptions] = useState([
+    { value: "easy", label: "Dễ" },
+    { value: "medium", label: "Trung bình" },
+    { value: "hard", label: "Khó" }
+  ]);
   const navigate = useNavigate();
   const [form] = Form.useForm();
+
+  // Thời gian thi options
+  const durationOptions = [
+    { label: "15 phút (Kiểm tra nhanh)", value: 15 },
+    { label: "30 phút (Kiểm tra ngắn)", value: 30 },
+    { label: "45 phút (Kiểm tra 1 tiết)", value: 45 },
+    { label: "60 phút (Kiểm tra học kỳ)", value: 60 },
+    { label: "90 phút (Thi học kỳ)", value: 90 },
+    { label: "120 phút (Thi tốt nghiệp)", value: 120 },
+  ];
 
   // Load real data from APIs
   useEffect(() => {
     loadDashboardData();
     loadChapters();
-    testAIConnection();
+    loadFilterOptions();
   }, []);
+
+  // Load filter options from chapters API
+  const loadFilterOptions = async () => {
+    try {
+      const chaptersData = await questionBankService.getChapters();
+      
+      if (chaptersData && chaptersData.length > 0) {
+        // Extract unique grades
+        const uniqueGrades = [...new Set(chaptersData.map(chapter => chapter.grade))].sort();
+        const gradeOpts = uniqueGrades.map(grade => ({
+          value: grade,
+          label: `Lớp ${grade}`
+        }));
+        setGradeOptions(gradeOpts);
+
+        // Extract unique chapter names as topics
+        const uniqueChapters = [...new Set(chaptersData.map(chapter => chapter.chapterName))].sort();
+        const topicOpts = uniqueChapters.map(chapterName => ({
+          value: chapterName,
+          label: chapterName
+        }));
+        setTopicOptions(topicOpts);
+
+        console.log('📋 Filter options loaded:', { grades: gradeOpts.length, topics: topicOpts.length });
+      }
+    } catch (error) {
+      console.error('❌ Error loading filter options:', error);
+      // Fallback to default options
+      setGradeOptions([
+        { value: 10, label: "Lớp 10" },
+        { value: 11, label: "Lớp 11" },
+        { value: 12, label: "Lớp 12" }
+      ]);
+      setTopicOptions([
+        { value: "Cơ học", label: "Cơ học" },
+        { value: "Điện học", label: "Điện học" },
+        { value: "Quang học", label: "Quang học" }
+      ]);
+    }
+  };
 
   const loadDashboardData = async () => {
     try {
       const data = await analyticsService.getDashboard();
       setDashboardData(data);
+
+      // Load recent activities if they exist in dashboard data
+      if (data && data.recentActivities && Array.isArray(data.recentActivities)) {
+        const formattedActivities = data.recentActivities.map(activity => {
+          let icon = <FaRocket />;
+
+          switch (activity.type) {
+            case 'exam_created':
+              icon = <FaRocket />;
+              break;
+            case 'question_created':
+              icon = <FaMagic />;
+              break;
+            case 'exam_shared':
+              icon = <FaUsers />;
+              break;
+            case 'exam_exported':
+              icon = <FaFileExport />;
+              break;
+            default:
+              icon = <FaChartLine />;
+          }
+
+          return {
+            id: activity.id,
+            icon: icon,
+            text: activity.description,
+            time: new Date(activity.createdAt).toLocaleString('vi-VN'),
+            type: activity.type
+          };
+        });
+        setRecentExams(formattedActivities);
+      } else {
+        // Load recent activities separately if not in dashboard
+        await loadRecentActivities();
+      }
+
+      console.log('✅ Dashboard data loaded successfully');
     } catch (error) {
       console.error('Dashboard error:', error);
       toast.error('Không thể tải dữ liệu dashboard');
@@ -114,57 +215,156 @@ const Home = () => {
     }
   };
 
+  // Load recent activities separately
+  const loadRecentActivities = async () => {
+    try {
+      const recentActivities = await analyticsService.getRecentActivities(10);
+
+      if (Array.isArray(recentActivities) && recentActivities.length > 0) {
+        const formattedActivities = recentActivities.map(activity => {
+          let icon = <FaRocket />;
+
+          switch (activity.type) {
+            case 'exam_created':
+              icon = <FaRocket />;
+              break;
+            case 'question_created':
+              icon = <FaMagic />;
+              break;
+            case 'exam_shared':
+              icon = <FaUsers />;
+              break;
+            case 'exam_exported':
+              icon = <FaFileExport />;
+              break;
+            default:
+              icon = <FaChartLine />;
+          }
+
+          return {
+            id: activity.id,
+            icon: icon,
+            text: activity.description,
+            time: new Date(activity.createdAt).toLocaleString('vi-VN'),
+            type: activity.type
+          };
+        });
+
+        setRecentExams(formattedActivities);
+      } else {
+        setRecentExams([]);
+      }
+    } catch (error) {
+      console.error('Error loading recent activities:', error);
+      setRecentExams([]);
+    }
+  };
+
   const loadChapters = async () => {
     try {
       console.log('🔄 Loading chapters from API...');
       const chaptersData = await questionBankService.getChapters();
-      
+
       console.log('📦 Raw chapters response:', chaptersData);
-      
-      // Debug response structure
+
       if (chaptersData && chaptersData.length > 0) {
         setChapters(chaptersData);
-        console.log('✅ Loaded', chaptersData.length, 'chapters from API');
-        toast.success(`📚 Đã tải ${chaptersData.length} chương học`);
+        setFilteredChapters(chaptersData); 
       } else {
-        console.warn('⚠️ Empty chapters response:', chaptersData);
         setChapters([]);
-        toast.warning('Chưa có dữ liệu chương học. Vui lòng kiểm tra backend API.');
+        setFilteredChapters([]);
+        toast.warning('Chưa có dữ liệu chương học. Vui lòng kiểm tra backend API hoặc seed data.');
       }
     } catch (error) {
-      console.error('❌ Chapters API error:', error);
-      console.error('❌ Error details:', error.response?.data || error.message);
       setChapters([]);
-      toast.error(`Không thể tải danh sách chương học: ${error.message}`);
-    }
-  };
+      setFilteredChapters([]);
 
-  const testAIConnection = async () => {
-    try {
-      const connectionTest = await questionBankService.testAIConnection();
-      setAiConnectionStatus(connectionTest);
-      
-      if (connectionTest.success) {
-        toast.success('🤖 AI đã sẵn sàng!', { duration: 2000 });
+      if (error.response?.status === 404) {
+        toast.error('API endpoint không tồn tại. Kiểm tra backend configuration.');
+      } else if (error.response?.status >= 500) {
+        toast.error('Lỗi server backend. Vui lòng kiểm tra backend service.');
+      } else if (error.code === 'NETWORK_ERROR' || error.message.includes('Network')) {
+        toast.error('Không thể kết nối tới backend. Kiểm tra URL và network.');
       } else {
-        toast.error('⚠️ AI chưa sẵn sàng, chỉ sử dụng đề mẫu', { duration: 3000 });
+        toast.error(`Không thể tải danh sách chương học: ${error.message}`);
       }
-    } catch (error) {
-      console.error('AI connection test error:', error);
-      setAiConnectionStatus({ success: false, connected: false });
-      toast.error('⚠️ Không thể kết nối AI', { duration: 3000 });
     }
   };
 
-  // Handle AI Exam Generation
+  const handleGradeChange = (grade) => {
+    setSelectedGrade(grade);
+
+    if (grade) {
+      const filtered = chapters.filter(chapter => chapter.grade === grade);
+      setFilteredChapters(filtered);
+      console.log(`🎓 Filtered ${filtered.length} chapters for grade ${grade}`);
+    } else {
+      setFilteredChapters(chapters);
+    }
+
+    form.setFieldsValue({ chapterId: undefined });
+  };
+
+  // Filter handlers for sidebar (just update state, no API calls)
+  const handleFilterGradeChange = (value) => {
+    setFilterGrade(value);
+    console.log('🔍 Filter by grade:', value);
+  };
+
+  const handleFilterTopicChange = (value) => {
+    setFilterTopic(value);
+    console.log('🔍 Filter by topic:', value);
+  };
+
+  const handleFilterDifficultyChange = (value) => {
+    setFilterDifficulty(value);
+    console.log('🔍 Filter by difficulty:', value);
+  };
+
+  // Navigate to thiMau page with filter params
+  const handleViewSampleExams = () => {
+    const filterParams = new URLSearchParams();
+    
+    if (filterGrade) filterParams.append('grade', filterGrade);
+    if (filterTopic) filterParams.append('topic', filterTopic);
+    if (filterDifficulty) filterParams.append('difficulty', filterDifficulty);
+    
+    const queryString = filterParams.toString();
+    const targetUrl = queryString ? `/thiMau?${queryString}` : '/thiMau';
+    
+    console.log('🔍 Navigating to thiMau with filters:', targetUrl);
+    navigate(targetUrl);
+  };
+
   const handleCreateAIExam = async () => {
     try {
       const values = await form.validateFields();
-      setCreatingExam(true);
 
-      // Check if user wants Smart Exam (adaptive) or Regular AI Exam
+      if (!values.chapterId) {
+        toast.error('Vui lòng chọn chương học!');
+        return;
+      }
+
+      if (!values.questionCount || values.questionCount < 5 || values.questionCount > 50) {
+        toast.error('Số câu hỏi phải từ 5 đến 50!');
+        return;
+      }
+
+      if (!values.duration || values.duration < 15 || values.duration > 180) {
+        toast.error('Vui lòng chọn thời gian thi!');
+        return;
+      }
+
+      // Validation cho loại câu hỏi
+      if (!values.includeMultipleChoice && !values.includeEssay) {
+        toast.error('Vui lòng chọn ít nhất một loại câu hỏi (Trắc nghiệm hoặc Tự luận)!');
+        return;
+      }
+
+      setCreatingExam(true);
+      console.log('🚀 Starting AI exam creation with values:', values);
+
       if (values.useSmartExam) {
-        // Smart Exam Generation - Uses AI to create adaptive exam
         toast.loading('🧠 AI đang tạo đề thi thông minh...', { id: 'smart-generating' });
 
         // Find selected chapter for naming
@@ -178,109 +378,67 @@ const Home = () => {
           difficultyLevel: values.difficulty,
           estimatedDuration: values.duration,
           questionCount: values.questionCount,
+          chapterId: values.chapterId, 
           includeMultipleChoice: values.includeMultipleChoice,
           includeEssay: values.includeEssay,
           adaptiveLearning: true
         };
 
+        console.log('🤖 Creating smart exam with criteria:', smartExamCriteria);
         const smartExam = await examService.generateSmartExam(smartExamCriteria);
-        
+
         toast.dismiss('smart-generating');
-        toast.success(`🎯 Đã tạo đề thi thông minh với ${smartExam.totalQuestions} câu hỏi!`, {
+
+        if (!smartExam || !smartExam.examId) {
+          throw new Error('Smart exam generation failed - no exam ID returned');
+        }
+
+        toast.success(`🎯 Đã tạo đề thi thông minh với ${smartExam.totalQuestions || values.questionCount} câu hỏi!`, {
           duration: 4000
         });
 
         // Navigate to smart exam
         setIsModalOpen(false);
         form.resetFields();
+        setSelectedGrade(null);
+        setFilteredChapters(chapters);
         navigate(`/quiz/${smartExam.examId}`);
 
       } else {
-        // Regular AI Question Generation
+        toast.loading('📝 Đang tạo đề thi thông thường...', { id: 'regular-generating' });
+
         const selectedChapter = chapters.find(c => c.chapterId === values.chapterId);
-        const questionCriteria = {
-          chapterId: values.chapterId,
-          difficultyLevel: values.difficulty || "medium",
-          questionType: values.includeMultipleChoice ? "multiple_choice" : "essay",
-          specificTopic: selectedChapter?.chapterName || "Vật lý",
-          saveToDatabase: true  // ✅ PHẢI TRUE để lưu questions vào database
-        };
-
-        // Generate questions using AI with rate limit protection
-        const generatedQuestions = [];
-        const questionCount = values.questionCount || 5; // Reduced default to avoid rate limits
-        
-        // Add progress toast
-        toast.loading(`🤖 Đang tạo câu hỏi 1/${questionCount}...`, { id: 'ai-progress' });
-        
-        for (let i = 0; i < questionCount; i++) {
-          try {
-            // Update progress
-            toast.loading(`🤖 Đang tạo câu hỏi ${i + 1}/${questionCount}...`, { id: 'ai-progress' });
-            
-            const question = await questionBankService.generateQuestion(questionCriteria);
-            if (question && question.questionId) {
-              generatedQuestions.push(question);
-              console.log(`✅ Generated question ${i + 1}/${questionCount}: ${question.questionId}`);
-            } else {
-              console.warn(`⚠️ Invalid question generated at index ${i + 1}`);
-            }
-            
-            // Add delay to avoid rate limiting (4 seconds = 15 requests per minute max)
-            if (i < questionCount - 1) {
-              toast.loading(`⏳ Chờ ${4} giây để tránh rate limit...`, { id: 'ai-progress' });
-              await new Promise(resolve => setTimeout(resolve, 4000));
-            }
-            
-          } catch (err) {
-            console.error(`❌ Error generating question ${i + 1}:`, err);
-            
-            // Check if it's rate limit error
-            if (err.message.includes('429') || err.message.includes('Too Many Requests')) {
-              toast.error(`⚠️ API rate limited. Đợi 60 giây rồi thử lại...`, { duration: 5000 });
-              await new Promise(resolve => setTimeout(resolve, 60000)); // Wait 1 minute
-              i--; // Retry this question
-            }
-            // Tiếp tục tạo các câu hỏi khác thay vì dừng lại
-          }
-        }
-        
-        toast.dismiss('ai-progress');
-
-        if (generatedQuestions.length === 0) {
-          throw new Error('Không thể tạo câu hỏi nào bằng AI. Vui lòng thử lại hoặc kiểm tra kết nối AI.');
-        }
-
-        console.log(`🎯 Successfully generated ${generatedQuestions.length}/${questionCount} questions`);
-
-        toast.dismiss('ai-generating');
-        toast.loading('📝 Đang tạo đề thi...', { id: 'exam-creating' });
-
-        // Step 2: Create Exam with Generated Questions
         const chapterName = selectedChapter?.chapterName || 'Vật lý';
-        const examData = {
-          examName: `Đề thi AI - ${chapterName} (${new Date().toLocaleDateString('vi-VN')})`,
-          description: `Đề thi được tạo tự động bằng AI với ${generatedQuestions.length} câu hỏi`,
+
+        // Sử dụng Exams/generate endpoint thay vì tạo questions riêng lẻ
+        const examGenerateData = {
+          examName: `Đề thi - ${chapterName} (${new Date().toLocaleDateString('vi-VN')})`,
+          description: `Đề thi được tạo cho ${chapterName}`,
           durationMinutes: values.duration || 45,
           examType: "ai_generated",
-          createdBy: "ai_system",  // ✅ Sử dụng ai_system user đã tạo trong database
-          questions: generatedQuestions.map((q, index) => ({
-            questionId: q.questionId,
-            questionOrder: index + 1,
-            pointsWeight: 1.0
-          }))
+          grade: selectedChapter?.grade || 12,
+          chapterId: values.chapterId,
+          questionCount: values.questionCount || 10,
+          difficultyLevel: values.difficulty || "medium",
+          includeMultipleChoice: values.includeMultipleChoice !== false,
+          includeEssay: values.includeEssay !== false
         };
 
-        const createdExam = await examService.createExam(examData);
+        console.log('📝 Creating regular exam with data:', examGenerateData);
+        const createdExam = await examService.generateExam(examGenerateData);
 
-        toast.dismiss('exam-creating');
-        toast.success(`🎉 Đã tạo đề thi AI thành công với ${generatedQuestions.length} câu hỏi!`, {
+        toast.dismiss('regular-generating');
+        if (!createdExam || !createdExam.examId) {
+          throw new Error('Exam generation failed - no exam ID returned');
+        }
+        toast.success(`🎉 Đã tạo đề thi thành công với ${createdExam.totalQuestions || values.questionCount} câu hỏi!`, {
           duration: 4000
         });
 
-        // Close modal and navigate to the created exam
         setIsModalOpen(false);
         form.resetFields();
+        setSelectedGrade(null);
+        setFilteredChapters(chapters);
         navigate(`/quiz/${createdExam.examId}`);
       }
 
@@ -306,27 +464,33 @@ const Home = () => {
             <div className="home-sidebar-input">
               <Cselect
                 label="Chọn lớp"
-                options={mockData.filters.classes}
+                options={gradeOptions}
                 prefix={<FaChalkboardTeacher />}
+                onChange={handleFilterGradeChange}
+                value={filterGrade}
               />
             </div>
             <div className="home-sidebar-input">
               <Cselect
-                label="Chủ đề"
-                options={mockData.filters.topics}
+                label="Chương học"
+                options={topicOptions}
                 prefix={<FaBookOpen style={{ color: "#2DD4BF" }} />}
+                onChange={handleFilterTopicChange}
+                value={filterTopic}
               />
             </div>
             <div className="home-sidebar-input">
               <Cselect
                 label="Độ khó"
-                options={mockData.filters.levels}
+                options={difficultyOptions}
                 prefix={<BsQuestionDiamond />}
+                onChange={handleFilterDifficultyChange}
+                value={filterDifficulty}
               />
             </div>
             <button
               className="home-sidebar-btn"
-              onClick={() => navigate("/thiMau")}
+              onClick={handleViewSampleExams}
             >
               Xem đề thi mẫu
             </button>
@@ -336,7 +500,7 @@ const Home = () => {
                 Hoạt động gần đây
               </h3>
               <ul className="home-sidebar-recent-list">
-                {mockData.recent.map((item, idx) => (
+                {recentExams.map((item, idx) => (
                   <li className="home-sidebar-recent-item" key={idx}>
                     <span className="home-sidebar-recent-icon">
                       {item.icon}
@@ -347,6 +511,19 @@ const Home = () => {
                   </li>
                 ))}
               </ul>
+              {(filterGrade || filterTopic || filterDifficulty) && (
+                <button 
+                  className="home-sidebar-clear-filter"
+                  onClick={() => {
+                    setFilterGrade(null);
+                    setFilterTopic(null);
+                    setFilterDifficulty(null);
+                    toast('🔄 Đã xóa bộ lọc', { icon: 'ℹ️' });
+                  }}
+                >
+                  🗑️ Xóa bộ lọc
+                </button>
+              )}
             </div>
           </>
         }
@@ -359,19 +536,18 @@ const Home = () => {
                 <span className="home-main-welcome-brand">Phygens</span>
               </h1>
               <p className="home-main-welcome-desc">
-                🤖 Tạo đề thi bằng AI thông minh, nhanh chóng và chính xác. 
+                🤖 Tạo đề thi bằng AI thông minh, nhanh chóng và chính xác.
                 PhyGen sử dụng trí tuệ nhân tạo để tạo ra đề thi phù hợp với mọi mức độ học sinh.
               </p>
-              
-              {/* AI Status Badge */}
+
               {aiConnectionStatus && (
                 <div className="home-ai-status-badge">
                   <span className="ai-status-indicator">
                     {aiConnectionStatus.connected ? '🟢' : '🔴'}
                   </span>
                   <span className="ai-status-text">
-                    {aiConnectionStatus.connected ? 
-                      `${aiConnectionStatus.provider || 'AI'} đã sẵn sàng` : 
+                    {aiConnectionStatus.connected ?
+                      `${aiConnectionStatus.provider || 'AI'} đã sẵn sàng` :
                       'AI chưa sẵn sàng'
                     }
                   </span>
@@ -380,22 +556,7 @@ const Home = () => {
                   )}
                 </div>
               )}
-              
-                             {/* AI Achievements */}
-               <div className="home-ai-achievements">
-                 <div className="achievement-item">
-                   <span className="achievement-icon">⚡</span>
-                   <span className="achievement-text">Tạo câu hỏi trong 2-3 giây</span>
-                 </div>
-                 <div className="achievement-item">
-                   <span className="achievement-icon">🎯</span>
-                   <span className="achievement-text">Độ chính xác 97%</span>
-                 </div>
-                 <div className="achievement-item">
-                   <span className="achievement-icon">🚀</span>
-                   <span className="achievement-text">{chapters.length}+ chương học được hỗ trợ</span>
-                 </div>
-               </div>
+
               <button
                 className="home-main-welcome-btn"
                 onClick={() => setIsModalOpen(true)}
@@ -421,7 +582,12 @@ const Home = () => {
                   </div>
                   <div className="home-main-stat-box">
                     <div className="home-main-stat-icon"><FaChartLine /></div>
-                    <h3 className="home-main-stat-value">{chapters.length || "0"}</h3>
+                    <h3 className="home-main-stat-value">{dashboardData?.totalQuestions || "0"}+</h3>
+                    <p className="home-main-stat-label">Câu hỏi</p>
+                  </div>
+                  <div className="home-main-stat-box">
+                    <div className="home-main-stat-icon"><FaMagic /></div>
+                    <h3 className="home-main-stat-value">{dashboardData?.totalChapters || chapters.length || "0"}+</h3>
                     <p className="home-main-stat-label">Chương học</p>
                   </div>
                 </>
@@ -450,13 +616,13 @@ const Home = () => {
 
       {/* AI Test Connection Status */}
       {loading && (
-        <div style={{ 
-          position: 'fixed', 
-          top: '20px', 
-          right: '20px', 
-          background: '#1890ff', 
-          color: '#fff', 
-          padding: '12px 20px', 
+        <div style={{
+          position: 'fixed',
+          top: '20px',
+          right: '20px',
+          background: '#1890ff',
+          color: '#fff',
+          padding: '12px 20px',
           borderRadius: '6px',
           zIndex: 1000,
           boxShadow: '0 4px 12px rgba(0,0,0,0.15)'
@@ -470,6 +636,8 @@ const Home = () => {
         onCancel={() => {
           setIsModalOpen(false);
           form.resetFields();
+          setSelectedGrade(null);
+          setFilteredChapters(chapters);
         }}
         footer={null}
         centered
@@ -482,35 +650,44 @@ const Home = () => {
           <p style={{ color: '#fff', marginBottom: '20px', textAlign: 'center' }}>
             PhyGen sử dụng AI để tạo đề thi phù hợp với yêu cầu của bạn
           </p>
-          
+
           <Form form={form} layout="vertical">
+            {/* Chọn lớp trước */}
             <Form.Item
-              name="chapterId"
-              label={<span style={{ color: '#fff' }}>Chương học</span>}
-              // rules={[{ required: true, message: 'Vui lòng chọn chương học!' }]}
+              name="grade"
+              label={<span style={{ color: '#fff' }}>Chọn lớp</span>}
+              rules={[{ required: true, message: 'Vui lòng chọn lớp!' }]}
             >
-              <Select placeholder="Chọn chương học" loading={chapters.length === 0}>
-                {Array.isArray(chapters) ? chapters.map(chapter => (
-                  <Select.Option key={chapter.chapterId} value={chapter.chapterId}>
-                    Lớp {chapter.grade} - {chapter.chapterName}
+              <Select
+                placeholder="Chọn lớp học"
+                onChange={handleGradeChange}
+                allowClear
+              >
+                {gradeOptions.map(grade => (
+                  <Select.Option key={grade.value} value={grade.value}>
+                    {grade.label}
                   </Select.Option>
-                )) : []}
+                ))}
               </Select>
             </Form.Item>
 
             <Form.Item
-              name="questionCount"
-              label={<span style={{ color: '#fff' }}>Câu hỏi (tối đa 15)</span>}
-              initialValue={5}
-              rules={[
-                { required: true, message: 'Vui lòng nhập số câu hỏi!' },
-                { type: 'number', min: 1, max: 15, message: 'Số câu hỏi từ 1-15 (giới hạn API)!' }
-              ]}
-              extra={<span style={{ color: '#ffeb3b', fontSize: '12px' }}>
-                ⚠️ Giới hạn 15 câu/phút do API rate limit. Nhiều hơn sẽ mất thời gian chờ.
-              </span>}
+              name="chapterId"
+              label={<span style={{ color: '#fff' }}>Chương học</span>}
+              rules={[{ required: true, message: 'Vui lòng chọn chương học!' }]}
             >
-              <InputNumber min={1} max={15} style={{ width: '100%' }} />
+              <Select
+                placeholder={selectedGrade ? "Chọn chương học" : "Vui lòng chọn lớp trước"}
+                disabled={!selectedGrade}
+                loading={chapters.length === 0}
+                allowClear
+              >
+                {Array.isArray(filteredChapters) ? filteredChapters.map(chapter => (
+                  <Select.Option key={chapter.chapterId} value={chapter.chapterId}>
+                    {chapter.chapterName}
+                  </Select.Option>
+                )) : []}
+              </Select>
             </Form.Item>
 
             <Form.Item
@@ -520,50 +697,72 @@ const Home = () => {
               rules={[{ required: true, message: 'Vui lòng chọn độ khó!' }]}
             >
               <Select placeholder="Chọn độ khó">
-                <Select.Option value="easy">Dễ</Select.Option>
-                <Select.Option value="medium">Trung bình</Select.Option>
-                <Select.Option value="hard">Khó</Select.Option>
+                <Select.Option value="easy">🟢 Dễ</Select.Option>
+                <Select.Option value="medium">🟡 Trung bình</Select.Option>
+                <Select.Option value="hard">🔴 Khó</Select.Option>
               </Select>
             </Form.Item>
 
-                         <Form.Item
-               name="duration"
-               label={<span style={{ color: '#fff' }}>Thời gian (phút)</span>}
-               initialValue={45}
-             >
-               <InputNumber min={15} max={180} style={{ width: '100%' }} />
-             </Form.Item>
-
-             <Divider style={{ background: "white", margin: "16px 0" }} />
-             
-             <Form.Item name="useSmartExam" valuePropName="checked" initialValue={false}>
-               <div className="modal-switch-row">
-                 <span className="modal-label">
-                   🧠 Smart Exam (AI thích ứng)
-                   <br />
-                   <small style={{ opacity: 0.8 }}>Tự động điều chỉnh độ khó theo năng lực</small>
-                 </span>
-                 <Switch />
-               </div>
-             </Form.Item>
-            
-            <Form.Item name="includeEssay" valuePropName="checked" initialValue={true}>
-              <div className="modal-switch-row">
-                <span className="modal-label">Tự luận</span>
-                <Switch defaultChecked />
-              </div>
+            <Form.Item
+              name="questionCount"
+              label={<span style={{ color: '#fff' }}>Số lượng câu hỏi</span>}
+              initialValue={10}
+              rules={[{ required: true, message: 'Vui lòng nhập số câu hỏi!' }]}
+            >
+              <InputNumber min={5} max={50} style={{ width: '100%' }} placeholder="Nhập số câu hỏi (5-50)" />
             </Form.Item>
+
+            {/* Thời gian thi dạng dropdown */}
+            <Form.Item
+              name="duration"
+              label={<span style={{ color: '#fff' }}>Thời gian thi</span>}
+              initialValue={45}
+              rules={[{ required: true, message: 'Vui lòng chọn thời gian!' }]}
+            >
+              <Select placeholder="Chọn thời gian thi">
+                {durationOptions.map(option => (
+                  <Select.Option key={option.value} value={option.value}>
+                    {option.label}
+                  </Select.Option>
+                ))}
+              </Select>
+            </Form.Item>
+
+            <Divider style={{ background: "white", margin: "16px 0" }} />
+
+            <div style={{ marginBottom: "16px" }}>
+              <span style={{ color: '#fff', fontSize: '14px', fontWeight: 'bold' }}>📝 Loại câu hỏi:</span>
+            </div>
 
             <Form.Item name="includeMultipleChoice" valuePropName="checked" initialValue={true}>
               <div className="modal-switch-row">
-                <span className="modal-label">Trắc nghiệm</span>
+                <span className="modal-label">
+                  🔘 Trắc nghiệm
+                  <br />
+                  <small style={{ opacity: 0.8 }}>Câu hỏi 4 lựa chọn A, B, C, D</small>
+                </span>
                 <Switch defaultChecked />
               </div>
             </Form.Item>
+
+            <Form.Item name="includeEssay" valuePropName="checked" initialValue={false}>
+              <div className="modal-switch-row">
+                <span className="modal-label">
+                  ✍️ Tự luận
+                  <br />
+                  <small style={{ opacity: 0.8 }}>Câu hỏi yêu cầu trình bày, giải thích chi tiết</small>
+                </span>
+                <Switch />
+              </div>
+            </Form.Item>
+
+            <Divider style={{ background: "white", margin: "16px 0" }} />
+
+
           </Form>
 
           <div className="modal-btn-row">
-            <Button 
+            <Button
               className="modal-btn"
               type="primary"
               size="large"
@@ -582,21 +781,6 @@ const Home = () => {
               ) : (
                 <>🚀 Tạo đề thi bằng AI</>
               )}
-            </Button>
-            
-            <Button 
-              className="modal-btn"
-              size="large"
-              onClick={() => navigate("/thiMau")}
-              style={{
-                marginTop: '10px',
-                background: 'transparent',
-                border: '2px solid #fff',
-                color: '#fff',
-                height: '45px'
-              }}
-            >
-              📋 Hoặc chọn đề có sẵn
             </Button>
           </div>
         </div>

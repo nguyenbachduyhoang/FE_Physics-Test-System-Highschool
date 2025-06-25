@@ -25,113 +25,39 @@ const PhysicsTestSystem = () => {
   const navigate = useNavigate();
   const { examId } = useParams(); // Get exam ID from URL
 
-  // Load real questions from AI API for placeholder questions
+  // Load real questions from AI API for placeholder questions (now using Backend AI service)
   const loadRealQuestionsFromAI = async (placeholderQuestions) => {
-    console.log('=== LOADING REAL AI QUESTIONS ===');
     try {
-      // Use service instead of manual fetch
-      console.log('Fetching available chapters using service...');
+      console.log('🔄 Attempting to load real AI questions for placeholders...');
+      
       const chaptersArray = await questionBankService.getChapters();
-
-      console.log('Chapters from service:', chaptersArray);
-      console.log('Chapters array length:', chaptersArray.length);
-
-      if (chaptersArray.length === 0) {
-        throw new Error('No chapters available in database');
+      if (!Array.isArray(chaptersArray) || chaptersArray.length === 0) {
+        console.warn('⚠️ No chapters available in database, using placeholder questions');
+        toast.warning('Không có chapters trong database. Sử dụng câu hỏi mẫu.');
+        setQuestions(placeholderQuestions);
+        return;
       }
 
       const firstChapter = chaptersArray[0];
       const chapterId = firstChapter.chapterId || firstChapter.ChapterId;
-      console.log('Using first chapter:', firstChapter);
-      console.log('Chapter ID extracted:', chapterId);
-      console.log('Chapter name:', firstChapter.chapterName || firstChapter.ChapterName);
-
-      const questionsWithRealContent = [];
-
-      for (let i = 0; i < placeholderQuestions.length; i++) {
-        const question = placeholderQuestions[i];
-        console.log(`Loading question ${i + 1}/${placeholderQuestions.length}...`);
-
-        // Call AI API to generate real question content
-        try {
-          const response = await fetch(`http://localhost:5298/ai-question/generate`, {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json',
-              'Authorization': `Bearer ${localStorage.getItem('token')}`
-            },
-            body: JSON.stringify({
-              questionType: 'multiple_choice',
-              chapterId: chapterId,
-              difficultyLevel: 'medium',
-              saveToDatabase: false // Don't save, just generate for display
-            })
-          });
-
-          if (response.ok) {
-            const aiData = await response.json();
-            console.log(`AI API response for question ${i + 1}:`, aiData);
-
-            if (aiData.success && aiData.data) {
-              // Use AI generated content - ONLY from API
-              questionsWithRealContent.push({
-                ...question,
-                questionText: aiData.data.questionText,
-                answerChoices: aiData.data.answerChoices
-              });
-            } else {
-              console.warn(`AI API response invalid for question ${i + 1}, retrying...`);
-              // Retry API call once more
-              const retryResponse = await fetch(`http://localhost:5298/ai-question/generate`, {
-                method: 'POST',
-                headers: {
-                  'Content-Type': 'application/json',
-                  'Authorization': `Bearer ${localStorage.getItem('token')}`
-                },
-                body: JSON.stringify({
-                  questionType: 'multiple_choice',
-                  chapterId: chapterId,
-                  difficultyLevel: 'medium',
-                  saveToDatabase: false
-                })
-              });
-
-              if (retryResponse.ok) {
-                const retryData = await retryResponse.json();
-                if (retryData.success && retryData.data) {
-                  questionsWithRealContent.push({
-                    ...question,
-                    questionText: retryData.data.questionText,
-                    answerChoices: retryData.data.answerChoices
-                  });
-                } else {
-                  // If still fails, keep original placeholder
-                  questionsWithRealContent.push(question);
-                }
-              } else {
-                questionsWithRealContent.push(question);
-              }
-            }
-          } else {
-            console.error(`AI API HTTP error for question ${i + 1}:`, response.status);
-            // Keep original placeholder if API fails
-            questionsWithRealContent.push(question);
-          }
-        } catch (err) {
-          console.error(`Error calling AI API for question ${i + 1}:`, err);
-          // Keep original placeholder if API call fails
-          questionsWithRealContent.push(question);
-        }
+      
+      if (!chapterId) {
+        console.warn('⚠️ No valid ChapterId found, using placeholder questions');
+        toast.warning('Lỗi: Không tìm thấy ChapterId. Sử dụng câu hỏi mẫu.');
+        setQuestions(placeholderQuestions);
+        return;
       }
 
-      console.log('Final questions with real AI content:', questionsWithRealContent);
-      setQuestions(questionsWithRealContent);
+      // ❌ REMOVED: Quiz page không được tự động tạo đề thi với values fix cứng
+      // Chỉ được load đề thi có sẵn từ examId URL hoặc user phải tạo đề từ admin
+      console.warn('❌ KHÔNG THỂ TỰ TẠO ĐỀ THI với values fix cứng! Chuyển về placeholder questions.');
+      toast.error('❌ Quiz page không được tự động tạo đề thi! Vui lòng chọn đề thi có sẵn từ danh sách.');
+      setQuestions(placeholderQuestions);
 
-    } catch (error) {
-      console.error('Error in loadRealQuestionsFromAI:', error);
-      console.error('Error details:', error.message);
-      // Show error message to user instead of using placeholders
-      alert(`Lỗi khi tải câu hỏi AI: ${error.message}`);
+    } catch (aiError) {
+      console.error('❌ AI service error:', aiError);
+      const errorMessage = examService.formatError(aiError);
+      toast.error(`Lỗi AI service: ${errorMessage}. Sử dụng câu hỏi mẫu.`);
       setQuestions(placeholderQuestions);
     }
   };
@@ -144,7 +70,6 @@ const PhysicsTestSystem = () => {
         // If we have specific exam ID from URL, get that exam
         if (examId) {
           const data = await examService.getExamById(examId);
-          console.log('Exam data received:', data);
           setExamData(data);
 
           // Safe extraction of questions from exam structure
@@ -154,10 +79,6 @@ const PhysicsTestSystem = () => {
           const questionsArray = data.questions && data.questions.$values ?
             data.questions.$values :
             (Array.isArray(data.questions) ? data.questions : []);
-
-          console.log('Questions array detected:', questionsArray);
-          console.log('Questions array length:', questionsArray.length);
-
           // Check if we have questions to process
           if (questionsArray && questionsArray.length > 0) {
             extractedQuestions = questionsArray.map(examQuestion => {
@@ -184,8 +105,6 @@ const PhysicsTestSystem = () => {
             console.warn('No questions found in exam data:', data);
           }
 
-          console.log('Extracted questions:', extractedQuestions);
-
           // Check if we have placeholder questions that need real content from AI API
           const hasPlaceholderQuestions = extractedQuestions.some(q =>
             q.questionText === '[AI Generated Question - Content loaded from frontend]' ||
@@ -194,7 +113,6 @@ const PhysicsTestSystem = () => {
           );
 
           if (hasPlaceholderQuestions) {
-            console.log('Detected placeholder questions, loading real content from AI API...');
             await loadRealQuestionsFromAI(extractedQuestions);
           } else {
             setQuestions(extractedQuestions);

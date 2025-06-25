@@ -3,276 +3,68 @@ import LayoutContent from "../../components/layoutContent";
 import "./index.scss";
 import { FaBookOpen, FaPlay, FaGraduationCap, FaMapMarkerAlt, FaEye } from "react-icons/fa";
 import { Radio, Modal, Spin, Alert } from "antd";
-import { useNavigate } from "react-router-dom";
-import { examService } from "../../services";
+import { useNavigate, useLocation } from "react-router-dom";
+import { analyticsService } from "../../services";
 import toast from "react-hot-toast";
 
 const ThiMau = () => {
   const [isModalVisible, setIsModalVisible] = useState(false);
   const [selectedTest, setSelectedTest] = useState(null);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
   const [tests, setTests] = useState([]);
   const navigate = useNavigate();
+  const location = useLocation();
 
-  // Load real exams from API
+  // Load filtered exams from API based on URL params
   useEffect(() => {
-    loadExams();
-  }, []);
+    loadFilteredExams();
+  }, [location.search]);
 
-  const loadExams = async () => {
+  const loadFilteredExams = async () => {
     try {
       setLoading(true);
-      const examsData = await examService.getAllExams();
+      
+      // Parse URL params for filters
+      const searchParams = new URLSearchParams(location.search);
+      const filters = {
+        grade: searchParams.get('grade') || '',
+        subject: searchParams.get('subject') || '',
+        difficulty: searchParams.get('difficulty') || ''
+      };
+
+      // Use analytics API to get filtered sample exams
+      const examsData = await analyticsService.getSampleExams(filters);
       
       // Transform exam data to match expected format
       const transformedTests = examsData.map(exam => ({
         id: exam.examId,
         title: exam.examName,
         subject: exam.description || "Đề thi vật lý",
-        class: "10-12", // Default since we don't have grade level in exam data
-        topic: exam.examType || "Vật lý",
-        difficulty: "Trung bình", // Default
-        attempts: 0, // Default since we don't track this yet
+        class: exam.grade || "10-12",
+        topic: exam.subject || "Vật lý", 
+        difficulty: exam.difficulty || "Trung bình",
+        attempts: 0,
         stats: [
-          { label: "Câu hỏi", value: exam.questions?.length || 0 },
-          { label: "Phút", value: exam.durationMinutes || 45 },
-          { label: "Điểm TB", value: 0 }, // Default
-          { label: "Lượt làm", value: 0 }, // Default
+          { label: "Câu hỏi", value: exam.questionCount || 0 },
+          { label: "Phút", value: exam.duration || 45 },
+          { label: "Điểm TB", value: 0 },
+          { label: "Lượt làm", value: 0 },
         ],
-        questions: exam.questions || []
+        questions: [] // Will be loaded when needed
       }));
       
       setTests(transformedTests);
-      setError(null);
     } catch (err) {
-      console.error('Load exams error:', err);
-      setError(examService.formatError(err));
+      console.error('Load filtered exams error:', err);
       toast.error('Không thể tải danh sách đề thi');
+      // Fallback to empty list
+      setTests([]);
     } finally {
       setLoading(false);
     }
   };
 
-  const mockTests = [
-    {
-      id: 1,
-      title: "Đề Thi Cơ Học Lớp 10",
-      subject:
-        "Chuyển động thẳng đều và biến đổi đều - Khám phá các định luật cơ bản về chuyển động, vận tốc và gia tốc trong vật lý học lớp 10.",
-      class: "10",
-      topic: "Cơ học",
-      difficulty: "Trung bình",
-      attempts: 500,
-      stats: [
-        { label: "Câu hỏi", value: 20 },
-        { label: "Phút", value: 45 },
-        { label: "Điểm TB", value: 20 },
-        { label: "Lượt làm", value: 500 },
-      ],
-      questions: [
-        {
-          id: 1,
-          question: "Định luật Newton thứ nhất nói về điều gì?",
-          options: [
-            "Một vật sẽ giữ nguyên trạng thái chuyển động hoặc đứng yên nếu không có lực tác dụng.",
-            "Một vật sẽ chuyển động mãi mãi nếu không có lực cản.",
-            "Một vật sẽ tăng tốc khi có lực tác dụng.",
-            "Một vật sẽ giảm tốc khi có lực cản.",
-          ],
-        },
-        {
-          id: 2,
-          question: "Công thức tính lực hấp dẫn giữa hai vật là gì?",
-          options: [
-            "F = m × a",
-            "F = G × (m1 × m2) / r²",
-            "F = k × q1 × q2 / r²",
-            "F = m × g",
-          ],
-        },
-        {
-          id: 4,
-          question: "Đơn vị của công suất là gì?",
-          options: [
-            "Joule (J)",
-            "Watt (W)",
-            "F × k × q1 × q2 / r²",
-            "F = m × g",
-          ],
-        },
-        {
-          id: 5,
-          question: "Đơn vị của công suất là gì?",
-          options: [
-            "Joule (J)",
-            "Watt (W)",
-            "F × k × q1 × q2 / r²",
-            "F = m × g",
-          ],
-        },
-        {
-          id: 6,
-          question: "Đơn vị của công suất là gì?",
-          options: [
-            "Joule (J)",
-            "Watt (W)",
-            "F × k × q1 × q2 / r²",
-            "F = m × g",
-          ],
-        },
-        {
-          id: 7,
-          question: "Đơn vị của công suất là gì?",
-          options: [
-            "Joule (J)",
-            "Watt (W)",
-            "F × k × q1 × q2 / r²",
-            "F = m × g",
-          ],
-        },
-      ],
-    },
-    {
-      id: 2,
-      title: "Đề Thi Cơ Học Lớp 10",
-      subject: "Chủ đề: Chuyển động thẳng đều và biến đổi đều",
-      class: "10",
-      topic: "Cơ học",
-      difficulty: "Trung bình",
-      attempts: 500,
-      stats: [
-        { label: "Câu hỏi", value: 20 },
-        { label: "Phút", value: 45 },
-        { label: "Điểm trung bình", value: 20 },
-        { label: "Lượt làm", value: 500 },
-      ],
-      questions: [
-        {
-          id: 1,
-          question: "Định luật Newton thứ nhất nói về điều gì?",
-          options: [
-            "Một vật sẽ giữ nguyên trạng thái chuyển động hoặc đứng yên nếu không có lực tác dụng.",
-            "Một vật sẽ chuyển động mãi mãi nếu không có lực cản.",
-            "Một vật sẽ tăng tốc khi có lực tác dụng.",
-            "Một vật sẽ giảm tốc khi có lực cản.",
-          ],
-        },
-        {
-          id: 2,
-          question: "Công thức tính lực hấp dẫn giữa hai vật là gì?",
-          options: [
-            "F = m × a",
-            "F = G × (m1 × m2) / r²",
-            "F = k × q1 × q2 / r²",
-            "F = m × g",
-          ],
-        },
-        {
-          id: 3,
-          question: "Đơn vị của công suất là gì?",
-          options: [
-            "Joule (J)",
-            "Watt (W)",
-            "F × k × q1 × q2 / r²",
-            "F = m × g",
-          ],
-        },
-      ],
-    },
-    {
-      id: 3,
-      title: "Đề Thi Cơ Học Lớp 10",
-      subject: "Chủ đề: Chuyển động thẳng đều và biến đổi đều",
-      class: "10",
-      topic: "Cơ học",
-      difficulty: "Trung bình",
-      attempts: 500,
-      stats: [
-        { label: "Câu hỏi", value: 20 },
-        { label: "Phút", value: 45 },
-        { label: "Điểm trung bình", value: 20 },
-        { label: "Lượt làm", value: 500 },
-      ],
-    },
-    {
-      id: 4,
-      title: "Đề Thi Cơ Học Lớp 10",
-      subject: "Chủ đề: Chuyển động thẳng đều và biến đổi đều",
-      class: "10",
-      topic: "Cơ học",
-      difficulty: "Trung bình",
-      attempts: 500,
-      stats: [
-        { label: "Câu hỏi", value: 20 },
-        { label: "Phút", value: 45 },
-        { label: "Điểm trung bình", value: 20 },
-        { label: "Lượt làm", value: 500 },
-      ],
-    },
-    {
-      id: 5,
-      title: "Đề Thi Cơ Học Lớp 10",
-      subject: "Chủ đề: Chuyển động thẳng đều và biến đổi đều",
-      class: "10",
-      topic: "Cơ học",
-      difficulty: "Trung bình",
-      attempts: 500,
-      stats: [
-        { label: "Câu hỏi", value: 20 },
-        { label: "Phút", value: 45 },
-        { label: "Điểm trung bình", value: 20 },
-        { label: "Lượt làm", value: 500 },
-      ],
-    },
-    {
-      id: 6,
-      title: "Đề Thi Cơ Học Lớp 10",
-      subject: "Chủ đề: Chuyển động thẳng đều và biến đổi đều",
-      class: "10",
-      topic: "Cơ học",
-      difficulty: "Trung bình",
-      attempts: 500,
-      stats: [
-        { label: "Câu hỏi", value: 20 },
-        { label: "Phút", value: 45 },
-        { label: "Điểm trung bình", value: 20 },
-        { label: "Lượt làm", value: 500 },
-      ],
-    },
-    {
-      id: 7,
-      title: "Đề Thi Cơ Học Lớp 10",
-      subject: "Chủ đề: Chuyển động thẳng đều và biến đổi đều",
-      class: "10",
-      topic: "Cơ học",
-      difficulty: "Trung bình",
-      attempts: 500,
-      stats: [
-        { label: "Câu hỏi", value: 20 },
-        { label: "Phút", value: 45 },
-        { label: "Điểm trung bình", value: 20 },
-        { label: "Lượt làm", value: 500 },
-      ],
-    },
-    {
-      id: 8,
-      title: "Đề Thi Cơ Học Lớp 10",
-      subject: "Chủ đề: Chuyển động thẳng đều và biến đổi đều",
-      class: "10",
-      topic: "Cơ học",
-      difficulty: "Trung bình",
-      attempts: 500,
-      stats: [
-        { label: "Câu hỏi", value: 20 },
-        { label: "Phút", value: 45 },
-        { label: "Điểm trung bình", value: 20 },
-        { label: "Lượt làm", value: 500 },
-      ],
-    },
-
-    // Thêm các đề thi khác nếu cần
-  ];
+  
 
   const handleViewDetails = (test) => {
     setSelectedTest(test);
@@ -291,8 +83,22 @@ const ThiMau = () => {
         content1={
           <div>
             <h1 className="title">Danh Sách Đề Thi Mẫu</h1>
-            <div className="test-list">
-              {tests.map((test) => (
+            {loading ? (
+              <div style={{ textAlign: 'center', padding: '50px' }}>
+                <Spin size="large" />
+                <p style={{ marginTop: '16px' }}>Đang tải đề thi...</p>
+              </div>
+            ) : tests.length === 0 ? (
+              <Alert
+                message="Không tìm thấy đề thi"
+                description="Không có đề thi nào phù hợp với bộ lọc của bạn. Vui lòng thử lại với điều kiện khác."
+                type="info"
+                showIcon
+                style={{ marginTop: '20px' }}
+              />
+            ) : (
+              <div className="test-list">
+                {tests.map((test) => (
                 <div key={test.id} className="test-card custom-layout">
                   <div className="test-card-header">
                     <div className="test-card-title">{test.title}</div>
@@ -370,7 +176,8 @@ const ThiMau = () => {
                   </div>
                 </div>
               ))}
-            </div>
+              </div>
+            )}
           </div>
         }
       />
