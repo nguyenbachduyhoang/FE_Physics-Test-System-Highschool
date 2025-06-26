@@ -61,70 +61,20 @@ export const userService = {
 
   // =============== USER MANAGEMENT (Admin) APIs ===============
   
-  // Get all users (with pagination and filters)
+  // Get all users with pagination and filters
   getAllUsers: async (params = {}) => {
-    const {
-      page = 1,
-      pageSize = 10,
-      search = '',
-      sortBy = 'username',
-      sortDirection = 'asc'
-    } = params;
-    
     try {
-      const response = await userAPI.get('/auth/admin/users', {
-        params: {
-          page,
-          pageSize,
-          search,
-          sortBy,
-          sortDirection
-        }
-      });
-      
-      const data = response.data.success ? response.data.data : response.data;
-      
-      // Ensure response is always in expected format
-      if (Array.isArray(data)) {
-        return {
-          items: data,
-          currentPage: page,
-          pageSize: pageSize,
-          totalCount: data.length
-        };
-      }
-      
-      // If data has pagination structure
-      if (data && data.items) {
-        return {
-          items: Array.isArray(data.items) ? data.items : [],
-          currentPage: data.currentPage || page,
-          pageSize: data.pageSize || pageSize,
-          totalCount: data.totalCount || 0
-        };
-      }
-      
-      // Fallback
-      return {
-        items: [],
-        currentPage: 1,
-        pageSize: 10,
-        totalCount: 0
-      };
+      const response = await userAPI.get('/users', { params });
+      return response.data.success ? response.data.data : response.data;
     } catch (error) {
-      console.warn('Users API not available:', error.message);
-      return {
-        items: [],
-        currentPage: 1,
-        pageSize: 10,
-        totalCount: 0
-      };
+      console.error('Get users error:', error);
+      throw error;
     }
   },
 
   // Get user by ID
-  getUserById: async (id) => {
-    const response = await userAPI.get(`/users/${id}`);
+  getUserById: async (userId) => {
+    const response = await userAPI.get(`/users/${userId}`);
     return response.data.success ? response.data.data : response.data;
   },
 
@@ -134,16 +84,97 @@ export const userService = {
     return response.data.success ? response.data.data : response.data;
   },
 
-  // Update user (Admin)
-  updateUser: async (id, userData) => {
-    const response = await userAPI.put(`/users/${id}`, userData);
+  // Update user
+  updateUser: async (userId, userData) => {
+    const response = await userAPI.put(`/users/${userId}`, userData);
     return response.data.success ? response.data.data : response.data;
   },
 
   // Delete user
-  deleteUser: async (id) => {
-    const response = await userAPI.delete(`/users/${id}`);
+  deleteUser: async (userId) => {
+    try {
+      console.log('Deleting user with ID:', userId);
+      const response = await userAPI.delete(`/users/${userId}`);
+      console.log('Delete response:', response);
+      
+      // Kiểm tra response format
+      if (response.data && response.data.success === false) {
+        throw new Error(response.data.message || 'Xóa người dùng thất bại');
+      }
+      
+      return response.data;
+    } catch (error) {
+      console.error('Delete user error details:', error.response || error);
+      if (error.response?.data?.message) {
+        throw new Error(error.response.data.message);
+      }
+      throw new Error('Không thể kết nối đến server hoặc xóa người dùng thất bại');
+    }
+  },
+
+  // Upload user avatar
+  uploadAvatar: async (userId, file) => {
+    const formData = new FormData();
+    formData.append('avatar', file);
+    
+    const response = await userAPI.post(`/users/${userId}/avatar`, formData, {
+      headers: {
+        'Content-Type': 'multipart/form-data',
+      },
+    });
+    return response.data.success ? response.data.data : response.data;
+  },
+
+  // Update user roles and permissions
+  updateUserRoles: async (userId, roles) => {
+    const response = await userAPI.put(`/users/${userId}/roles`, { roles });
+    return response.data.success ? response.data.data : response.data;
+  },
+
+  // Get user permissions
+  getUserPermissions: async (userId) => {
+    const response = await userAPI.get(`/users/${userId}/permissions`);
+    return response.data.success ? response.data.data : response.data;
+  },
+
+  // Update user permissions
+  updateUserPermissions: async (userId, permissions) => {
+    const response = await userAPI.put(`/users/${userId}/permissions`, { permissions });
+    return response.data.success ? response.data.data : response.data;
+  },
+
+  // Export users data
+  exportUsers: async (filters = {}) => {
+    const response = await userAPI.get('/users/export', {
+      params: filters,
+      responseType: 'blob'
+    });
     return response.data;
+  },
+
+  // Import users from file
+  importUsers: async (file) => {
+    const formData = new FormData();
+    formData.append('file', file);
+    
+    const response = await userAPI.post('/users/import', formData, {
+      headers: {
+        'Content-Type': 'multipart/form-data',
+      },
+    });
+    return response.data.success ? response.data.data : response.data;
+  },
+
+  // Get user activity logs
+  getUserActivityLogs: async (userId, params = {}) => {
+    const response = await userAPI.get(`/users/${userId}/activity-logs`, { params });
+    return response.data.success ? response.data.data : response.data;
+  },
+
+  // Get user statistics
+  getUserStats: async (userId) => {
+    const response = await userAPI.get(`/users/${userId}/stats`);
+    return response.data.success ? response.data.data : response.data;
   },
 
   // =============== AUTHENTICATION VERIFY APIs ===============
@@ -170,13 +201,10 @@ export const userService = {
     throw new Error(response.message || 'API call failed');
   },
 
-  // Format error for user display
+  // Format error messages
   formatError: (error) => {
     if (error.response?.data?.message) {
       return error.response.data.message;
-    }
-    if (error.response?.data?.errors) {
-      return Object.values(error.response.data.errors).flat().join(', ');
     }
     return error.message || 'Đã xảy ra lỗi không xác định';
   },

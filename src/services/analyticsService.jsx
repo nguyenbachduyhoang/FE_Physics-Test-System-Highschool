@@ -358,6 +358,83 @@ export const analyticsService = {
       return Object.values(error.response.data.errors).flat().join(', ');
     }
     return error.message || 'Đã xảy ra lỗi không xác định';
+  },
+
+  // Get recent users
+  getRecentUsers: async (limit = 5) => {
+    try {
+      const response = await analyticsAPI.get('/analytics/recent-users', {
+        params: { limit }
+      });
+      return response.data.success ? response.data.data : response.data;
+    } catch (error) {
+      console.warn('Recent users API not available:', error.message);
+      return [];
+    }
+  },
+
+  // Get real-time stats
+  getRealTimeStats: async () => {
+    try {
+      const response = await analyticsAPI.get('/analytics/real-time-stats');
+      return response.data.success ? response.data.data : response.data;
+    } catch (error) {
+      console.warn('Real-time stats API not available:', error.message);
+      return {
+        currentOnline: 0,
+        todayNewUsers: 0,
+        todayNewExams: 0,
+        todayAttempts: 0
+      };
+    }
+  },
+
+  // Get system health status
+  getSystemHealth: async () => {
+    try {
+      const response = await analyticsAPI.get('/analytics/system-health');
+      return response.data.success ? response.data.data : response.data;
+    } catch (error) {
+      console.warn('System health API not available:', error.message);
+      return {
+        status: 'unknown',
+        aiQuota: 0,
+        serverLoad: 0,
+        lastBackup: null
+      };
+    }
+  },
+
+  // Get performance metrics
+  getPerformanceMetrics: async (period = '24h') => {
+    try {
+      const response = await analyticsAPI.get('/analytics/performance-metrics', {
+        params: { period }
+      });
+      return response.data.success ? response.data.data : response.data;
+    } catch (error) {
+      console.warn('Performance metrics API not available:', error.message);
+      return {
+        averageResponseTime: 0,
+        errorRate: 0,
+        successfulRequests: 0,
+        failedRequests: 0
+      };
+    }
+  },
+
+  // Export analytics data
+  exportAnalytics: async (filters = {}) => {
+    try {
+      const response = await analyticsAPI.get('/analytics/export', {
+        params: filters,
+        responseType: 'blob'
+      });
+      return response.data;
+    } catch (error) {
+      console.warn('Export analytics API not available:', error.message);
+      throw new Error('Không thể xuất dữ liệu phân tích');
+    }
   }
 };
 
