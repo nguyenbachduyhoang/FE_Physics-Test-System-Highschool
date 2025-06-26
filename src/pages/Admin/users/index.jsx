@@ -37,21 +37,36 @@ export default function UsersPage() {
       };
       
       const response = await userService.getAllUsers(params);
-      console.log('Users response:', response);
+      console.log('Raw API response:', response);
       
       if (response && response.items && Array.isArray(response.items)) {
-        setUsers(response.items);
+        // Map dữ liệu để đảm bảo có id
+        const mappedUsers = response.items.map(user => {
+          console.log('Original user data:', user);
+          return {
+            ...user,
+            id: user.userId || user.UserId || user.id // Ưu tiên userId
+          };
+        });
+        console.log('Mapped users:', mappedUsers);
+        setUsers(mappedUsers);
         setPagination({
           current: response.currentPage || 1,
           pageSize: response.pageSize || 10,
           total: response.totalCount || 0
         });
       } else if (response && Array.isArray(response)) {
-        // Fallback for different response format
-        setUsers(response);
+        const mappedUsers = response.map(user => {
+          console.log('Original user data:', user);
+          return {
+            ...user,
+            id: user.userId || user.UserId || user.id
+          };
+        });
+        console.log('Mapped users:', mappedUsers);
+        setUsers(mappedUsers);
         setPagination(prev => ({ ...prev, total: response.length }));
       } else {
-        // Đảm bảo luôn là array
         setUsers([]);
         setPagination(prev => ({ ...prev, total: 0 }));
       }
@@ -60,7 +75,7 @@ export default function UsersPage() {
       const errorMessage = userService.formatError(err);
       toast.error(`Lỗi tải danh sách người dùng: ${errorMessage}`);
     } finally {
-    setLoading(false);
+      setLoading(false);
     }
   };
 
@@ -117,24 +132,44 @@ export default function UsersPage() {
 
   // Delete user
   const handleDelete = async (userId) => {
-    Modal.confirm({
-      title: "Xác nhận xóa người dùng",
-      content: `Bạn chắc chắn muốn xóa người dùng này? Hành động này không thể hoàn tác.`,
-      okText: "Xóa",
-      okType: "danger",
-      cancelText: "Hủy",
-      onOk: async () => {
-        try {
-          await userService.deleteUser(userId);
-          toast.success("Xóa người dùng thành công!");
-          fetchUsers(pagination.current, pagination.pageSize, searchTerm, sortBy, sortDirection);
-        } catch (err) {
-          console.error('Delete user error:', err);
-          const errorMessage = userService.formatError(err);
-          toast.error(`Lỗi xóa người dùng: ${errorMessage}`);
-        }
-      },
-    });
+    console.log('Attempting to delete user with ID:', userId);
+    
+    if (!userId) {
+      toast.error("Không tìm thấy ID người dùng!");
+      return;
+    }
+
+    const confirmDelete = window.confirm("Bạn chắc chắn muốn xóa người dùng này? Hành động này không thể hoàn tác.");
+    
+    if (confirmDelete) {
+      setLoading(true);
+      try {
+        console.log('Sending delete request for ID:', userId);
+        await userService.deleteUser(userId);
+        toast.success("Xóa người dùng thành công!");
+        
+        // Cập nhật state users ngay lập tức
+        setUsers(prevUsers => {
+          console.log('Previous users:', prevUsers);
+          const newUsers = prevUsers.filter(user => {
+            const currentId = user.userId || user.UserId || user.id;
+            console.log('Comparing', currentId, 'with', userId);
+            return currentId !== userId;
+          });
+          console.log('New users after filter:', newUsers);
+          return newUsers;
+        });
+        
+        // Sau đó fetch lại dữ liệu từ server để đồng bộ
+        await fetchUsers(pagination.current, pagination.pageSize, searchTerm, sortBy, sortDirection);
+      } catch (err) {
+        console.error('Delete user error:', err);
+        const errorMessage = userService.formatError(err);
+        toast.error(`Lỗi xóa người dùng: ${errorMessage}`);
+      } finally {
+        setLoading(false);
+      }
+    }
   };
 
   // Open modal for edit
@@ -144,7 +179,7 @@ export default function UsersPage() {
     form.setFieldsValue({
       username: user.username,
       email: user.email,
-      fullName: user.fullName,
+      full_name: user.full_name,
       role: user.role,
       isActive: user.isActive
     });
@@ -193,8 +228,8 @@ export default function UsersPage() {
     },
     {
       title: "Họ tên",
-      dataIndex: "fullName",
-      key: "fullName",
+      dataIndex: "full_name",
+      key: "full_name",
       sorter: true,
     },
     {
@@ -224,32 +259,32 @@ export default function UsersPage() {
       ),
     },
     {
-      title: "Ngày tạo",
-      dataIndex: "createdAt",
-      key: "createdAt",
-      sorter: true,
-      render: (date) => date ? new Date(date).toLocaleDateString('vi-VN') : '',
-    },
-    {
       title: "Thao tác",
       key: "action",
-      render: (_, record) => (
-        <Space>
-          <Button 
-            icon={<EditOutlined />} 
-            size="small" 
-            onClick={() => handleEdit(record)}
-            title="Chỉnh sửa"
-          />
-          <Button 
-            icon={<DeleteOutlined />} 
-            size="small" 
-            danger 
-            onClick={() => handleDelete(record.id)}
-            title="Xóa"
-          />
-        </Space>
-      ),
+      render: (_, record) => {
+        console.log("Record data:", record);
+        const userId = record.id || record.userId || record.UserId;
+        return (
+          <Space>
+            <Button 
+              icon={<EditOutlined />} 
+              size="small" 
+              onClick={() => handleEdit(record)}
+              title="Chỉnh sửa"
+            />
+            <Button 
+              icon={<DeleteOutlined />} 
+              size="small" 
+              danger 
+              onClick={() => {
+                console.log("Deleting user with ID:", userId);
+                handleDelete(userId);
+              }}
+              title="Xóa"
+            />
+          </Space>
+        );
+      },
     },
   ];
 
@@ -321,18 +356,7 @@ export default function UsersPage() {
       >
         <Form form={form} layout="vertical">
           <Form.Item 
-            name="username" 
-            label="Tên đăng nhập" 
-            rules={[
-              { required: true, message: 'Vui lòng nhập tên đăng nhập!' },
-              { min: 3, message: 'Tên đăng nhập phải có ít nhất 3 ký tự!' }
-            ]}
-          >
-            <Input placeholder="Nhập tên đăng nhập" />
-          </Form.Item>
-
-          <Form.Item 
-            name="fullName" 
+            name="full_name" 
             label="Họ tên" 
             rules={[
               { required: true, message: 'Vui lòng nhập họ tên!' }
@@ -377,16 +401,6 @@ export default function UsersPage() {
             </Select>
           </Form.Item>
 
-          <Form.Item 
-            name="isActive" 
-            label="Trạng thái" 
-            rules={[{ required: true, message: 'Vui lòng chọn trạng thái!' }]}
-          >
-            <Select placeholder="Chọn trạng thái">
-              <Option value={true}>Hoạt động</Option>
-              <Option value={false}>Không hoạt động</Option>
-            </Select>
-          </Form.Item>
         </Form>
       </Modal>
     </div>

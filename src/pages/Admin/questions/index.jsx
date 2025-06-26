@@ -16,52 +16,11 @@ export default function QuestionsPage() {
   const [isModalVisible, setIsModalVisible] = useState(false);
   const [editingQuestion, setEditingQuestion] = useState(null);
   const [searchTerm, setSearchTerm] = useState('');
-  const [showApiWarning, setShowApiWarning] = useState(false);
-  const [aiGenerating, setAiGenerating] = useState(false);
   const [chapters, setChapters] = useState([]);
   const [showAIModal, setShowAIModal] = useState(false);
+  const [aiGenerating, setAiGenerating] = useState(false);
   const [form] = Form.useForm();
   const [aiForm] = Form.useForm();
-
-  // Mock data for demonstration
-  const mockQuestions = [
-    {
-      questionId: "q001",
-      questionText: "Một vật chuyển động thẳng đều với vận tốc 20 m/s. Quãng đường vật đi được trong 5s là?",
-      topic: "Cơ học",
-      difficultyLevel: "medium",
-      explanation: "Áp dụng công thức s = v × t = 20 × 5 = 100m",
-      createdAt: "2025-06-20T10:00:00Z",
-      createdBy: "admin"
-    },
-    {
-      questionId: "q002", 
-      questionText: "Đơn vị của vận tốc trong hệ SI là gì?",
-      topic: "Cơ học",
-      difficultyLevel: "easy",
-      explanation: "Trong hệ SI, vận tốc có đơn vị là m/s (mét trên giây)",
-      createdAt: "2025-06-20T09:30:00Z",
-      createdBy: "admin"
-  },
-  {
-      questionId: "q003",
-      questionText: "Công thức tính động năng của một vật là gì?",
-      topic: "Cơ học",
-      difficultyLevel: "medium",
-      explanation: "Động năng được tính theo công thức Ek = (1/2)mv²",
-      createdAt: "2025-06-20T09:00:00Z",
-      createdBy: "admin"
-    },
-    {
-      questionId: "q004",
-      questionText: "Định luật bảo toàn năng lượng phát biểu như thế nào?",
-      topic: "Cơ học",
-      difficultyLevel: "hard",
-      explanation: "Năng lượng không thể tự sinh ra hay tự mất đi mà chỉ có thể chuyển hóa từ dạng này sang dạng khác",
-      createdAt: "2025-06-20T08:30:00Z",
-      createdBy: "admin"
-    }
-  ];
 
   // Fetch questions from API
   const fetchQuestions = async (search = '') => {
@@ -71,22 +30,17 @@ export default function QuestionsPage() {
       const response = await questionBankService.getQuestions(params);
       console.log('Questions response:', response);
       
-      // Đảm bảo response luôn là array
-      if (!response || !Array.isArray(response) || response.length === 0) {
-        setQuestions(Array.isArray(mockQuestions) ? mockQuestions : []);
-        setShowApiWarning(true);
+      if (!response || !Array.isArray(response)) {
+        setQuestions([]);
+        toast.error("Không thể tải dữ liệu câu hỏi");
       } else {
-        setQuestions(Array.isArray(response) ? response : []);
-        setShowApiWarning(false);
+        setQuestions(response);
       }
     } catch (err) {
       console.error('Fetch questions error:', err);
-      // Sử dụng mock data khi API lỗi
-      setQuestions(Array.isArray(mockQuestions) ? mockQuestions : []);
-      setShowApiWarning(true);
-      
       const errorMessage = adminService.formatError(err);
-      console.log(`API lỗi, sử dụng dữ liệu demo: ${errorMessage}`);
+      toast.error(`Lỗi tải dữ liệu: ${errorMessage}`);
+      setQuestions([]);
     } finally {
       setLoading(false);
     }
@@ -110,16 +64,7 @@ export default function QuestionsPage() {
   // Handle search
   const handleSearch = (value) => {
     setSearchTerm(value);
-    if (showApiWarning) {
-      // Filter mock data locally
-      const filtered = mockQuestions.filter(q => 
-        q.questionText.toLowerCase().includes(value.toLowerCase()) ||
-        q.topic.toLowerCase().includes(value.toLowerCase())
-      );
-      setQuestions(filtered);
-    } else {
-      fetchQuestions(value);
-    }
+    fetchQuestions(value);
   };
 
   // Handle create/update question
@@ -383,18 +328,6 @@ const columns = [
           </Button>
         </div>
       </div>
-
-      {showApiWarning && (
-        <Alert
-          message="Chế độ Demo"
-          description="API ngân hàng câu hỏi chưa sẵn sàng. Hiện tại đang hiển thị dữ liệu mẫu. Các tính năng thêm/sửa/xóa sẽ được kích hoạt khi API hoàn thành."
-          type="warning"
-          showIcon
-          style={{ marginBottom: 16 }}
-          closable
-          onClose={() => setShowApiWarning(false)}
-        />
-      )}
 
       <div className="questions-stats">
         <Card size="small" style={{ marginBottom: 16 }}>

@@ -28,11 +28,11 @@ const PhysicsTestSystem = () => {
   // Load real questions from AI API for placeholder questions (now using Backend AI service)
   const loadRealQuestionsFromAI = async (placeholderQuestions) => {
     try {
-      console.log('🔄 Attempting to load real AI questions for placeholders...');
+      console.log('Attempting to load real AI questions for placeholders...');
       
       const chaptersArray = await questionBankService.getChapters();
       if (!Array.isArray(chaptersArray) || chaptersArray.length === 0) {
-        console.warn('⚠️ No chapters available in database, using placeholder questions');
+        console.warn('No chapters available in database, using placeholder questions');
         toast.warning('Không có chapters trong database. Sử dụng câu hỏi mẫu.');
         setQuestions(placeholderQuestions);
         return;
@@ -42,20 +42,17 @@ const PhysicsTestSystem = () => {
       const chapterId = firstChapter.chapterId || firstChapter.ChapterId;
       
       if (!chapterId) {
-        console.warn('⚠️ No valid ChapterId found, using placeholder questions');
+        console.warn('No valid ChapterId found, using placeholder questions');
         toast.warning('Lỗi: Không tìm thấy ChapterId. Sử dụng câu hỏi mẫu.');
         setQuestions(placeholderQuestions);
         return;
       }
 
-      // ❌ REMOVED: Quiz page không được tự động tạo đề thi với values fix cứng
-      // Chỉ được load đề thi có sẵn từ examId URL hoặc user phải tạo đề từ admin
-      console.warn('❌ KHÔNG THỂ TỰ TẠO ĐỀ THI với values fix cứng! Chuyển về placeholder questions.');
-      toast.error('❌ Quiz page không được tự động tạo đề thi! Vui lòng chọn đề thi có sẵn từ danh sách.');
+      toast.error('Quiz page không được tự động tạo đề thi! Vui lòng chọn đề thi có sẵn từ danh sách.');
       setQuestions(placeholderQuestions);
 
     } catch (aiError) {
-      console.error('❌ AI service error:', aiError);
+      console.error('AI service error:', aiError);
       const errorMessage = examService.formatError(aiError);
       toast.error(`Lỗi AI service: ${errorMessage}. Sử dụng câu hỏi mẫu.`);
       setQuestions(placeholderQuestions);

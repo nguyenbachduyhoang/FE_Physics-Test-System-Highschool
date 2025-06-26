@@ -162,7 +162,7 @@ export const questionBankService = {
   getQuestions: async (filters = {}) => {
     try {
       // Sử dụng AI endpoint để lấy questions
-      const response = await questionAPI.get('/ai-question', { params: filters });
+      const response = await questionAPI.get('/ai-question/list', { params: filters });
       return response.data.success ? response.data.data : response.data;
     } catch (err) {
       // Fallback: return empty array nếu API chưa sẵn sàng
