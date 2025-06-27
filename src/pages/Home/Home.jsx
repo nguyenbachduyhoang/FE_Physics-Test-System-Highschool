@@ -15,7 +15,7 @@ import {
 } from "react-icons/fa";
 import { BsQuestionDiamond, BsClock } from "react-icons/bs";
 import Cselect from "../../components/uiBasic/Cselect";
-import { Divider, Modal, Switch, Spin, Form, InputNumber, Select, Button } from "antd";
+import { Divider, Modal, Switch, Form, InputNumber, Select, Button } from "antd";
 import { useNavigate } from "react-router-dom";
 import LayoutContent from "../../components/layoutContent";
 import { analyticsService, questionBankService, examService } from "../../services";
@@ -445,8 +445,7 @@ const Home = () => {
     } catch (error) {
       console.error('AI Exam Generation error:', error);
       toast.dismiss();
-      const errorMessage = examService.formatError(error);
-      toast.error(`❌ Lỗi tạo đề thi AI: ${errorMessage}`, { duration: 5000 });
+     
     } finally {
       setCreatingExam(false);
     }
@@ -566,9 +565,6 @@ const Home = () => {
               </button>
             </div>
             <div className="home-main-stats">
-              {loading ? (
-                <Spin size="large" />
-              ) : (
                 <>
                   <div className="home-main-stat-box">
                     <div className="home-main-stat-icon"><FaRocket /></div>
@@ -591,7 +587,6 @@ const Home = () => {
                     <p className="home-main-stat-label">Chương học</p>
                   </div>
                 </>
-              )}
             </div>
             <h3 className="home-main-feature-title">
               <FaMagic className="home-main-feature-icon" />
@@ -613,24 +608,6 @@ const Home = () => {
           </>
         }
       />
-
-      {/* AI Test Connection Status */}
-      {loading && (
-        <div style={{
-          position: 'fixed',
-          top: '20px',
-          right: '20px',
-          background: '#1890ff',
-          color: '#fff',
-          padding: '12px 20px',
-          borderRadius: '6px',
-          zIndex: 1000,
-          boxShadow: '0 4px 12px rgba(0,0,0,0.15)'
-        }}>
-          🤖 Đang kiểm tra kết nối AI...
-        </div>
-      )}
-
       <Modal
         open={isModalOpen}
         onCancel={() => {
