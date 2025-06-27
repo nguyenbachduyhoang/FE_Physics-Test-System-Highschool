@@ -4,7 +4,7 @@ import "./index.scss";
 import LayoutContent from "../../components/layoutContent";
 import { useNavigate, useParams } from "react-router-dom";
 import { uploadFile } from "../../quiz-uploads/firebaseStorage";
-import { examService } from "../../services";
+import { examService, autoGradingService } from "../../services";
 import { questionBankService } from "../../services/questionBankService";
 import toast from "react-hot-toast";
 
@@ -20,12 +20,13 @@ const PhysicsTestSystem = () => {
   const [showConfirmSubmit, setShowConfirmSubmit] = useState(false);
   const [uploadedFiles, setUploadedFiles] = useState({}); // 2. State
   const [examData, setExamData] = useState(null);
+  const [startTime, setStartTime] = useState(null);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const QUESTIONS_PER_PAGE = 10; // Số câu hỏi trên mỗi trang
+  const QUESTIONS_PER_PAGE = 10; 
   const navigate = useNavigate();
-  const { examId } = useParams(); // Get exam ID from URL
+  const { examId } = useParams(); 
 
-  // Load real questions from AI API for placeholder questions (now using Backend AI service)
   const loadRealQuestionsFromAI = async (placeholderQuestions) => {
     try {
       console.log('Attempting to load real AI questions for placeholders...');
@@ -63,8 +64,8 @@ const PhysicsTestSystem = () => {
     const fetchExamData = async () => {
       try {
         setLoading(true);
+        setStartTime(new Date());
 
-        // If we have specific exam ID from URL, get that exam
         if (examId) {
           const data = await examService.getExamById(examId);
           setExamData(data);
@@ -189,8 +190,79 @@ const PhysicsTestSystem = () => {
   const endIndex = startIndex + QUESTIONS_PER_PAGE;
   const currentPageQuestions = questions.slice(startIndex, endIndex);
 
-  const handleSubmit = () => {
-    navigate("/result");
+  const handleSubmit = async () => {
+    try {
+      setIsSubmitting(true);
+      toast.loading("Đang chấm bài...", { id: "grading" });
+
+      // Tính thời gian làm bài
+      const endTime = new Date();
+      const timeTakenMs = endTime - startTime;
+      const hours = Math.floor(timeTakenMs / (1000 * 60 * 60));
+      const minutes = Math.floor((timeTakenMs % (1000 * 60 * 60)) / (1000 * 60));
+      const seconds = Math.floor((timeTakenMs % (1000 * 60)) / 1000);
+      const timeTaken = `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`; // Format: "HH:mm:ss"
+
+      // Lấy userId từ localStorage hoặc auth context
+      const currentUser = JSON.parse(localStorage.getItem('user') || '{}');
+      const studentUserId = currentUser.userId || currentUser.id;
+
+      if (!studentUserId) {
+        throw new Error("Không tìm thấy thông tin người dùng");
+      }
+
+      // Chuyển đổi selectedAnswers thành format phù hợp cho API
+      const studentAnswers = Object.entries(selectedAnswers).map(([questionId, choiceLabel]) => {
+        // Tìm question để lấy choiceId từ choiceLabel
+        const question = questions.find(q => (q.questionId || q.id) === questionId);
+        if (!question || !question.answerChoices) {
+          return null;
+        }
+
+        const selectedChoice = question.answerChoices.find(choice => choice.choiceLabel === choiceLabel);
+        if (!selectedChoice) {
+          return null;
+        }
+
+        return {
+          questionId: questionId,
+          selectedChoiceId: selectedChoice.choiceId,
+          answeredAt: new Date().toISOString()
+        };
+      }).filter(answer => answer !== null);
+
+      if (studentAnswers.length === 0) {
+        throw new Error("Không có câu trả lời nào để chấm điểm");
+      }
+
+      // Gọi API chấm điểm tự động
+      const gradingResult = await autoGradingService.gradeExam(
+        examId,
+        studentAnswers,
+        studentUserId,
+        timeTaken // Format: "HH:mm:ss"
+      );
+
+      // Lưu kết quả chấm điểm để truyền sang trang Result
+      localStorage.setItem('latestGradingResult', JSON.stringify(gradingResult));
+
+      toast.success("Chấm bài thành công!", { id: "grading" });
+      
+      // Chuyển đến trang kết quả với data
+      navigate("/result", { 
+        state: { 
+          gradingResults: gradingResult,
+          examData: examData,
+          timeTaken: timeTaken
+        }
+      });
+
+    } catch (error) {
+      console.error("Lỗi khi chấm bài:", error);
+      toast.error(`Lỗi khi chấm bài: ${error.message || error}`, { id: "grading" });
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   const handleFileUpload = async (questionId, file) => {
@@ -398,8 +470,9 @@ const PhysicsTestSystem = () => {
               <button
                 className="submit-btn"
                 onClick={() => setShowConfirmSubmit(true)}
+                disabled={isSubmitting}
               >
-                Nộp bài
+                {isSubmitting ? "Đang chấm bài..." : "Nộp bài"}
               </button>
             </div>
           </div>

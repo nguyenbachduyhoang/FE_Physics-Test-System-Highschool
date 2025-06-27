@@ -131,8 +131,11 @@ export const examService = {
 
   // Get student's exam history (for future implementation)
   getMyExamHistory: async () => {
-    // This endpoint doesn't exist yet in backend, but preparing for future
-    const response = await examAPI.get('/exams/my-history');
+    const user = JSON.parse(localStorage.getItem('user'));
+    if (!user || !user.id) {
+      throw new Error('User not found');
+    }
+    const response = await examAPI.get(`/Exams/history/${user.id}`);
     return response.data.success ? response.data.data : response.data;
   },
 
@@ -288,7 +291,18 @@ export const examService = {
   createFromTemplate: async (templateId, examData) => {
     const response = await examAPI.post(`/exams/templates/${templateId}`, examData);
     return response.data.success ? response.data.data : response.data;
-  }
+  },
+
+  // Get exam history for a specific user
+  getExamHistory: async (userId) => {
+    try {
+      const response = await examAPI.get(`/exams/history/${userId}`);
+      return response.data;
+    } catch (error) {
+      console.error('Error fetching exam history:', error);
+      throw error;
+    }
+  },
 };
 
 export default examService;

@@ -119,23 +119,8 @@ export const questionBankService = {
   // Get all chapters for question categorization
   getChapters: async () => {
     try {
-      const response = await questionAPI.get('/ai-question/chapters');
-      if (response.data.success) {
-        const data = response.data.data;
-        if (data && data.$values && Array.isArray(data.$values)) {
-          console.log('Found $values array with', data.$values.length, 'chapters');
-          return data.$values;
-        } else if (Array.isArray(data)) {
-          console.log('Found direct array with', data.length, 'chapters');
-          return data;
-        } else {
-          console.warn('Unexpected data format:', data);
-          return [];
-        }
-      } else {
-        console.error('API returned success=false:', response.data.message);
-        return [];
-      }
+      const response = await questionAPI.get('/Topics');
+      return response.data || [];
     } catch (error) {
       console.error('Chapters API error:', error.message);
       return [];
@@ -161,41 +146,40 @@ export const questionBankService = {
   // Get all questions with filters
   getQuestions: async (filters = {}) => {
     try {
-      // Sử dụng AI endpoint để lấy questions
-      const response = await questionAPI.get('/ai-question/list', { params: filters });
-      return response.data.success ? response.data.data : response.data;
+      const response = await questionAPI.get('/ai-question', { params: filters });
+      return response.data.questions || [];
     } catch (err) {
-      // Fallback: return empty array nếu API chưa sẵn sàng
-      console.warn('Questions API not available:', err.message);
+      console.warn('Questions API error:', err.message);
       return [];
     }
   },
 
   // Get question by ID
   getQuestionById: async (id) => {
-    // This endpoint doesn't exist yet in backend, preparing for future
-    const response = await questionAPI.get(`/questions/${id}`);
-    return response.data.success ? response.data.data : response.data;
+    const response = await questionAPI.get(`/ai-question/${id}`);
+    return response.data;
   },
 
   // Create new question manually
   createQuestion: async (questionData) => {
-    // This endpoint doesn't exist yet in backend, preparing for future
-    const response = await questionAPI.post('/questions', questionData);
-    return response.data.success ? response.data.data : response.data;
+    const response = await questionAPI.post('/ai-question/generate', {
+      ...questionData,
+      saveToDatabase: true
+    });
+    return response.data;
   },
 
   // Update question
   updateQuestion: async (id, questionData) => {
-    // This endpoint doesn't exist yet in backend, preparing for future
-    const response = await questionAPI.put(`/questions/${id}`, questionData);
-    return response.data.success ? response.data.data : response.data;
+    const response = await questionAPI.post(`/ai-question/improve/${id}`, questionData);
+    return response.data;
   },
 
   // Delete question
   deleteQuestion: async (id) => {
-    // This endpoint doesn't exist yet in backend, preparing for future
-    const response = await questionAPI.delete(`/questions/${id}`);
+    const response = await questionAPI.post(`/ai-question/validate/${id}`, {
+      action: 'delete'
+    });
     return response.data;
   },
 

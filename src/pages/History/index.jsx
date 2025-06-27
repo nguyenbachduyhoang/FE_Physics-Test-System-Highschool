@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import LayoutContent from "../../components/layoutContent";
 import {
   FaChalkboardTeacher,
@@ -13,6 +13,7 @@ import {
   FaBookOpen,
   FaChevronDown,
 } from "react-icons/fa";
+import { examService } from "../../services";
 import "./index.scss";
 
 const stats = [
@@ -22,52 +23,27 @@ const stats = [
   { value: "18h", label: "Thời gian học", icon: FaClock },
 ];
 
-const historyList = [
-  {
-    id: 1,
-    score: 9.5,
-    total: 10,
-    subject: "Vật lý - Lớp 10",
-    correct: 39,
-    totalQuestions: 40,
-    time: "15 phút",
-    date: "Hôm nay, 18:30",
-    difficulty: "Trung bình",
-    accuracy: 97.5,
-  },
-  {
-    id: 2,
-    score: 9.0,
-    total: 10,
-    subject: "Vật lý - Lớp 10",
-    correct: 36,
-    totalQuestions: 40,
-    time: "20 phút",
-    date: "Hôm qua, 14:20",
-    difficulty: "Khó",
-    accuracy: 90,
-  },
-  {
-    id: 3,
-    score: 8.5,
-    total: 10,
-    subject: "Vật lý - Lớp 10",
-    correct: 34,
-    totalQuestions: 40,
-    time: "18 phút",
-    date: "2 ngày trước, 16:45",
-    difficulty: "Dễ",
-    accuracy: 85,
-  },
-];
-
-const classes = ["Lớp", "10", "11", "12"];
+const classes = ["Lớp", "10", "11", "12"];
 const timeFilters = ["Tất cả thời gian", "Hôm nay", "Tuần này", "Tháng này"];
 
 const HistoryContent = () => {
   const [search, setSearch] = useState("");
   const [subjectFilter, setSubjectFilter] = useState("Tất cả môn học");
   const [timeFilter, setTimeFilter] = useState("Tất cả thời gian");
+  const [historyList, setHistoryList] = useState([]);
+
+  useEffect(() => {
+    const fetchHistory = async () => {
+      try {
+        const data = await examService.getMyExamHistory();
+        setHistoryList(data);
+      } catch (error) {
+        console.error("Error fetching history:", error);
+      }
+    };
+
+    fetchHistory();
+  }, []);
 
   const filteredHistory = historyList.filter((item) => {
     const matchesSearch = item.subject
@@ -164,7 +140,7 @@ const HistoryContent = () => {
                       : "average"
                   }`}
                 >
-                  {item.score}/10
+                  {item.score}/{item.total}
                 </div>
                 <div className="item-info">
                   <h3 className="subject">{item.subject}</h3>
@@ -181,7 +157,7 @@ const HistoryContent = () => {
                       {item.difficulty}
                     </span>
                     <span className="accuracy">
-                      {item.accuracy}% độ chính xác
+                      {item.accuracy.toFixed(1)}% độ chính xác
                     </span>
                   </div>
                 </div>
@@ -202,7 +178,7 @@ const HistoryContent = () => {
             <div className="progress-section">
               <div className="progress-header">
                 <span>Tiến độ hoàn thành</span>
-                <span>{item.accuracy}%</span>
+                <span>{item.accuracy.toFixed(1)}%</span>
               </div>
               <div className="progress-bar">
                 <div
