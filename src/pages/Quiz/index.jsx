@@ -9,7 +9,7 @@ import { questionBankService } from "../../services/questionBankService";
 import toast from "react-hot-toast";
 
 const PhysicsTestSystem = () => {
-  const [timeLeft, setTimeLeft] = useState(20 * 60);
+  const [timeLeft, setTimeLeft] = useState(null);
   const [selectedAnswers, setSelectedAnswers] = useState({});
   const [markedForReview, setMarkedForReview] = useState({});
   const [questions, setQuestions] = useState([]);
@@ -69,6 +69,10 @@ const PhysicsTestSystem = () => {
         if (examId) {
           const data = await examService.getExamById(examId);
           setExamData(data);
+          
+          // Set thời gian từ exam data
+          const duration = data.durationMinutes || 20; // Fallback to 20 minutes if not set
+          setTimeLeft(duration * 60); // Convert to seconds
 
           // Safe extraction of questions from exam structure
           let extractedQuestions = [];
@@ -135,13 +139,23 @@ const PhysicsTestSystem = () => {
     fetchExamData();
   }, [examId]);
 
+  // Chỉ bắt đầu đếm ngược khi đã có thời gian
   useEffect(() => {
+    if (timeLeft === null) return;
+
     const timer = setInterval(() => {
-      setTimeLeft((prev) => (prev > 0 ? prev - 1 : 0));
+      setTimeLeft((prev) => {
+        if (prev <= 0) {
+          clearInterval(timer);
+          handleSubmit(); // Tự động nộp bài khi hết giờ
+          return 0;
+        }
+        return prev - 1;
+      });
     }, 1000);
 
     return () => clearInterval(timer);
-  }, []);
+  }, [timeLeft]);
 
   const formatTime = (seconds) => {
     const mins = Math.floor(seconds / 60);

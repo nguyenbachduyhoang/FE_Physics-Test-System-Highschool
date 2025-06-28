@@ -1,5 +1,6 @@
 .result {
   padding: 12px;
+  background: #fff;
 
   .title {
     color: #19d6b4;
@@ -7,6 +8,26 @@
     font-size: 2rem;
     font-weight: 700;
     margin-bottom: 1.5rem;
+  }
+
+  .stats-card {
+    transform-style: preserve-3d;
+    perspective: 1000px;
+    will-change: transform;
+  }
+
+  .question {
+    transform-style: preserve-3d;
+    perspective: 1000px;
+    will-change: transform;
+  }
+
+  .stats-value {
+    will-change: contents;
+  }
+
+  .ant-progress-circle {
+    will-change: transform;
   }
 }
 
@@ -19,24 +40,54 @@
   &-card {
     flex: 1;
     background: #fff;
-    border-radius: 1rem;
-    padding: 12px;
+    border-radius: 12px;
+    padding: 1.5rem;
     display: flex;
     flex-direction: column;
     align-items: center;
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-    height: 9rem;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+    min-width: 200px;
+    border: 1px solid rgba(0, 0, 0, 0.05);
+
+    &:hover {
+      border-color: rgba(25, 214, 180, 0.3);
+    }
+  }
+
+  &-icon {
+    color: #19d6b4;
+    font-size: 1.8rem;
+    margin-bottom: 0.8rem;
   }
 
   &-label {
-    color: #222;
-    font-weight: 500;
+    color: #666;
+    font-size: 1rem;
+    margin-bottom: 0.5rem;
+    text-align: center;
   }
 
   &-value {
-    color: #16bfae;
-    font-weight: 700;
-    font-size: 1.25rem;
+    color: #19d6b4;
+    font-size: 1.8rem;
+    font-weight: 600;
+    margin-bottom: 0.5rem;
+    text-align: center;
+  }
+
+  &-subtitle {
+    font-size: 0.9rem;
+    color: #666;
+    text-align: center;
+    margin-top: 0.3rem;
+
+    &.error {
+      color: #ff4d4f;
+      font-weight: 500;
+      padding: 2px 8px;
+      border-radius: 4px;
+      background: rgba(255, 77, 79, 0.1);
+    }
   }
 }
 
@@ -75,24 +126,46 @@
 .question {
   background: #fff;
   border-radius: 0.5rem;
-  padding: 1rem;
-  margin-bottom: 1rem;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  padding: 1.5rem;
+  margin-bottom: 1.5rem;
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.08);
+  transition: all 0.3s ease;
+  border-left: 4px solid transparent;
+
+  &:hover {
+    transform: translateX(5px);
+    box-shadow: 0 6px 20px rgba(0, 0, 0, 0.12);
+    border-left-color: #19d6b4;
+  }
 
   &-title {
     font-weight: 600;
     color: #222;
-    margin-bottom: 0.5rem;
+    margin-bottom: 1rem;
+    font-size: 1.1rem;
   }
 
   &-answer {
-    margin: 0.5rem 0;
+    margin: 0.8rem 0;
+    padding: 0.8rem;
+    border-radius: 0.5rem;
+    background: rgba(248, 249, 250, 0.8);
+    transition: all 0.3s ease;
+
+    &:hover {
+      background: rgba(248, 249, 250, 1);
+      transform: translateX(5px);
+    }
   }
 
   &-analysis {
-    color: #222;
-    margin-top: 0.5rem;
+    color: #666;
+    margin-top: 1rem;
     font-style: italic;
+    padding: 0.8rem;
+    border-radius: 0.5rem;
+    background: rgba(25, 214, 180, 0.05);
+    border-left: 3px solid #19d6b4;
   }
 }
 
@@ -124,15 +197,45 @@
   font-size: 1.1rem;
   font-weight: 600;
   cursor: pointer;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+  transition: all 0.3s ease;
+  position: relative;
+  overflow: hidden;
+
+  &::before {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 0;
+    height: 0;
+    background: rgba(255, 255, 255, 0.2);
+    border-radius: 50%;
+    transform: translate(-50%, -50%);
+    transition: width 0.6s ease, height 0.6s ease;
+  }
+
+  &:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(0, 0, 0, 0.15);
+
+    &::before {
+      width: 300px;
+      height: 300px;
+    }
+  }
+
+  &:active {
+    transform: translateY(1px);
+  }
 
   &--primary {
-    background: #19d6b4;
+    background: linear-gradient(135deg, #19d6b4, #16bfae);
     color: #fff;
   }
 
   &--danger {
-    background: #b71c1c;
+    background: linear-gradient(135deg, #b71c1c, #d32f2f);
     color: #fff;
   }
 }
@@ -145,12 +248,19 @@
 
 // Auto Grading specific styles
 .ai-analysis {
-  background: rgba(25, 214, 180, 0.1);
-  padding: 16px;
-  border-radius: 8px;
-  margin-bottom: 20px;
+  background: rgba(25, 214, 180, 0.08);
+  padding: 1.5rem;
+  border-radius: 1rem;
+  margin-bottom: 1.5rem;
   border-left: 4px solid #19d6b4;
+  transition: all 0.3s ease;
   
+  &:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 6px 20px rgba(25, 214, 180, 0.15);
+    background: rgba(25, 214, 180, 0.1);
+  }
+
   .difficulty-breakdown {
     margin-top: 12px;
     
@@ -277,5 +387,166 @@
     .btn {
       width: 100%;
     }
+  }
+}
+
+// Thêm styles mới cho phần phân tích & thống kê
+.analysis-section {
+  background: linear-gradient(135deg, rgba(25, 214, 180, 0.05), rgba(25, 214, 180, 0.02));
+  border-radius: 16px;
+  padding: 1.5rem;
+  margin: 2rem 0;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.05);
+  border: 1px solid rgba(25, 214, 180, 0.1);
+  
+  h2 {
+    color: #19d6b4;
+    font-size: 1.5rem;
+    font-weight: 600;
+    margin-bottom: 1.5rem;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+
+    svg {
+      font-size: 1.8rem;
+    }
+  }
+}
+
+.suggestion-item {
+  background: #fff;
+  border-radius: 12px;
+  padding: 1rem 1.2rem;
+  margin-bottom: 1rem;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+  border-left: 3px solid #19d6b4;
+  transition: all 0.3s ease;
+  display: flex;
+  align-items: flex-start;
+  gap: 1rem;
+
+  svg {
+    color: #19d6b4;
+    font-size: 1.2rem;
+    margin-top: 0.2rem;
+  }
+
+  &:hover {
+    transform: translateX(5px);
+    box-shadow: 0 4px 15px rgba(25, 214, 180, 0.15);
+  }
+}
+
+.study-plan {
+  background: #fff;
+  border-radius: 12px;
+  padding: 1.2rem;
+  margin-top: 1rem;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+  border: 1px solid rgba(25, 214, 180, 0.1);
+  transition: all 0.3s ease;
+
+  &:hover {
+    box-shadow: 0 4px 15px rgba(25, 214, 180, 0.1);
+  }
+
+  h3 {
+    color: #19d6b4;
+    font-size: 1.1rem;
+    font-weight: 600;
+    margin-bottom: 1rem;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+  }
+}
+
+.difficulty-analysis {
+  margin-top: 1.5rem;
+  
+  h3 {
+    color: #19d6b4;
+    font-size: 1.1rem;
+    font-weight: 600;
+    margin-bottom: 1rem;
+  }
+
+  .difficulty-tags {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.8rem;
+    margin-top: 1rem;
+
+    .difficulty-tag {
+      padding: 0.5rem 1rem;
+      border-radius: 20px;
+      font-size: 0.9rem;
+      font-weight: 500;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      transition: all 0.3s ease;
+      
+      &.easy {
+        background: rgba(76, 175, 80, 0.1);
+        color: #4CAF50;
+        border: 1px solid rgba(76, 175, 80, 0.2);
+        
+        &:hover {
+          background: rgba(76, 175, 80, 0.15);
+          transform: translateY(-2px);
+        }
+      }
+      
+      &.medium {
+        background: rgba(255, 152, 0, 0.1);
+        color: #FF9800;
+        border: 1px solid rgba(255, 152, 0, 0.2);
+        
+        &:hover {
+          background: rgba(255, 152, 0, 0.15);
+          transform: translateY(-2px);
+        }
+      }
+      
+      &.hard {
+        background: rgba(244, 67, 54, 0.1);
+        color: #F44336;
+        border: 1px solid rgba(244, 67, 54, 0.2);
+        
+        &:hover {
+          background: rgba(244, 67, 54, 0.15);
+          transform: translateY(-2px);
+        }
+      }
+      
+      &.very_hard {
+        background: rgba(156, 39, 176, 0.1);
+        color: #9C27B0;
+        border: 1px solid rgba(156, 39, 176, 0.2);
+        
+        &:hover {
+          background: rgba(156, 39, 176, 0.15);
+          transform: translateY(-2px);
+        }
+      }
+    }
+  }
+}
+
+// Tùy chỉnh Progress bar của Ant Design
+.ant-progress {
+  width: 100%;
+  margin-top: 0.5rem;
+
+  .ant-progress-bg {
+    height: 4px !important;
+    border-radius: 2px;
+    background: #19d6b4 !important;
+  }
+
+  .ant-progress-inner {
+    background-color: rgba(25, 214, 180, 0.1);
   }
 }
