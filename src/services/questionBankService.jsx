@@ -119,11 +119,19 @@ export const questionBankService = {
   // Get all chapters for question categorization
   getChapters: async () => {
     try {
-      const response = await questionAPI.get('/Topics');
-      return response.data || [];
+      console.log('Fetching chapters from API...');
+      const response = await questionAPI.get('/ai-question/chapters');
+      console.log('API Response:', response);
+
+      if (response.data.success && Array.isArray(response.data.data)) {
+        return response;
+      } else {
+        console.warn('Invalid chapters data format:', response.data);
+        throw new Error('Dữ liệu chapters không hợp lệ');
+      }
     } catch (error) {
-      console.error('Chapters API error:', error.message);
-      return [];
+      console.error('Chapters API error:', error);
+      throw error; // Throw error để component có thể xử lý
     }
   },
 
@@ -137,6 +145,22 @@ export const questionBankService = {
       return Array.isArray(data) ? data : [];
     } catch (error) {
       console.warn('Chapters API not available:', error.message);
+      return [];
+    }
+  },
+
+  // Get unique grades from chapters
+  getGrades: async () => {
+    try {
+      const response = await questionAPI.get('/ai-question/chapters');
+      if (response.data.success && Array.isArray(response.data.data)) {
+        // Lấy danh sách grade duy nhất và sắp xếp
+        const grades = [...new Set(response.data.data.map(chapter => chapter.grade))];
+        return grades.sort((a, b) => a - b);
+      }
+      return [];
+    } catch (error) {
+      console.error('Get grades error:', error.message);
       return [];
     }
   },

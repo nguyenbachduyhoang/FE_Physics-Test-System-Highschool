@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { Outlet, Navigate } from "react-router-dom";
+import { Outlet, Navigate, useNavigate } from "react-router-dom";
 import "./AdminLayout.scss";
 import AdminSidebar from "../../components/Sidebar";
 import { authService } from "../../services/authService";
@@ -9,6 +9,7 @@ export default function AdminLayout() {
     const [isCollapsed, setIsCollapsed] = useState(false);
     const [isLoading, setIsLoading] = useState(true);
     const [user, setUser] = useState(null);
+    const navigate = useNavigate();
 
     useEffect(() => {
         const checkAuth = () => {
@@ -23,6 +24,17 @@ export default function AdminLayout() {
         
         checkAuth();
     }, []);
+
+    const handleLogout = async () => {
+        try {
+            await authService.logout();
+            navigate('/login', { replace: true });
+        } catch (error) {
+            console.error("Lỗi khi đăng xuất:", error);
+            // Ngay cả khi có lỗi, vẫn chuyển hướng người dùng về trang login
+            navigate('/login', { replace: true });
+        }
+    };
 
     // Loading state
     if (isLoading) {
@@ -44,7 +56,7 @@ export default function AdminLayout() {
                 <div className="access-denied-content">
                     <h2>Không có quyền truy cập</h2>
                     <p>Bạn không có quyền truy cập vào trang quản trị.</p>
-                    <button onClick={() => window.location.href = '/home'}>
+                    <button onClick={() => navigate('/home', { replace: true })}>
                         Về trang chủ
                     </button>
                 </div>
@@ -67,10 +79,7 @@ export default function AdminLayout() {
                         <div className="admin-user-info">
                             <span>Xin chào, {user.fullName || user.username}</span>
                             <button 
-                                onClick={() => {
-                                    authService.logout();
-                                    window.location.href = '/login';
-                                }}
+                                onClick={handleLogout}
                                 className="logout-btn"
                             >
                                 Đăng xuất
