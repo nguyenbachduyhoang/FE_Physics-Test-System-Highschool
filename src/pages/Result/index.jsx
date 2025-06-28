@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import LayoutContent from "../../components/layoutContent";
 import "./index.scss";
 import {
@@ -16,7 +16,10 @@ import { useNavigate, useLocation } from "react-router-dom";
 import { autoGradingService } from "../../services";
 import { Modal, Spin, Alert, Collapse, Tag, Progress, Divider } from "antd";
 import toast from "react-hot-toast";
+import gsap from 'gsap';
+import { ScrollTrigger } from 'gsap/ScrollTrigger';
 
+gsap.registerPlugin(ScrollTrigger);
 
 const resultData = {
   score: 8.5,
@@ -136,6 +139,12 @@ const ResultContent = () => {
   const [detailedFeedback, setDetailedFeedback] = useState({});
   const [showDetailedAnalysis, setShowDetailedAnalysis] = useState(false);
 
+  // Thêm refs cho animation
+  const statsRef = useRef(null);
+  const titleRef = useRef(null);
+  const analysisRef = useRef(null);
+  const questionsRef = useRef(null);
+
   useEffect(() => {
     const loadGradingResults = async () => {
       try {
@@ -169,6 +178,118 @@ const ResultContent = () => {
 
     loadGradingResults();
   }, [location.state]);
+
+  // Thêm animation khi component mount
+  useEffect(() => {
+    if (!loading && gradingData) {
+      // Title animation
+      gsap.from(titleRef.current, {
+        y: -50,
+        opacity: 0,
+        duration: 0.8,
+        ease: "power3.out"
+      });
+
+      // Stats cards animation với hiệu ứng 3D
+      gsap.from(".stats-card", {
+        scale: 0.8,
+        opacity: 0,
+        rotationY: 45,
+        duration: 0.6,
+        stagger: 0.2,
+        ease: "back.out(1.7)",
+        transformPerspective: 1000
+      });
+
+      // Questions animation với hiệu ứng 3D
+      gsap.from(".question", {
+        opacity: 0,
+        rotationX: -30,
+        y: 50,
+        duration: 0.8,
+        stagger: 0.2,
+        ease: "power2.out",
+        transformPerspective: 1000,
+        scrollTrigger: {
+          trigger: questionsRef.current,
+          start: "top center+=100",
+          toggleActions: "play none none reverse"
+        }
+      });
+
+      // Progress bars animation
+      gsap.from(".ant-progress-circle", {
+        rotation: 360,
+        scale: 0.5,
+        opacity: 0,
+        duration: 1.5,
+        ease: "power2.out",
+        stagger: 0.2
+      });
+
+      // Stats numbers counting animation
+      const statsElements = document.querySelectorAll('.stats-value');
+      statsElements.forEach(stat => {
+        const value = parseFloat(stat.textContent);
+        if (!isNaN(value)) {
+          gsap.from(stat, {
+            textContent: 0,
+            duration: 2,
+            ease: "power2.out",
+            snap: { textContent: 1 },
+            onUpdate: function() {
+              this.targets()[0].textContent = Number(this.targets()[0].textContent).toFixed(1);
+            }
+          });
+        }
+      });
+    }
+  }, [loading, gradingData]);
+
+  // Thêm hover animations
+  useEffect(() => {
+    // Stats card hover effect
+    gsap.utils.toArray(".stats-card").forEach(card => {
+      card.addEventListener("mouseenter", () => {
+        gsap.to(card, {
+          rotationY: 10,
+          scale: 1.05,
+          duration: 0.3,
+          ease: "power2.out"
+        });
+      });
+      
+      card.addEventListener("mouseleave", () => {
+        gsap.to(card, {
+          rotationY: 0,
+          scale: 1,
+          duration: 0.3,
+          ease: "power2.out"
+        });
+      });
+    });
+
+    // Question hover effect
+    gsap.utils.toArray(".question").forEach(question => {
+      question.addEventListener("mouseenter", () => {
+        gsap.to(question, {
+          scale: 1.02,
+          rotationX: 2,
+          duration: 0.3,
+          ease: "power2.out"
+        });
+      });
+      
+      question.addEventListener("mouseleave", () => {
+        gsap.to(question, {
+          scale: 1,
+          rotationX: 0,
+          duration: 0.3,
+          ease: "power2.out"
+        });
+      });
+    });
+  }, []);
 
   const handleSave = () => {
     // Lưu kết quả vào history hoặc database
@@ -215,8 +336,8 @@ const ResultContent = () => {
 
   return (
     <div className="result">
-      <h1 className="title">
-        {isRealData ? `Kết Quả Bài Thi - ${displayData.examName || 'PhyGen'}` : 'Kết Quả Bài Thi - PhyGen (Mẫu)'}
+      <h1 className="title" ref={titleRef}>
+        Kết Quả Bài Thi - {gradingData?.examName || "Đề thi - Động lực học chất điểm"}
       </h1>
       
       {!isRealData && (
@@ -229,112 +350,93 @@ const ResultContent = () => {
         />
       )}
 
-      <div className="stats">
+      <div className="stats" ref={statsRef}>
         <div className="stats-card">
           <FaRocket className="stats-icon" />
           <div className="stats-label">Điểm số</div>
           <div className="stats-value">
             {isRealData 
-              ? `${displayData.totalPointsEarned?.toFixed(1) || 0} / ${displayData.maxPossiblePoints?.toFixed(1) || 10}`
-              : `${resultData.score} / ${resultData.total}`
+              ? `${displayData.totalPointsEarned?.toFixed(1)} / ${displayData.maxPossiblePoints?.toFixed(1)}`
+              : "3.0 / 10.0"
             }
           </div>
-          {isRealData && (
-            <div className="stats-subtitle">
-              <Tag color={displayData.percentageScore >= 80 ? 'green' : displayData.percentageScore >= 60 ? 'orange' : 'red'}>
-                {displayData.percentageScore?.toFixed(1)}% - {autoGradingService.getGradeText(displayData.grade)}
-              </Tag>
-            </div>
-          )}
+          <div className="stats-subtitle error">30.0% - Yếu</div>
         </div>
+
         <div className="stats-card">
           <FaUsers className="stats-icon" />
           <div className="stats-label">Số câu đúng</div>
           <div className="stats-value">
             {isRealData 
-              ? `${displayData.correctAnswers || 0} / ${displayData.totalQuestions || 0}`
-              : `${resultData.correct} / ${resultData.totalQuestions}`
+              ? `${displayData.correctAnswers} / ${displayData.totalQuestions}`
+              : "3 / 10"
             }
           </div>
-          {isRealData && (
-            <Progress 
-              percent={displayData.totalQuestions > 0 ? (displayData.correctAnswers / displayData.totalQuestions * 100) : 0}
-              size="small"
-              status={displayData.correctAnswers / displayData.totalQuestions >= 0.8 ? 'success' : 'normal'}
-            />
-          )}
+          <Progress percent={30} showInfo={false} strokeColor="#19d6b4" />
         </div>
+
         <div className="stats-card">
           <FaChartLine className="stats-icon" />
           <div className="stats-label">Thời gian làm bài</div>
           <div className="stats-value">
-            {isRealData ? (displayData.timeTaken || 'N/A') : resultData.time}
+            {isRealData ? displayData.timeTaken || "N/A" : "N/A"}
           </div>
         </div>
-        {isRealData && (
-          <div className="stats-card">
-            <FaTrophy className="stats-icon" />
-            <div className="stats-label">Hiệu suất</div>
-            <div className="stats-value">
-              <Tag color={
-                displayData.analysis?.performanceLevel === 'Excellent' ? 'gold' :
-                displayData.analysis?.performanceLevel === 'Good' ? 'green' :
-                displayData.analysis?.performanceLevel === 'Average' ? 'blue' : 'red'
-              }>
-                {autoGradingService.getPerformanceLevelText(displayData.analysis?.performanceLevel)}
-              </Tag>
-            </div>
+
+        <div className="stats-card">
+          <FaTrophy className="stats-icon" />
+          <div className="stats-label">Hiệu suất</div>
+          <div className="stats-value">
+            {isRealData 
+              ? autoGradingService.getPerformanceLevelText(displayData.analysis?.performanceLevel)
+              : "Chưa xác định"
+            }
           </div>
-        )}
+          <div className="stats-subtitle error">Chưa xác định</div>
+        </div>
       </div>
-      <h2 className="section-title">
-        <FaBrain style={{ marginRight: '8px' }} />
-        Phân tích & Thống kê
-      </h2>
-      
-      {isRealData && displayData.analysis ? (
-        <div className="ai-analysis">
-          <div className="tip">
-            <FaLightbulb style={{ marginRight: '8px', color: '#faad14' }} />
+
+      <div className="analysis-section">
+        <h2>
+          <FaBrain /> Phân tích & Thống kê
+        </h2>
+        
+        <div className="suggestion-item">
+          <FaLightbulb />
+          <div>
             <strong>Gợi ý luyện tập:</strong>
-            <ul style={{ marginLeft: '20px', marginTop: '8px' }}>
-              {displayData.analysis.recommendations?.map((rec, index) => (
-                <li key={index}>{rec}</li>
-              )) || <li>Tiếp tục luyện tập để cải thiện kỹ năng</li>}
+            <ul>
+              <li>Cần tập trung ôn tập các chủ đề: Điện học, Từ học</li>
+              <li>Cần luyện tập thêm các bài tập khó</li>
             </ul>
           </div>
-          
-          {displayData.analysis.studyPlan && (
-            <div className="tip">
-              <span role="img" aria-label="system">📚</span>
-              <strong>Kế hoạch học tập:</strong> {displayData.analysis.studyPlan}
-            </div>
-          )}
+        </div>
 
-          {displayData.difficultyBreakdown && Object.keys(displayData.difficultyBreakdown).length > 0 && (
-            <div className="difficulty-breakdown">
-              <h3>Phân tích theo độ khó:</h3>
-              {Object.entries(displayData.difficultyBreakdown).map(([level, count]) => (
-                <Tag key={level} color="blue" style={{ margin: '4px' }}>
-                  {level}: {count} câu đúng
-                </Tag>
-              ))}
+        <div className="study-plan">
+          <h3>
+            <FaChartLine /> Kế hoạch học tập
+          </h3>
+          <p>Xem lại lý thuyết và làm thêm bài tập về các chủ đề trênTăng dần độ khó của bài tập khi luyện tập</p>
+        </div>
+
+        <div className="difficulty-analysis">
+          <h3>Phân tích theo độ khó:</h3>
+          <div className="difficulty-tags">
+            <div className="difficulty-tag easy">
+              <span>Dễ:</span> 1 câu đúng
             </div>
-          )}
-        </div>
-      ) : (
-        <div>
-          <div className="tip">
-            <FaLightbulb style={{ marginRight: '8px', color: '#faad14' }} />
-            Gợi ý luyện tập: {resultData.suggestions[0]}
-          </div>
-          <div className="tip">
-            <span role="img" aria-label="system">📝</span>
-            Hệ thống có thể tạo đề luyện tương tự theo chủ đề này.{" "}
-            <a href="#" className="link">[Làm đề tương tự]</a>
+            <div className="difficulty-tag medium">
+              <span>Trung bình:</span> 2 câu đúng
+            </div>
+            <div className="difficulty-tag hard">
+              <span>Khó:</span> 1 câu đúng
+            </div>
+            <div className="difficulty-tag very_hard">
+              <span>Rất khó:</span> 6 câu đúng
+            </div>
           </div>
         </div>
-      )}
+      </div>
 
       <Divider />
 
@@ -353,7 +455,7 @@ const ResultContent = () => {
         )}
       </div>
 
-      <div className="questions">
+      <div className="questions" ref={questionsRef}>
         {isRealData && displayData.questionResults ? (
           <Collapse ghost>
             {displayData.questionResults.map((result, index) => (
@@ -383,7 +485,7 @@ const ResultContent = () => {
                   <div className="question-answer">
                     <span className="label">Đáp án đúng:</span>
                     <span className="correct">
-                      {result.correctChoiceLabel}. {result.correctChoiceText}
+                      {result.correctChoiceimage.pngLabel}. {result.correctChoiceText}
                     </span>
                   </div>
                   {result.explanation && (
@@ -448,7 +550,7 @@ const ResultContent = () => {
           ))
         )}
       </div>
-      <div className="actions">
+      <div className="actions" ref={analysisRef}>
         <button className="btn btn--primary" onClick={handleSave}>
           <FaRegCheckSquare style={{ marginRight: 8 }} /> Lưu kết quả
         </button>

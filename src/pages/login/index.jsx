@@ -13,6 +13,25 @@ import { signInWithPopup } from "firebase/auth";
 import { auth, provider } from "../../firebase"; 
 import toast from "react-hot-toast";
 import { authService } from "../../services";
+import { motion } from "framer-motion";
+
+// Animation variants
+const containerVariants = {
+  hidden: { opacity: 0 },
+  visible: { 
+    opacity: 1,
+    transition: { duration: 0.5, when: "beforeChildren", staggerChildren: 0.1 }
+  }
+};
+
+const itemVariants = {
+  hidden: { y: 20, opacity: 0 },
+  visible: { 
+    y: 0, 
+    opacity: 1,
+    transition: { duration: 0.5 }
+  }
+};
 
 function Login() {
   const navigate = useNavigate();
@@ -111,13 +130,40 @@ function Login() {
 
   return (
     <GoogleOAuthProvider clientId="YOUR_GOOGLE_CLIENT_ID">
-      <div className="login-container">
+      <motion.div 
+        className="login-container"
+        initial="hidden"
+        animate="visible"
+        variants={containerVariants}
+      >
         <Row className="login-layout">
-          <Col xs={0} sm={0} md={16} className="left-section" />
+          <Col xs={0} sm={0} md={16} className="left-section">
+            <motion.div
+              initial={{ x: -100, opacity: 0 }}
+              animate={{ x: 0, opacity: 1 }}
+              transition={{ duration: 0.8, ease: "easeOut" }}
+            >
+              {/* Add your left section content here */}
+            </motion.div>
+          </Col>
           <Col xs={24} sm={24} md={8} className="right-section">
-            <div className="login-card">
-              <p className="title">Đăng Nhập</p>
-              <img src="/images/22.png" alt="Logo 1" />
+            <motion.div 
+              className="login-card"
+              variants={itemVariants}
+            >
+              <motion.p 
+                className="title"
+                variants={itemVariants}
+              >
+                Đăng Nhập
+              </motion.p>
+              <motion.img 
+                src="/images/22.png" 
+                alt="Logo 1" 
+                variants={itemVariants}
+                whileHover={{ scale: 1.05 }}
+                transition={{ duration: 0.2 }}
+              />
 
               <Form
                 name="login"
@@ -128,42 +174,47 @@ function Login() {
               >
                 <Row gutter={[8, 8]}>
                   <Col span={24}>
-                    <Form.Item
-                      name="username"
-                      rules={[
-                        {
-                          required: true,
-                          message: "Vui lòng nhập tên đăng nhập!",
-                        },
-                      ]}
-                    >
-                      <CInputLabel
-                        label="TÊN ĐĂNG NHẬP"
-                        prefix={<UserOutlined />}
-                      />
-                    </Form.Item>
+                    <motion.div variants={itemVariants}>
+                      <Form.Item
+                        name="username"
+                        rules={[
+                          {
+                            required: true,
+                            message: "Vui lòng nhập tên đăng nhập!",
+                          },
+                        ]}
+                      >
+                        <CInputLabel
+                          label="TÊN ĐĂNG NHẬP"
+                          prefix={<UserOutlined />}
+                        />
+                      </Form.Item>
+                    </motion.div>
                   </Col>
 
                   <Col span={24}>
-                    <Form.Item
-                      name="password"
-                      rules={[
-                        {
-                          required: true,
-                          message: "Vui lòng nhập mật khẩu!",
-                        },
-                      ]}
-                    >
-                      <CInputLabelPass
-                        label="MẬT KHẨU"
-                        type="password"
-                        prefix={<LockOutlined />}
-                      />
-                    </Form.Item>
+                    <motion.div variants={itemVariants}>
+                      <Form.Item
+                        name="password"
+                        rules={[
+                          {
+                            required: true,
+                            message: "Vui lòng nhập mật khẩu!",
+                          },
+                        ]}
+                      >
+                        <CInputLabelPass
+                          label="MẬT KHẨU"
+                          type="password"
+                          prefix={<LockOutlined />}
+                        />
+                      </Form.Item>
+                    </motion.div>
                   </Col>
 
                   <Col span={24}>
-                    <div
+                    <motion.div 
+                      variants={itemVariants}
                       style={{
                         display: "flex",
                         justifyContent: "space-between",
@@ -174,48 +225,57 @@ function Login() {
                       <Form.Item name="remember" noStyle>
                         <Checkbox>Ghi nhớ</Checkbox>
                       </Form.Item>
-                      <a style={{ color: "#0D5B79" }}>Quên mật khẩu?</a>
-                    </div>
+                      <motion.a 
+                        style={{ color: "#0D5B79" }}
+                        whileHover={{ scale: 1.05 }}
+                      >
+                        Quên mật khẩu?
+                      </motion.a>
+                    </motion.div>
                   </Col>
 
                   <Col span={24}>
-                    <Form.Item>
-                      <Button
-                        icon={<RiLoginCircleLine size={20} />}
-                        className="login-button"
-                        htmlType="submit"
-                        block
-                        loading={loading}
-                        disabled={loading}
-                      >
-                        {loading ? "Đang đăng nhập..." : "Đăng nhập"}
-                      </Button>
-                    </Form.Item>
+                    <motion.div variants={itemVariants}>
+                      <Form.Item>
+                        <Button
+                          icon={<RiLoginCircleLine size={20} />}
+                          className="login-button"
+                          htmlType="submit"
+                          block
+                          loading={loading}
+                          disabled={loading}
+                        >
+                          {loading ? "Đang đăng nhập..." : "Đăng nhập"}
+                        </Button>
+                      </Form.Item>
+                    </motion.div>
                   </Col>
                 </Row>
                 <Col span={24}>
-                  <div className="social-login-group">
-                    <button
+                  <motion.div 
+                    className="social-login-group"
+                    variants={itemVariants}
+                  >
+                    <motion.button
                       className="social-btn google"
                       type="button"
                       onClick={handleGoogleLogin}
+                      whileHover={{ scale: 1.05 }}
+                      whileTap={{ scale: 0.95 }}
                     >
-                      <span className="icon">
-                        <FcGoogle size={22} />
-                      </span>
-                      Sign in with Google
-                    </button>
-                  </div>
+                      <FcGoogle size={20} /> Đăng nhập với Google
+                    </motion.button>
+                  </motion.div>
                 </Col>
                 <p className="login-support">
                   Cần trợ giúp?{" "}
                   <a href="mailto:support@phygen.com">Liên hệ hỗ trợ</a>
                 </p>
               </Form>
-            </div>
+            </motion.div>
           </Col>
         </Row>
-      </div>
+      </motion.div>
     </GoogleOAuthProvider>
   );
 }
