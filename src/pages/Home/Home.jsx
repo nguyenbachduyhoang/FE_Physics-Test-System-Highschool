@@ -103,10 +103,10 @@ const Home = () => {
   const [filterGrade, setFilterGrade] = useState(null);
   const [filterTopic, setFilterTopic] = useState(null);
   const [filterDifficulty, setFilterDifficulty] = useState(null);
+  const [filteredChaptersForFilter, setFilteredChaptersForFilter] = useState([]);
   
   // Dynamic options loaded from API
   const [gradeOptions, setGradeOptions] = useState([]);
-  const [topicOptions, setTopicOptions] = useState([]);
   const [difficultyOptions] = useState([
     { value: "easy", label: "Dễ" },
     { value: "medium", label: "Trung bình" },
@@ -147,15 +147,7 @@ const Home = () => {
         }));
         setGradeOptions(gradeOpts);
 
-        // Extract unique chapter names as topics
-        const uniqueChapters = [...new Set(chaptersData.map(chapter => chapter.chapterName))].sort();
-        const topicOpts = uniqueChapters.map(chapterName => ({
-          value: chapterName,
-          label: chapterName
-        }));
-        setTopicOptions(topicOpts);
-
-        console.log('📋 Filter options loaded:', { grades: gradeOpts.length, topics: topicOpts.length });
+        console.log('📋 Filter options loaded:', { grades: gradeOpts.length });
       }
     } catch (error) {
       console.error('❌ Error loading filter options:', error);
@@ -164,11 +156,6 @@ const Home = () => {
         { value: 10, label: "Lớp 10" },
         { value: 11, label: "Lớp 11" },
         { value: 12, label: "Lớp 12" }
-      ]);
-      setTopicOptions([
-        { value: "Cơ học", label: "Cơ học" },
-        { value: "Điện học", label: "Điện học" },
-        { value: "Quang học", label: "Quang học" }
       ]);
     }
   };
@@ -282,6 +269,7 @@ const Home = () => {
           // Lưu toàn bộ chapters
           setChapters(chaptersData);
           setFilteredChapters(chaptersData);
+          setFilteredChaptersForFilter(chaptersData);
           
           // Tạo options cho dropdown grade
           const uniqueGrades = [...new Set(chaptersData.map(chapter => chapter.grade))].sort();
@@ -297,6 +285,7 @@ const Home = () => {
           toast.error('Không có dữ liệu chương học');
           setChapters([]);
           setFilteredChapters([]);
+          setFilteredChaptersForFilter([]);
           setGradeOptions([]);
         }
       } else {
@@ -304,6 +293,7 @@ const Home = () => {
         toast.error('Không thể tải danh sách chương học');
         setChapters([]);
         setFilteredChapters([]);
+        setFilteredChaptersForFilter([]);
         setGradeOptions([]);
       }
     } catch (error) {
@@ -311,6 +301,7 @@ const Home = () => {
       toast.error('Lỗi khi tải danh sách chương học');
       setChapters([]);
       setFilteredChapters([]);
+      setFilteredChaptersForFilter([]);
       setGradeOptions([]);
     }
   };
@@ -347,6 +338,26 @@ const Home = () => {
   // Filter handlers for sidebar (just update state, no API calls)
   const handleFilterGradeChange = (value) => {
     setFilterGrade(value);
+    setFilterTopic(null); // Reset topic selection when grade changes
+    
+    if (value) {
+      // Filter chapters by selected grade
+      const filtered = chapters.filter(chapter => chapter.grade === value);
+      console.log('Filtered chapters for filter:', filtered);
+      
+      if (filtered && filtered.length > 0) {
+        setFilteredChaptersForFilter(filtered);
+        console.log(`🎓 Found ${filtered.length} chapters for filter grade ${value}`);
+      } else {
+        console.warn(`No chapters found for filter grade ${value}`);
+        setFilteredChaptersForFilter([]);
+        toast.error('Không có chương học nào cho lớp này');
+      }
+    } else {
+      // If no grade selected, show all chapters
+      setFilteredChaptersForFilter(chapters);
+    }
+    
     console.log('🔍 Filter by grade:', value);
   };
 
@@ -365,7 +376,13 @@ const Home = () => {
     const filterParams = new URLSearchParams();
     
     if (filterGrade) filterParams.append('grade', filterGrade);
-    if (filterTopic) filterParams.append('topic', filterTopic);
+    if (filterTopic) {
+      // Find chapter name by chapterId for display
+      const selectedChapter = filteredChaptersForFilter.find(chapter => chapter.chapterId === filterTopic);
+      const chapterName = selectedChapter ? selectedChapter.chapterName : filterTopic;
+      filterParams.append('topic', chapterName);
+      filterParams.append('chapterId', filterTopic);
+    }
     if (filterDifficulty) filterParams.append('difficulty', filterDifficulty);
     
     const queryString = filterParams.toString();
@@ -506,6 +523,7 @@ const Home = () => {
                 Lọc đề thi
               </h3>
               <div className="home-sidebar-input">
+                {console.log('gradeOptions:', gradeOptions)}
                 <Cselect
                   label="Chọn lớp"
                   options={gradeOptions}
@@ -517,10 +535,15 @@ const Home = () => {
               <div className="home-sidebar-input">
                 <Cselect
                   label="Chương học"
-                  options={topicOptions}
+                  options={filteredChaptersForFilter.map(chapter => ({
+                    value: chapter.chapterId,
+                    label: chapter.chapterName
+                  }))}
                   prefix={<FaBookOpen style={{ color: "#2DD4BF" }} />}
                   onChange={handleFilterTopicChange}
                   value={filterTopic}
+                  disabled={!filterGrade}
+                  placeholder={filterGrade ? "Chọn chương học" : "Vui lòng chọn lớp trước"}
                 />
               </div>
               <div className="home-sidebar-input">
@@ -575,6 +598,7 @@ const Home = () => {
                       setFilterGrade(null);
                       setFilterTopic(null);
                       setFilterDifficulty(null);
+                      setFilteredChaptersForFilter(chapters);
                       toast('🔄 Đã xóa bộ lọc', { icon: 'ℹ️' });
                     }}
                     whileHover={{ scale: 1.02 }}
