@@ -2,9 +2,10 @@ import React, { useState, useEffect } from "react";
 import { Pagination, Modal, Spin, Alert } from "antd";
 import "./index.scss";
 import LayoutContent from "../../components/layoutContent";
+import EssayQuestion from "../../components/EssayQuestion";
 import { useNavigate, useParams } from "react-router-dom";
 import { uploadFile } from "../../quiz-uploads/firebaseStorage";
-import { examService, autoGradingService } from "../../services";
+import { examService, autoGradingService, essayService } from "../../services";
 import { questionBankService } from "../../services/questionBankService";
 import toast from "react-hot-toast";
 
@@ -22,6 +23,8 @@ const PhysicsTestSystem = () => {
   const [examData, setExamData] = useState(null);
   const [startTime, setStartTime] = useState(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [essayValidations, setEssayValidations] = useState({});
+  const [isSubmitted, setIsSubmitted] = useState(false); // Thêm state để tránh submit nhiều lần
 
   const QUESTIONS_PER_PAGE = 10; 
   const navigate = useNavigate();
@@ -34,7 +37,6 @@ const PhysicsTestSystem = () => {
       const chaptersArray = await questionBankService.getChapters();
       if (!Array.isArray(chaptersArray) || chaptersArray.length === 0) {
         console.warn('No chapters available in database, using placeholder questions');
-        toast.warning('Không có chapters trong database. Sử dụng câu hỏi mẫu.');
         setQuestions(placeholderQuestions);
         return;
       }
@@ -44,7 +46,6 @@ const PhysicsTestSystem = () => {
       
       if (!chapterId) {
         console.warn('No valid ChapterId found, using placeholder questions');
-        toast.warning('Lỗi: Không tìm thấy ChapterId. Sử dụng câu hỏi mẫu.');
         setQuestions(placeholderQuestions);
         return;
       }
@@ -70,21 +71,16 @@ const PhysicsTestSystem = () => {
           const data = await examService.getExamById(examId);
           setExamData(data);
           
-          // Set thời gian từ exam data
-          const duration = data.durationMinutes || 20; // Fallback to 20 minutes if not set
-          setTimeLeft(duration * 60); // Convert to seconds
+          const duration = data.durationMinutes || 20; 
+          setTimeLeft(duration * 60);
 
-          // Safe extraction of questions from exam structure
           let extractedQuestions = [];
 
-          // Handle .NET serialization format with $values array
           const questionsArray = data.questions && data.questions.$values ?
             data.questions.$values :
             (Array.isArray(data.questions) ? data.questions : []);
-          // Check if we have questions to process
           if (questionsArray && questionsArray.length > 0) {
             extractedQuestions = questionsArray.map(examQuestion => {
-              // If examQuestion.question exists (nested structure)
               if (examQuestion.question) {
                 return {
                   ...examQuestion.question,
@@ -93,7 +89,6 @@ const PhysicsTestSystem = () => {
                   pointsWeight: examQuestion.pointsWeight
                 };
               }
-              // If examQuestion is the question itself (flat structure)
               else {
                 return {
                   ...examQuestion,
@@ -107,7 +102,6 @@ const PhysicsTestSystem = () => {
             console.warn('No questions found in exam data:', data);
           }
 
-          // Check if we have placeholder questions that need real content from AI API
           const hasPlaceholderQuestions = extractedQuestions.some(q =>
             q.questionText === '[AI Generated Question - Content loaded from frontend]' ||
             !q.answerChoices ||
@@ -141,13 +135,16 @@ const PhysicsTestSystem = () => {
 
   // Chỉ bắt đầu đếm ngược khi đã có thời gian
   useEffect(() => {
-    if (timeLeft === null) return;
+    if (timeLeft === null || isSubmitted) return; // Thêm check isSubmitted
 
     const timer = setInterval(() => {
       setTimeLeft((prev) => {
         if (prev <= 0) {
           clearInterval(timer);
-          handleSubmit(); // Tự động nộp bài khi hết giờ
+          if (!isSubmitted) { // Kiểm tra trước khi auto submit
+            console.log('⏰ Hết giờ - tự động nộp bài');
+            handleSubmit();
+          }
           return 0;
         }
         return prev - 1;
@@ -155,7 +152,7 @@ const PhysicsTestSystem = () => {
     }, 1000);
 
     return () => clearInterval(timer);
-  }, [timeLeft]);
+  }, [timeLeft, isSubmitted]); // Thêm isSubmitted vào dependency
 
   const formatTime = (seconds) => {
     const mins = Math.floor(seconds / 60);
@@ -204,8 +201,107 @@ const PhysicsTestSystem = () => {
   const endIndex = startIndex + QUESTIONS_PER_PAGE;
   const currentPageQuestions = questions.slice(startIndex, endIndex);
 
+  const handleEssayValidationChange = (questionId, isValid) => {
+    setEssayValidations(prev => ({
+      ...prev,
+      [questionId]: isValid
+    }));
+  };
+
+  const renderQuestionContent = (question) => {
+    const questionId = question.questionId || question.id;
+    
+    // Kiểm tra xem có phải câu hỏi tự luận không
+    if (question.questionType === 'essay' || question.type === 'essay') {
+      return (
+        <EssayQuestion
+          question={question}
+          value={selectedAnswers[questionId] || ''}
+          onChange={(value) => handleAnswerSelect(questionId, value)}
+          onValidationChange={(isValid) => handleEssayValidationChange(questionId, isValid)}
+          disabled={isSubmitting}
+        />
+      );
+    }
+
+    return (
+      <div className="options">
+        {question.answerChoices && question.answerChoices.length > 0 ? (
+          [...question.answerChoices]
+            .sort((a, b) => {
+              const orderA = a.displayOrder === null ? 0 : a.displayOrder;
+              const orderB = b.displayOrder === null ? 0 : b.displayOrder;
+              return orderA - orderB;
+            })
+            .map((choice, optionIndex) => (
+              <label key={choice.choiceId || optionIndex}>
+                <input
+                  type="radio"
+                  name={`question-${questionId}`}
+                  value={choice.choiceLabel}
+                  checked={selectedAnswers[questionId] === choice.choiceLabel}
+                  onChange={() => handleAnswerSelect(questionId, choice.choiceLabel)}
+                  disabled={isSubmitting}
+                />
+                <span>{`${choice.choiceLabel}. ${choice.choiceText}`}</span>
+              </label>
+            ))
+        ) : (
+          ["A", "B", "C", "D"].map((optionLabel, optionIndex) => (
+            <label key={optionIndex}>
+              <input
+                type="radio"
+                name={`question-${questionId}`}
+                value={optionLabel}
+                checked={selectedAnswers[questionId] === optionLabel}
+                onChange={() => handleAnswerSelect(questionId, optionLabel)}
+                disabled={isSubmitting}
+              />
+              <span>{`${optionLabel}. ${question[`answer${optionLabel}`] || 'Đáp án chưa có'}`}</span>
+            </label>
+          ))
+        )}
+      </div>
+    );
+  };
+
   const handleSubmit = async () => {
     try {
+      // Tránh submit nhiều lần
+      if (isSubmitted) {
+        console.log('⚠️ Đã submit rồi, bỏ qua lần gọi này');
+        return;
+      }
+      
+      setIsSubmitted(true); // Đánh dấu đã bắt đầu submit
+      
+      // Kiểm tra đăng nhập
+      const currentUser = JSON.parse(localStorage.getItem('user') || '{}');
+      const studentUserId = currentUser.userId || currentUser.id;
+
+      if (!studentUserId) {
+        toast.error("Vui lòng đăng nhập để nộp bài");
+        return;
+      }
+
+      // Kiểm tra xem có câu trả lời nào không
+      if (Object.keys(selectedAnswers).length === 0) {
+        toast.error("Vui lòng trả lời ít nhất một câu hỏi trước khi nộp bài");
+        return;
+      }
+
+      // Kiểm tra validation của các câu hỏi tự luận
+      const essayQuestions = questions.filter(q => q.questionType === 'essay' || q.type === 'essay');
+      const invalidEssays = essayQuestions.filter(q => {
+        const questionId = q.questionId || q.id;
+        return selectedAnswers[questionId] && essayValidations[questionId] === false;
+      });
+
+      if (invalidEssays.length > 0) {
+        toast.error(`Có ${invalidEssays.length} câu tự luận chưa đạt yêu cầu về độ dài. Vui lòng kiểm tra lại.`);
+        return;
+      }
+
       setIsSubmitting(true);
       toast.loading("Đang chấm bài...", { id: "grading" });
 
@@ -215,38 +311,80 @@ const PhysicsTestSystem = () => {
       const hours = Math.floor(timeTakenMs / (1000 * 60 * 60));
       const minutes = Math.floor((timeTakenMs % (1000 * 60 * 60)) / (1000 * 60));
       const seconds = Math.floor((timeTakenMs % (1000 * 60)) / 1000);
-      const timeTaken = `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`; // Format: "HH:mm:ss"
+      const timeTaken = `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
 
-      // Lấy userId từ localStorage hoặc auth context
-      const currentUser = JSON.parse(localStorage.getItem('user') || '{}');
-      const studentUserId = currentUser.userId || currentUser.id;
+      // Tách riêng essay questions và multiple choice questions cho xử lý
 
-      if (!studentUserId) {
-        throw new Error("Không tìm thấy thông tin người dùng");
+      let essayGradingResults = {};
+
+      // Chấm điểm các câu tự luận trước
+      if (essayQuestions.length > 0) {
+        try {
+          toast.loading("Đang chấm điểm các câu tự luận...", { id: "essay-grading" });
+          
+          const essaySubmissions = essayQuestions
+            .filter(q => selectedAnswers[q.questionId || q.id])
+            .map(q => essayService.createEssaySubmission(
+              q.questionId || q.id,
+              studentUserId,
+              selectedAnswers[q.questionId || q.id]
+            ));
+
+          if (essaySubmissions.length > 0) {
+            const batchGradingResult = await essayService.batchGradeEssays({
+              submissions: essaySubmissions,
+              examId: examId
+            });
+
+            essayGradingResults = batchGradingResult.results || {};
+            toast.success("Chấm điểm tự luận hoàn thành!", { id: "essay-grading" });
+          }
+        } catch (error) {
+          console.warn('Lỗi khi chấm điểm tự luận:', error);
+          toast.dismiss("essay-grading");
+          toast.error("Không thể chấm điểm tự luận, sẽ sử dụng chấm điểm thủ công sau");
+        }
       }
 
-      // Chuyển đổi selectedAnswers thành format phù hợp cho API
-      const studentAnswers = Object.entries(selectedAnswers).map(([questionId, choiceLabel]) => {
-        // Tìm question để lấy choiceId từ choiceLabel
-        const question = questions.find(q => (q.questionId || q.id) === questionId);
-        if (!question || !question.answerChoices) {
-          return null;
+      const studentAnswers = questions.map(question => {
+        const questionId = question.questionId || question.id;
+        const answer = selectedAnswers[questionId];
+        
+        if (question.questionType === 'essay' || question.type === 'essay') {
+          return {
+            questionId,
+            studentTextAnswer: answer,
+            answeredAt: new Date().toISOString(),
+            // Thêm kết quả chấm điểm tự luận nếu có
+            ...(essayGradingResults[questionId] && {
+              essayScore: essayGradingResults[questionId].totalScore,
+              essayFeedback: essayGradingResults[questionId].overallFeedback
+            })
+          };
         }
 
-        const selectedChoice = question.answerChoices.find(choice => choice.choiceLabel === choiceLabel);
-        if (!selectedChoice) {
-          return null;
-        }
+        // Xử lý câu hỏi trắc nghiệm như cũ
+        const selectedChoice = question.answerChoices?.find(choice => 
+          choice.choiceLabel === answer
+        );
+
+        // Debug: Log thông tin mapping
+        console.log(`🔍 DEBUG Quiz Submit - Question ${questionId}:`, {
+          answer,
+          answerChoices: question.answerChoices,
+          selectedChoice,
+          selectedChoiceId: selectedChoice?.choiceId
+        });
 
         return {
-          questionId: questionId,
-          selectedChoiceId: selectedChoice.choiceId,
+          questionId,
+          selectedChoiceId: selectedChoice?.choiceId,
           answeredAt: new Date().toISOString()
         };
-      }).filter(answer => answer !== null);
+      }).filter(answer => answer.selectedChoiceId || answer.studentTextAnswer);
 
       if (studentAnswers.length === 0) {
-        throw new Error("Không có câu trả lời nào để chấm điểm");
+        throw new Error("Có lỗi xảy ra khi xử lý câu trả lời. Vui lòng thử lại");
       }
 
       // Gọi API chấm điểm tự động
@@ -254,15 +392,27 @@ const PhysicsTestSystem = () => {
         examId,
         studentAnswers,
         studentUserId,
-        timeTaken // Format: "HH:mm:ss"
+        timeTaken
       );
 
-      // Lưu kết quả chấm điểm để truyền sang trang Result
+      if (!gradingResult) {
+        throw new Error("Không nhận được kết quả chấm điểm từ server");
+      }
+
+      // Lưu kết quả chấm điểm
       localStorage.setItem('latestGradingResult', JSON.stringify(gradingResult));
+
+      console.log('✅ Chấm bài thành công, chuẩn bị chuyển trang...', {
+        gradingResult,
+        examData,
+        timeTaken,
+        currentPath: window.location.pathname
+      });
 
       toast.success("Chấm bài thành công!", { id: "grading" });
       
-      // Chuyển đến trang kết quả với data
+      // Chuyển đến trang kết quả
+      console.log('🚀 Đang chuyển đến trang /result...');
       navigate("/result", { 
         state: { 
           gradingResults: gradingResult,
@@ -271,11 +421,31 @@ const PhysicsTestSystem = () => {
         }
       });
 
+      console.log('✅ Navigate command đã được thực hiện');
+
+      // Fallback navigation nếu navigate không hoạt động
+      setTimeout(() => {
+        if (window.location.pathname === '/quiz' || window.location.pathname.includes('/quiz')) {
+          console.log('⚠️ Navigation không hoạt động, sử dụng window.location.href fallback');
+          localStorage.setItem('fallbackNavigationData', JSON.stringify({
+            gradingResults: gradingResult,
+            examData: examData,
+            timeTaken: timeTaken
+          }));
+          window.location.href = '/result';
+        }
+      }, 1000); // Đợi 1 giây trước khi fallback
+
     } catch (error) {
-      console.error("Lỗi khi chấm bài:", error);
-      toast.error(`Lỗi khi chấm bài: ${error.message || error}`, { id: "grading" });
+      console.error("❌ Lỗi khi chấm bài:", error);
+      setIsSubmitted(false); // Reset để có thể thử lại
+      toast.error(
+        error.message || "Có lỗi xảy ra khi chấm bài. Vui lòng thử lại sau",
+        { id: "grading" }
+      );
     } finally {
       setIsSubmitting(false);
+      console.log('🔄 setIsSubmitting(false) đã được gọi');
     }
   };
 
@@ -294,6 +464,8 @@ const PhysicsTestSystem = () => {
 
     }
   };
+
+  // Styles cho essay questions đã được chuyển vào EssayQuestion component
 
   return (
     <div className="Layout-Quiz">
@@ -322,15 +494,16 @@ const PhysicsTestSystem = () => {
             </div>
 
             <div className="question-grid">
-              {questions.map((_, questionNum) => {
+              {questions.map((question, questionNum) => {
                 const pageOfQuestion =
                   Math.floor(questionNum / QUESTIONS_PER_PAGE) + 1;
+                const questionId = question.questionId || question.id;
                 return (
                   <button
-                    key={questionNum + 1}
-                    className={`question-btn ${selectedAnswers[questionNum + 1]
+                    key={questionId}
+                    className={`question-btn ${selectedAnswers[questionId]
                       ? "question-btn--answered"
-                      : markedForReview[questionNum + 1]
+                      : markedForReview[questionId]
                         ? "question-btn--review"
                         : "question-btn--unanswered"
                       }`}
@@ -399,43 +572,7 @@ const PhysicsTestSystem = () => {
                 >
                   <h3>{`Câu ${startIndex + index + 1}: ${question.questionText || question.question || 'Câu hỏi không có nội dung'
                     }`}</h3>
-                  <div className="options">
-                    {question.answerChoices && question.answerChoices.length > 0 ? (
-                      question.answerChoices
-                        .sort((a, b) => (a.displayOrder || 0) - (b.displayOrder || 0))
-                        .map((choice, optionIndex) => (
-                          <label key={choice.choiceId || optionIndex}>
-                            <input
-                              type="radio"
-                              name={`question-${question.questionId || question.id}`}
-                              value={choice.choiceLabel}
-                              checked={selectedAnswers[question.questionId || question.id] === choice.choiceLabel}
-                              onChange={() =>
-                                handleAnswerSelect(question.questionId || question.id, choice.choiceLabel)
-                              }
-                            />
-                            <span>{`${choice.choiceLabel}. ${choice.choiceText}`}</span>
-                          </label>
-                        ))
-                    ) : (
-                      // Fallback cho format cũ nếu không có answerChoices
-                      ["A", "B", "C", "D"].map((optionLabel, optionIndex) => (
-                        <label key={optionIndex}>
-                          <input
-                            type="radio"
-                            name={`question-${question.questionId || question.id}`}
-                            value={optionLabel}
-                            checked={selectedAnswers[question.questionId || question.id] === optionLabel}
-                            onChange={() =>
-                              handleAnswerSelect(question.questionId || question.id, optionLabel)
-                            }
-                          />
-                          <span>{`${optionLabel}. ${question[`answer${optionLabel}`] || 'Đáp án chưa có'
-                            }`}</span>
-                        </label>
-                      ))
-                    )}
-                  </div>
+                  {renderQuestionContent(question, index)}
                   <div className="review-toggle">
                     <label>
                       <input
