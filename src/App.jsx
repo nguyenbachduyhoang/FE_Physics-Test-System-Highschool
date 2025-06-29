@@ -14,6 +14,7 @@ import Reports from "./pages/Admin/reports";
 import AdminDashboard from "./pages/Admin/dashboard";
 import AdminLayout from "./pages/Admin/AdminLayout";
 import TestAPIPage from "./pages/Admin/test-api";
+import EssayManagement from "./pages/Admin/essays";
 import ProtectedRoute from "./components/ProtectedRoute";
 import AuthRedirect from "./components/AuthRedirect";
 import { Toaster } from "react-hot-toast";
@@ -47,6 +48,7 @@ const router = createBrowserRouter([
       { path: "dashboard", element: <AdminDashboard /> }, 
       { path: "users", element: <Users /> }, 
       { path: "questions", element: <Questions /> }, 
+      { path: "essays", element: <EssayManagement /> },
       { path: "exams", element: <Exams /> }, 
       { path: "reports", element: <Reports /> },
       { path: "test-api", element: <TestAPIPage /> }, 

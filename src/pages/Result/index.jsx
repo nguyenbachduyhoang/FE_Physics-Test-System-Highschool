@@ -13,8 +13,8 @@ import {
   FaTrophy,
 } from "react-icons/fa";
 import { useNavigate, useLocation } from "react-router-dom";
-import { autoGradingService } from "../../services";
-import { Modal, Spin, Alert, Collapse, Tag, Progress, Divider } from "antd";
+import { autoGradingService, explanationService } from "../../services";
+import { Modal, Spin, Alert, Collapse, Tag, Progress, Divider, Button } from "antd";
 import toast from "react-hot-toast";
 import gsap from 'gsap';
 import { ScrollTrigger } from 'gsap/ScrollTrigger';
@@ -138,6 +138,8 @@ const ResultContent = () => {
   const [loading, setLoading] = useState(true);
   const [detailedFeedback, setDetailedFeedback] = useState({});
   const [showDetailedAnalysis, setShowDetailedAnalysis] = useState(false);
+  const [explanations, setExplanations] = useState({});
+  const [loadingExplanations, setLoadingExplanations] = useState({});
 
   // Thêm refs cho animation
   const statsRef = useRef(null);
@@ -160,8 +162,67 @@ const ResultContent = () => {
           }
         }
 
+        // Thêm fallback navigation data
+        if (!results) {
+          const fallbackData = localStorage.getItem('fallbackNavigationData');
+          if (fallbackData) {
+            const parsedFallback = JSON.parse(fallbackData);
+            results = parsedFallback.gradingResults;
+            localStorage.removeItem('fallbackNavigationData'); // Cleanup
+          }
+        }
+
+        // Debug: Log kết quả tìm được
+        console.log('🔍 DEBUG - Kết quả tìm được:', {
+          fromState: !!location.state?.gradingResults,
+          fromLocalStorage: !!localStorage.getItem('latestGradingResult'),
+          fromFallback: !!localStorage.getItem('fallbackNavigationData'),
+          finalResults: results,
+          hasQuestionResults: !!results?.questionResults,
+          questionResultsCount: results?.questionResults?.length || 0
+        });
+
         if (results) {
           setGradingData(results);
+          
+          // Debug: Log chi tiết questionResults
+          console.log('🔍 DEBUG - Chi tiết questionResults:', {
+            questionResults: results.questionResults,
+            firstQuestion: results.questionResults?.[0],
+            questionKeys: results.questionResults?.[0] ? Object.keys(results.questionResults[0]) : []
+          });
+          
+          // Tự động load explanation cho tất cả câu hỏi
+          if (results.questionResults && results.questionResults.length > 0) {
+            results.questionResults.forEach(async (result, index) => {
+              console.log(`🔍 DEBUG - Question ${index + 1}:`, {
+                questionId: result.questionId,
+                studentChoiceId: result.studentChoiceId,
+                studentChoiceLabel: result.studentChoiceLabel,
+                studentChoiceText: result.studentChoiceText,
+                studentTextAnswer: result.studentTextAnswer,
+                correctChoiceId: result.correctChoiceId,
+                correctChoiceLabel: result.correctChoiceLabel,
+                correctChoiceText: result.correctChoiceText,
+                isCorrect: result.isCorrect,
+                questionType: result.questionType
+              });
+              
+              if (result.questionId) {
+                try {
+                  const explanationResult = await explanationService.getExplanationByQuestion(result.questionId);
+                  if (explanationResult.success) {
+                    setExplanations(prev => ({
+                      ...prev,
+                      [result.questionId]: explanationResult.data
+                    }));
+                  }
+                } catch {
+                  console.log(`Không thể tải explanation cho câu ${result.questionId}`);
+                }
+              }
+            });
+          }
         } else {
           // Fallback to demo data if no grading results
           setGradingData(null);
@@ -320,6 +381,74 @@ const ResultContent = () => {
     }
   };
 
+  // Thêm function để lấy explanation từ database
+  const handleGetExplanation = async (questionId) => {
+    if (explanations[questionId] || loadingExplanations[questionId]) {
+      return; // Đã có hoặc đang tải
+    }
+
+    try {
+      setLoadingExplanations(prev => ({ ...prev, [questionId]: true }));
+      
+      const result = await explanationService.getExplanationByQuestion(questionId);
+      
+      if (result.success) {
+        setExplanations(prev => ({
+          ...prev,
+          [questionId]: result.data
+        }));
+        toast.success("Đã tải giải thích chi tiết");
+      } else {
+        // Nếu không tìm thấy explanation trong DB, có thể tạo mới bằng AI
+        if (result.statusCode === 404) {
+          toast.info("Chưa có giải thích cho câu hỏi này. Bạn có thể tạo mới.");
+        } else {
+          toast.error(result.error);
+        }
+      }
+    } catch (error) {
+      console.error("Lỗi khi lấy explanation:", error);
+      toast.error("Không thể tải giải thích");
+    } finally {
+      setLoadingExplanations(prev => ({ ...prev, [questionId]: false }));
+    }
+  };
+
+  // Function để tạo explanation tự động bằng AI (nếu cần)
+  const handleCreateExplanationWithAI = async (questionId) => {
+    try {
+      setLoadingExplanations(prev => ({ ...prev, [questionId]: true }));
+      
+      // Thử tạo explanation bằng AI trước
+      const aiResult = await explanationService.generateExplanationWithAI(questionId);
+      
+      if (aiResult.success) {
+        // Sau khi AI tạo xong, tạo explanation trong database
+        const createResult = await explanationService.createExplanation({
+          questionId: questionId,
+          explanationText: aiResult.data.explanation || "Giải thích được tạo tự động bằng AI"
+        });
+        
+        if (createResult.success) {
+          setExplanations(prev => ({
+            ...prev,
+            [questionId]: createResult.data
+          }));
+          toast.success("Đã tạo giải thích mới bằng AI");
+        } else {
+          toast.error(createResult.error);
+        }
+      } else {
+        toast.error("Không thể tạo giải thích bằng AI");
+      }
+    } catch (error) {
+      console.error("Lỗi khi tạo explanation:", error);
+      toast.error("Không thể tạo giải thích mới");
+    } finally {
+      setLoadingExplanations(prev => ({ ...prev, [questionId]: false }));
+    }
+  };
+
   // Hiển thị loading khi đang tải dữ liệu
   if (loading) {
     return (
@@ -333,6 +462,15 @@ const ResultContent = () => {
   // Sử dụng dữ liệu thực từ auto grading hoặc fallback
   const displayData = gradingData || resultData;
   const isRealData = !!gradingData;
+
+  // Debug: Log toàn bộ dữ liệu
+  console.log('🔍 DEBUG - Toàn bộ dữ liệu Result:', {
+    gradingData,
+    displayData,
+    isRealData,
+    hasQuestionResults: !!displayData?.questionResults,
+    questionResultsLength: displayData?.questionResults?.length || 0
+  });
 
   return (
     <div className="result">
@@ -458,7 +596,20 @@ const ResultContent = () => {
       <div className="questions" ref={questionsRef}>
         {isRealData && displayData.questionResults ? (
           <Collapse ghost>
-            {displayData.questionResults.map((result, index) => (
+            {displayData.questionResults.map((result, index) => {
+              // Debug: Log dữ liệu của từng câu hỏi
+              console.log(`🔍 Dữ liệu câu ${index + 1}:`, {
+                questionId: result.questionId,
+                studentChoiceLabel: result.studentChoiceLabel,
+                studentChoiceText: result.studentChoiceText,
+                studentTextAnswer: result.studentTextAnswer,
+                correctChoiceLabel: result.correctChoiceLabel,
+                correctChoiceText: result.correctChoiceText,
+                isCorrect: result.isCorrect,
+                questionType: result.questionType
+              });
+              
+              return (
               <Collapse.Panel 
                 key={result.questionId}
                 header={
@@ -479,13 +630,19 @@ const ResultContent = () => {
                   <div className="question-answer">
                     <span className="label">Câu trả lời của bạn:</span>
                     <span className={result.isCorrect ? "correct" : "incorrect"}>
-                      {result.studentChoiceLabel}. {result.studentChoiceText}
+                      {result.studentChoiceLabel && result.studentChoiceText 
+                        ? `${result.studentChoiceLabel}. ${result.studentChoiceText}`
+                        : result.studentChoiceText || result.studentTextAnswer || "Không có câu trả lời"
+                      }
                     </span>
                   </div>
                   <div className="question-answer">
                     <span className="label">Đáp án đúng:</span>
                     <span className="correct">
-                      {result.correctChoiceimage.pngLabel}. {result.correctChoiceText}
+                      {result.correctChoiceLabel && result.correctChoiceText 
+                        ? `${result.correctChoiceLabel}. ${result.correctChoiceText}`
+                        : result.correctChoiceText || "Không xác định được đáp án"
+                      }
                     </span>
                   </div>
                   {result.explanation && (
@@ -500,14 +657,78 @@ const ResultContent = () => {
                     </div>
                   )}
                   
+                  {/* Button để lấy explanation từ database */}
+                  <div style={{ marginTop: '12px', display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
+                    <Button 
+                      size="small"
+                      loading={loadingExplanations[result.questionId]}
+                      onClick={() => handleGetExplanation(result.questionId)}
+                      icon={<FaLightbulb />}
+                      style={{ 
+                        borderColor: '#1890ff',
+                        color: explanations[result.questionId] ? '#52c41a' : '#1890ff'
+                      }}
+                    >
+                      {explanations[result.questionId] ? 'Đã có giải thích chi tiết' : 'Xem giải thích chi tiết từ DB'}
+                    </Button>
+                    
+                    {!explanations[result.questionId] && (
+                      <Button 
+                        size="small"
+                        loading={loadingExplanations[result.questionId]}
+                        onClick={() => handleCreateExplanationWithAI(result.questionId)}
+                        icon={<FaBrain />}
+                        type="dashed"
+                        style={{ 
+                          borderColor: '#ff9c6e',
+                          color: '#ff9c6e'
+                        }}
+                      >
+                        Tạo giải thích bằng AI
+                      </Button>
+                    )}
+                  </div>
+                  
+                  {/* Hiển thị explanation từ database */}
+                  {explanations[result.questionId] && (
+                    <div className="database-explanation" style={{ marginTop: '12px', padding: '12px', background: '#f0f8ff', borderRadius: '6px', border: '1px solid #d9ecff' }}>
+                      <div style={{ display: 'flex', alignItems: 'center', marginBottom: '8px' }}>
+                        <FaLightbulb style={{ marginRight: '8px', color: '#1890ff' }} />
+                        <strong>Giải thích chi tiết từ AI:</strong>
+                      </div>
+                      <div style={{ marginBottom: '8px' }}>
+                        {explanations[result.questionId].explanationText}
+                      </div>
+                      <div style={{ fontSize: '12px', color: '#666' }}>
+                        Tạo bởi: {explanations[result.questionId].creator?.fullName || 'Hệ thống'} • 
+                        {new Date(explanations[result.questionId].createdAt).toLocaleDateString('vi-VN')}
+                      </div>
+                    </div>
+                  )}
+                  
                   {showDetailedAnalysis && (
                     <div style={{ marginTop: '12px' }}>
-                      <button 
-                        className="btn btn--small"
-                        onClick={() => handleGetDetailedFeedback(result.questionId, result.studentChoiceId)}
-                      >
-                        Xem phân tích chi tiết
-                      </button>
+                      <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
+                        <button 
+                          className="btn btn--small"
+                          onClick={() => handleGetDetailedFeedback(result.questionId, result.studentChoiceId)}
+                        >
+                          Xem phân tích chi tiết
+                        </button>
+                        
+                        <Button 
+                          size="small"
+                          loading={loadingExplanations[result.questionId]}
+                          onClick={() => handleGetExplanation(result.questionId)}
+                          icon={<FaLightbulb />}
+                          style={{ 
+                            borderColor: '#1890ff',
+                            color: explanations[result.questionId] ? '#52c41a' : '#1890ff'
+                          }}
+                        >
+                          {explanations[result.questionId] ? 'Đã có giải thích' : 'Lấy giải thích từ DB'}
+                        </Button>
+                      </div>
                       
                       {detailedFeedback[result.questionId] && (
                         <div className="detailed-feedback" style={{ marginTop: '12px', padding: '12px', background: '#f6f8fa', borderRadius: '6px' }}>
@@ -530,7 +751,8 @@ const ResultContent = () => {
                   )}
                 </div>
               </Collapse.Panel>
-            ))}
+              );
+            })}
           </Collapse>
         ) : (
           // Fallback cho dữ liệu mẫu

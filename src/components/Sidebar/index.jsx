@@ -7,6 +7,7 @@ import {
   QuestionCircleOutlined,
   FileTextOutlined,
   BarChartOutlined,
+  EditOutlined,
   MenuFoldOutlined,
   MenuUnfoldOutlined,
   LogoutOutlined, // thêm dòng này
@@ -37,6 +38,12 @@ const AdminSidebar = () => {
       icon: <QuestionCircleOutlined />,
       label: "Ngân hàng câu hỏi",
       path: "/admin/questions",
+    },
+    {
+      key: "essays",
+      icon: <EditOutlined />,
+      label: "Câu hỏi tự luận",
+      path: "/admin/essays",
     },
     {
       key: "exams",

@@ -1,0 +1,248 @@
+.essay-management {
+  padding: 24px;
+  background: #f0f2f5;
+  min-height: 100vh;
+
+  .ant-card {
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+    border-radius: 8px;
+    
+    .ant-card-head {
+      border-bottom: 1px solid #f0f0f0;
+      
+      .ant-card-head-title {
+        font-size: 16px;
+        font-weight: 600;
+      }
+    }
+  }
+
+  // Statistics cards
+  .ant-statistic {
+    .ant-statistic-title {
+      color: #666;
+      font-size: 14px;
+      margin-bottom: 8px;
+    }
+
+    .ant-statistic-content {
+      font-size: 24px;
+      font-weight: 600;
+      
+      .ant-statistic-content-prefix {
+        margin-right: 8px;
+        color: #1890ff;
+      }
+    }
+  }
+
+  // Table customizations
+  .ant-table {
+    .ant-table-thead > tr > th {
+      background: #fafafa;
+      font-weight: 600;
+      border-bottom: 2px solid #f0f0f0;
+    }
+
+    .ant-table-tbody > tr:hover > td {
+      background: #f5f5f5;
+    }
+
+    code {
+      background: #f6f6f6;
+      padding: 2px 6px;
+      border-radius: 3px;
+      font-size: 12px;
+      color: #666;
+    }
+  }
+
+  // Action buttons
+  .ant-btn {
+    &.ant-btn-text {
+      &:hover {
+        background: rgba(24, 144, 255, 0.1);
+      }
+
+      &.ant-btn-dangerous:hover {
+        background: rgba(245, 34, 45, 0.1);
+      }
+    }
+  }
+
+  // Modal customizations
+  .ant-modal {
+    .ant-modal-header {
+      border-bottom: 1px solid #f0f0f0;
+      margin-bottom: 24px;
+
+      .ant-modal-title {
+        font-size: 16px;
+        font-weight: 600;
+      }
+    }
+
+    .ant-form {
+      .ant-form-item-label > label {
+        font-weight: 500;
+        color: #333;
+      }
+
+      .ant-form-item-control-input {
+        .ant-input,
+        .ant-select,
+        .ant-input-number {
+          border-radius: 6px;
+          
+          &:focus,
+          &.ant-select-focused {
+            border-color: #40a9ff;
+            box-shadow: 0 0 0 2px rgba(24, 144, 255, 0.2);
+          }
+        }
+      }
+    }
+  }
+
+  // Tags
+  .ant-tag {
+    border-radius: 12px;
+    font-size: 12px;
+    font-weight: 500;
+    padding: 2px 8px;
+  }
+
+  // Badges
+  .ant-badge {
+    .ant-badge-status-text {
+      font-size: 12px;
+      margin-left: 6px;
+    }
+  }
+
+  // Pagination
+  .ant-pagination {
+    margin-top: 24px;
+    text-align: center;
+
+    .ant-pagination-item {
+      border-radius: 6px;
+      
+      &.ant-pagination-item-active {
+        background: #1890ff;
+        border-color: #1890ff;
+      }
+    }
+
+    .ant-pagination-jump-prev,
+    .ant-pagination-jump-next {
+      border-radius: 6px;
+    }
+  }
+
+  // Loading states
+  .ant-spin-container {
+    .ant-spin-blur {
+      opacity: 0.5;
+    }
+  }
+
+  // Responsive design
+  @media (max-width: 768px) {
+    padding: 16px;
+
+    .ant-row {
+      .ant-col {
+        margin-bottom: 16px;
+      }
+    }
+
+    .ant-table {
+      .ant-table-scroll {
+        overflow-x: auto;
+      }
+    }
+
+    .ant-modal {
+      margin: 0;
+      max-width: 100vw;
+      top: 0;
+      
+      .ant-modal-content {
+        border-radius: 0;
+      }
+    }
+  }
+
+  @media (max-width: 576px) {
+    .ant-card-head {
+      .ant-card-extra {
+        margin-top: 12px;
+      }
+    }
+
+    .ant-btn {
+      &.ant-btn-primary {
+        width: 100%;
+      }
+    }
+  }
+}
+
+// Dark mode support
+@media (prefers-color-scheme: dark) {
+  .essay-management {
+    background: #141414;
+
+    .ant-card {
+      background: #1f1f1f;
+      border-color: #303030;
+
+      .ant-card-head {
+        background: #1f1f1f;
+        border-bottom-color: #303030;
+
+        .ant-card-head-title {
+          color: #fff;
+        }
+      }
+
+      .ant-card-body {
+        color: #a6a6a6;
+      }
+    }
+
+    .ant-table {
+      .ant-table-thead > tr > th {
+        background: #262626;
+        color: #a6a6a6;
+        border-bottom-color: #303030;
+      }
+
+      .ant-table-tbody > tr > td {
+        background: #1f1f1f;
+        color: #a6a6a6;
+        border-bottom-color: #303030;
+      }
+
+      .ant-table-tbody > tr:hover > td {
+        background: #262626;
+      }
+
+      code {
+        background: #262626;
+        color: #a6a6a6;
+      }
+    }
+
+    .ant-statistic {
+      .ant-statistic-title {
+        color: #a6a6a6;
+      }
+
+      .ant-statistic-content {
+        color: #fff;
+      }
+    }
+  }
+} 
