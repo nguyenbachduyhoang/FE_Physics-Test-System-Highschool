@@ -93,11 +93,7 @@ export const userService = {
   // Delete user
   deleteUser: async (userId) => {
     try {
-      console.log('Deleting user with ID:', userId);
       const response = await userAPI.delete(`/users/${userId}`);
-      console.log('Delete response:', response);
-      
-      // Kiểm tra response format
       if (response.data && response.data.success === false) {
         throw new Error(response.data.message || 'Xóa người dùng thất bại');
       }

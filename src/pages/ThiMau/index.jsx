@@ -32,11 +32,20 @@ const ThiMau = () => {
         difficulty: searchParams.get('difficulty') || ''
       };
 
-      // Use analytics API to get filtered sample exams
-      const examsData = await analyticsService.getSampleExams(filters);
+      // BƯỚC 2: Thử API debug trước
+      let examsData = await analyticsService.getSampleExams(filters);
+
+      // BƯỚC 3: Nếu debug API không có dữ liệu, thử API gốc
+      if (!examsData || examsData.length === 0) {
+        examsData = await analyticsService.getSampleExams(filters);
+      }
+
+      // BƯỚC 4: Nếu vẫn không có dữ liệu, thử lấy tất cả (không filter)
+      if (!examsData || examsData.length === 0) {
+        examsData = await analyticsService.getSampleExams({});
+      }
       
-      // Transform exam data to match expected format
-      const transformedTests = examsData.map(exam => ({
+      const transformedTests = (examsData || []).map(exam => ({
         id: exam.examId,
         title: exam.examName,
         subject: exam.description || "Đề thi vật lý",

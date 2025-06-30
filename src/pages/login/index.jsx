@@ -104,25 +104,28 @@ function Login() {
     setLoading(true);
     try {
       console.time('Login API Call');
-      const data = await authService.login(values.username, values.password);
+      const response = await authService.login(values.username, values.password);
       console.timeEnd('Login API Call');
       
       // Set auth data using service
-      authService.setAuthData(data);
+      authService.setAuthData(response);
       
-      toast.success(`Đăng nhập thành công! Chào mừng ${data.user.full_name}`);
+      const userData = response.data?.user || response.user;
+      const userFullName = userData?.full_name || userData?.fullName;
+      
+      toast.success(`Đăng nhập thành công! Chào mừng ${userFullName}`);
       
       // Redirect based on role
-      const userRole = data.user?.role;
+      const userRole = userData?.role;
       if (userRole === 'admin') {
         navigate("/admin");
       } else {
-      navigate("/home");
+        navigate("/home");
       }
     } catch (err) {
-      const errorMessage = err.response?.data?.message || "Đăng nhập thất bại!";
+      console.error("Login error:", err);
+      const errorMessage = err.response?.data?.message || err.message || "Đăng nhập thất bại!";
       toast.error(errorMessage);
-      console.error("Login error:", err.response?.data || err);
     } finally {
       setLoading(false);
     }

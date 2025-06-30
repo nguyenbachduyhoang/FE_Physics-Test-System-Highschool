@@ -1,3 +1,4 @@
+/* eslint-disable no-unused-vars */
 import React, { useState, useEffect, useRef } from "react";
 import LayoutContent from "../../components/layoutContent";
 import "./index.scss";
@@ -11,10 +12,12 @@ import {
   FaLightbulb,
   FaExclamationTriangle,
   FaTrophy,
+  FaEye,
+  FaEyeSlash,
 } from "react-icons/fa";
 import { useNavigate, useLocation } from "react-router-dom";
 import { autoGradingService, explanationService } from "../../services";
-import { Modal, Spin, Alert, Collapse, Tag, Progress, Divider, Button } from "antd";
+import { Modal, Spin, Alert, Collapse, Tag, Progress, Divider, Button, Tooltip } from "antd";
 import toast from "react-hot-toast";
 import gsap from 'gsap';
 import { ScrollTrigger } from 'gsap/ScrollTrigger';
@@ -140,6 +143,8 @@ const ResultContent = () => {
   const [showDetailedAnalysis, setShowDetailedAnalysis] = useState(false);
   const [explanations, setExplanations] = useState({});
   const [loadingExplanations, setLoadingExplanations] = useState({});
+  const [activeCollapseKeys, setActiveCollapseKeys] = useState([]);
+  const [error, setError] = useState(null);
 
   // Thêm refs cho animation
   const statsRef = useRef(null);
@@ -151,63 +156,83 @@ const ResultContent = () => {
     const loadGradingResults = async () => {
       try {
         setLoading(true);
+        console.log('🔍 Result component: Loading grading results...');
+        console.log('📍 Current URL:', window.location.pathname);
         
-        // Lấy kết quả từ navigation state hoặc localStorage
-        let results = location.state?.gradingResults;
+        // Thứ tự ưu tiên đọc data:
+        // 1. Navigation state
+        // 2. resultPageData từ localStorage
+        // 3. latestGradingResult từ localStorage
+        // 4. fallbackNavigationData từ localStorage
         
+        let results = null;
+        let examData = null;
+        let timeTaken = null;
+        
+        // 1. Thử navigation state trước
+        if (location.state?.gradingResults) {
+          results = location.state.gradingResults;
+          examData = location.state.examData;
+          timeTaken = location.state.timeTaken;
+          console.log('✅ Using navigation state:', results);
+        }
+        
+        // 2. Thử resultPageData
+        if (!results) {
+          const resultPageData = localStorage.getItem('resultPageData');
+          console.log('💾 ResultPageData from localStorage:', resultPageData);
+          if (resultPageData) {
+            try {
+              const parsedData = JSON.parse(resultPageData);
+              results = parsedData.gradingResults;
+              examData = parsedData.examData;
+              timeTaken = parsedData.timeTaken;
+              console.log('✅ Using resultPageData:', results);
+              // Cleanup sau khi đọc
+              localStorage.removeItem('resultPageData');
+            } catch (parseError) {
+              console.error('Error parsing resultPageData:', parseError);
+            }
+          }
+        }
+        
+        // 3. Thử latestGradingResult
         if (!results) {
           const savedResults = localStorage.getItem('latestGradingResult');
+          console.log('💾 LatestGradingResult from localStorage:', savedResults);
           if (savedResults) {
-            results = JSON.parse(savedResults);
+            try {
+              results = JSON.parse(savedResults);
+              console.log('✅ Using latestGradingResult:', results);
+            } catch (parseError) {
+              console.error('Error parsing latestGradingResult:', parseError);
+            }
           }
         }
 
-        // Thêm fallback navigation data
+        // 4. Thử fallback data
         if (!results) {
           const fallbackData = localStorage.getItem('fallbackNavigationData');
           if (fallbackData) {
-            const parsedFallback = JSON.parse(fallbackData);
-            results = parsedFallback.gradingResults;
-            localStorage.removeItem('fallbackNavigationData'); // Cleanup
+            try {
+              const parsedFallback = JSON.parse(fallbackData);
+              results = parsedFallback.gradingResults;
+              examData = parsedFallback.examData;
+              timeTaken = parsedFallback.timeTaken;
+              localStorage.removeItem('fallbackNavigationData'); // Cleanup
+              console.log('✅ Using fallbackNavigationData:', results);
+            } catch (parseError) {
+              console.error('Error parsing fallbackNavigationData:', parseError);
+            }
           }
         }
 
-        // Debug: Log kết quả tìm được
-        console.log('🔍 DEBUG - Kết quả tìm được:', {
-          fromState: !!location.state?.gradingResults,
-          fromLocalStorage: !!localStorage.getItem('latestGradingResult'),
-          fromFallback: !!localStorage.getItem('fallbackNavigationData'),
-          finalResults: results,
-          hasQuestionResults: !!results?.questionResults,
-          questionResultsCount: results?.questionResults?.length || 0
-        });
-
         if (results) {
+          console.log('🎉 Final results data:', results);
           setGradingData(results);
-          
-          // Debug: Log chi tiết questionResults
-          console.log('🔍 DEBUG - Chi tiết questionResults:', {
-            questionResults: results.questionResults,
-            firstQuestion: results.questionResults?.[0],
-            questionKeys: results.questionResults?.[0] ? Object.keys(results.questionResults[0]) : []
-          });
-          
           // Tự động load explanation cho tất cả câu hỏi
           if (results.questionResults && results.questionResults.length > 0) {
             results.questionResults.forEach(async (result, index) => {
-              console.log(`🔍 DEBUG - Question ${index + 1}:`, {
-                questionId: result.questionId,
-                studentChoiceId: result.studentChoiceId,
-                studentChoiceLabel: result.studentChoiceLabel,
-                studentChoiceText: result.studentChoiceText,
-                studentTextAnswer: result.studentTextAnswer,
-                correctChoiceId: result.correctChoiceId,
-                correctChoiceLabel: result.correctChoiceLabel,
-                correctChoiceText: result.correctChoiceText,
-                isCorrect: result.isCorrect,
-                questionType: result.questionType
-              });
-              
               if (result.questionId) {
                 try {
                   const explanationResult = await explanationService.getExplanationByQuestion(result.questionId);
@@ -224,13 +249,15 @@ const ResultContent = () => {
             });
           }
         } else {
+          console.warn('⚠️ No grading results found, using demo data');
           // Fallback to demo data if no grading results
           setGradingData(null);
-          toast.warning("Không tìm thấy kết quả chấm điểm. Hiển thị dữ liệu mẫu.");
         }
-      } catch (error) {
-        console.error("Lỗi khi tải kết quả:", error);
-        toast.error("Có lỗi khi tải kết quả chấm điểm");
+
+        setError(null);
+      } catch (err) {
+        console.error('❌ Error loading results:', err);
+        setError('Không thể tải kết quả bài thi');
         setGradingData(null);
       } finally {
         setLoading(false);
@@ -449,12 +476,43 @@ const ResultContent = () => {
     }
   };
 
-  // Hiển thị loading khi đang tải dữ liệu
+  // Loading state
   if (loading) {
     return (
-      <div className="result" style={{ textAlign: 'center', padding: '50px' }}>
+      <div style={{ 
+        display: 'flex', 
+        justifyContent: 'center', 
+        alignItems: 'center', 
+        height: '100vh',
+        flexDirection: 'column',
+        gap: '20px'
+      }}>
         <Spin size="large" />
-        <p style={{ marginTop: '20px' }}>Đang tải kết quả chấm điểm...</p>
+        <div style={{ color: '#666', fontSize: '16px' }}>Đang tải kết quả bài thi...</div>
+      </div>
+    );
+  }
+
+  // Error state
+  if (error) {
+    return (
+      <div style={{ 
+        display: 'flex', 
+        justifyContent: 'center', 
+        alignItems: 'center', 
+        height: '100vh',
+        flexDirection: 'column',
+        gap: '20px'
+      }}>
+        <Alert 
+          message="Lỗi tải dữ liệu" 
+          description={error}
+          type="error" 
+          showIcon 
+        />
+        <Button type="primary" onClick={() => navigate('/home')}>
+          Về trang chủ
+        </Button>
       </div>
     );
   }
@@ -462,15 +520,6 @@ const ResultContent = () => {
   // Sử dụng dữ liệu thực từ auto grading hoặc fallback
   const displayData = gradingData || resultData;
   const isRealData = !!gradingData;
-
-  // Debug: Log toàn bộ dữ liệu
-  console.log('🔍 DEBUG - Toàn bộ dữ liệu Result:', {
-    gradingData,
-    displayData,
-    isRealData,
-    hasQuestionResults: !!displayData?.questionResults,
-    questionResultsLength: displayData?.questionResults?.length || 0
-  });
 
   return (
     <div className="result">
@@ -498,7 +547,16 @@ const ResultContent = () => {
               : "3.0 / 10.0"
             }
           </div>
-          <div className="stats-subtitle error">30.0% - Yếu</div>
+          <div className={`stats-subtitle ${isRealData 
+            ? (displayData.percentageScore >= 80 ? 'success' : 
+               displayData.percentageScore >= 60 ? 'warning' : 'error')
+            : 'error'
+          }`}>
+            {isRealData 
+              ? `${displayData.percentageScore?.toFixed(1)}% - ${autoGradingService.getGradeText(displayData.grade)}`
+              : "30.0% - Yếu"
+            }
+          </div>
         </div>
 
         <div className="stats-card">
@@ -510,15 +568,31 @@ const ResultContent = () => {
               : "3 / 10"
             }
           </div>
-          <Progress percent={30} showInfo={false} strokeColor="#19d6b4" />
+          <Progress 
+            percent={isRealData 
+              ? Math.round((displayData.correctAnswers / displayData.totalQuestions) * 100)
+              : 30
+            } 
+            showInfo={false} 
+            strokeColor={isRealData 
+              ? (displayData.percentageScore >= 80 ? "#52c41a" : 
+                 displayData.percentageScore >= 60 ? "#faad14" : "#ff4d4f")
+              : "#19d6b4"
+            } 
+          />
         </div>
 
         <div className="stats-card">
           <FaChartLine className="stats-icon" />
           <div className="stats-label">Thời gian làm bài</div>
           <div className="stats-value">
-            {isRealData ? displayData.timeTaken || "N/A" : "N/A"}
+            {isRealData ? (displayData.timeTaken || location.state?.timeTaken || "N/A") : "N/A"}
           </div>
+          {isRealData && (displayData.timeTaken || location.state?.timeTaken) && (
+            <div className="stats-subtitle">
+              Hoàn thành
+            </div>
+          )}
         </div>
 
         <div className="stats-card">
@@ -526,11 +600,23 @@ const ResultContent = () => {
           <div className="stats-label">Hiệu suất</div>
           <div className="stats-value">
             {isRealData 
-              ? autoGradingService.getPerformanceLevelText(displayData.analysis?.performanceLevel)
+              ? (displayData.analysis?.performanceLevel || autoGradingService.getPerformanceLevelText(displayData.analysis?.performanceLevel) || "Trung bình")
               : "Chưa xác định"
             }
           </div>
-          <div className="stats-subtitle error">Chưa xác định</div>
+          <div className={`stats-subtitle ${isRealData 
+            ? (displayData.percentageScore >= 90 ? 'success' : 
+               displayData.percentageScore >= 70 ? 'warning' : 'error')
+            : 'error'
+          }`}>
+            {isRealData 
+              ? (displayData.percentageScore >= 90 ? "Xuất sắc" :
+                 displayData.percentageScore >= 80 ? "Giỏi" :
+                 displayData.percentageScore >= 70 ? "Khá" :
+                 displayData.percentageScore >= 60 ? "Trung bình" : "Cần cải thiện")
+              : "Chưa xác định"
+            }
+          </div>
         </div>
       </div>
 
@@ -544,8 +630,16 @@ const ResultContent = () => {
           <div>
             <strong>Gợi ý luyện tập:</strong>
             <ul>
-              <li>Cần tập trung ôn tập các chủ đề: Điện học, Từ học</li>
-              <li>Cần luyện tập thêm các bài tập khó</li>
+              {isRealData && displayData.analysis?.recommendations?.length > 0 ? (
+                displayData.analysis.recommendations.map((rec, index) => (
+                  <li key={index}>{rec}</li>
+                ))
+              ) : (
+                <>
+                  <li>Cần tập trung ôn tập các chủ đề: Điện học, Từ học</li>
+                  <li>Cần luyện tập thêm các bài tập khó</li>
+                </>
+              )}
             </ul>
           </div>
         </div>
@@ -554,24 +648,46 @@ const ResultContent = () => {
           <h3>
             <FaChartLine /> Kế hoạch học tập
           </h3>
-          <p>Xem lại lý thuyết và làm thêm bài tập về các chủ đề trênTăng dần độ khó của bài tập khi luyện tập</p>
+          {isRealData && displayData.analysis?.studyPlan?.length > 0 ? (
+            <ul>
+              {displayData.analysis.studyPlan.map((plan, index) => (
+                <li key={index}>{plan}</li>
+              ))}
+            </ul>
+          ) : (
+            <p>Xem lại lý thuyết và làm thêm bài tập về các chủ đề trên. Tăng dần độ khó của bài tập khi luyện tập</p>
+          )}
         </div>
 
         <div className="difficulty-analysis">
           <h3>Phân tích theo độ khó:</h3>
           <div className="difficulty-tags">
-            <div className="difficulty-tag easy">
-              <span>Dễ:</span> 1 câu đúng
-            </div>
-            <div className="difficulty-tag medium">
-              <span>Trung bình:</span> 2 câu đúng
-            </div>
-            <div className="difficulty-tag hard">
-              <span>Khó:</span> 1 câu đúng
-            </div>
-            <div className="difficulty-tag very_hard">
-              <span>Rất khó:</span> 6 câu đúng
-            </div>
+            {isRealData && displayData.difficultyBreakdown ? (
+              Object.entries(displayData.difficultyBreakdown).map(([difficulty, count]) => (
+                <div key={difficulty} className={`difficulty-tag ${difficulty.toLowerCase().replace('_', '-')}`}>
+                  <span>{difficulty === 'easy' ? 'Dễ' : 
+                         difficulty === 'medium' ? 'Trung bình' : 
+                         difficulty === 'hard' ? 'Khó' : 
+                         difficulty === 'very_easy' ? 'Rất dễ' :
+                         difficulty === 'very_hard' ? 'Rất khó' : difficulty}:</span> {count} câu
+                </div>
+              ))
+            ) : (
+              <>
+                <div className="difficulty-tag easy">
+                  <span>Dễ:</span> 1 câu đúng
+                </div>
+                <div className="difficulty-tag medium">
+                  <span>Trung bình:</span> 2 câu đúng
+                </div>
+                <div className="difficulty-tag hard">
+                  <span>Khó:</span> 1 câu đúng
+                </div>
+                <div className="difficulty-tag very-hard">
+                  <span>Rất khó:</span> 6 câu đúng
+                </div>
+              </>
+            )}
           </div>
         </div>
       </div>
@@ -582,33 +698,74 @@ const ResultContent = () => {
         <h2 className="section-title">
           <FaExclamationTriangle style={{ marginRight: '8px' }} />
           Phân tích chi tiết câu hỏi
+          {isRealData && displayData.questionResults && (
+            <span style={{ 
+              fontSize: '0.8rem', 
+              fontWeight: 'normal', 
+              color: '#666',
+              marginLeft: '8px',
+              background: '#f0f0f0',
+              padding: '2px 8px',
+              borderRadius: '12px'
+            }}>
+              {activeCollapseKeys.length}/{displayData.questionResults.length} đang mở
+            </span>
+          )}
         </h2>
-        {isRealData && (
-          <button 
-            className="btn btn--secondary"
-            onClick={() => setShowDetailedAnalysis(!showDetailedAnalysis)}
-          >
-            {showDetailedAnalysis ? 'Ẩn phân tích AI' : 'Xem phân tích AI'}
-          </button>
-        )}
+        <div style={{ display: 'flex', gap: '8px' }}>
+          {isRealData && displayData.questionResults && displayData.questionResults.length > 0 && (
+            <>
+              <Tooltip title={activeCollapseKeys.length === displayData.questionResults.length ? 'Đóng tất cả câu hỏi' : 'Mở tất cả câu hỏi'}>
+                <button 
+                  // className="btn btn--small"
+                  className="btn btn--secondary"
+                  onClick={() => {
+                    const allKeys = displayData.questionResults.map(result => result.questionId);
+                    const isClosingAll = activeCollapseKeys.length === allKeys.length;
+                    
+                    if (isClosingAll) {
+                      // Đóng tất cả với animation
+                      setActiveCollapseKeys([]);
+                      toast.success('Đã đóng tất cả câu hỏi');
+                    } else {
+                      // Mở tất cả với animation
+                      setActiveCollapseKeys(allKeys);
+                      toast.success(`Đã mở tất cả ${allKeys.length} câu hỏi`);
+                    }
+                  }}
+                >
+                  {activeCollapseKeys.length === displayData.questionResults.length ? (
+                    <>
+                      <FaEyeSlash style={{ marginRight: '6px' }} />
+                      Đóng tất cả
+                    </>
+                  ) : (
+                    <>
+                      <FaEye style={{ marginRight: '6px' }} />
+                      Mở tất cả
+                    </>
+                  )}
+                </button>
+              </Tooltip>
+              {/* <button 
+                className="btn btn--secondary"
+                onClick={() => setShowDetailedAnalysis(!showDetailedAnalysis)}
+              >
+                {showDetailedAnalysis ? 'Ẩn phân tích AI' : 'Xem phân tích AI'}
+              </button> */}
+            </>
+          )}
+        </div>
       </div>
 
       <div className="questions" ref={questionsRef}>
         {isRealData && displayData.questionResults ? (
-          <Collapse ghost>
+          <Collapse 
+            ghost
+            activeKey={activeCollapseKeys}
+            onChange={setActiveCollapseKeys}
+          >
             {displayData.questionResults.map((result, index) => {
-              // Debug: Log dữ liệu của từng câu hỏi
-              console.log(`🔍 Dữ liệu câu ${index + 1}:`, {
-                questionId: result.questionId,
-                studentChoiceLabel: result.studentChoiceLabel,
-                studentChoiceText: result.studentChoiceText,
-                studentTextAnswer: result.studentTextAnswer,
-                correctChoiceLabel: result.correctChoiceLabel,
-                correctChoiceText: result.correctChoiceText,
-                isCorrect: result.isCorrect,
-                questionType: result.questionType
-              });
-              
               return (
               <Collapse.Panel 
                 key={result.questionId}
@@ -630,18 +787,24 @@ const ResultContent = () => {
                   <div className="question-answer">
                     <span className="label">Câu trả lời của bạn:</span>
                     <span className={result.isCorrect ? "correct" : "incorrect"}>
-                      {result.studentChoiceLabel && result.studentChoiceText 
-                        ? `${result.studentChoiceLabel}. ${result.studentChoiceText}`
-                        : result.studentChoiceText || result.studentTextAnswer || "Không có câu trả lời"
+                      {result.questionType === 'essay' 
+                        ? (result.studentChoiceText || result.studentTextAnswer || "Không có câu trả lời")
+                        : (result.studentChoiceLabel && result.studentChoiceText 
+                            ? `${result.studentChoiceLabel}. ${result.studentChoiceText}`
+                            : result.studentChoiceText || "Không có câu trả lời"
+                          )
                       }
                     </span>
                   </div>
                   <div className="question-answer">
                     <span className="label">Đáp án đúng:</span>
                     <span className="correct">
-                      {result.correctChoiceLabel && result.correctChoiceText 
-                        ? `${result.correctChoiceLabel}. ${result.correctChoiceText}`
-                        : result.correctChoiceText || "Không xác định được đáp án"
+                      {result.questionType === 'essay' 
+                        ? (result.correctChoiceText || "Câu hỏi tự luận - xem hướng dẫn chi tiết")
+                        : (result.correctChoiceLabel && result.correctChoiceText 
+                            ? `${result.correctChoiceLabel}. ${result.correctChoiceText}`
+                            : result.correctChoiceText || "Không xác định được đáp án"
+                          )
                       }
                     </span>
                   </div>
@@ -650,46 +813,6 @@ const ResultContent = () => {
                       <strong>Giải thích:</strong> {result.explanation}
                     </div>
                   )}
-                  {result.feedback && (
-                    <div className="ai-feedback">
-                      <FaBrain style={{ marginRight: '8px', color: '#1890ff' }} />
-                      <strong>AI Feedback:</strong> {result.feedback}
-                    </div>
-                  )}
-                  
-                  {/* Button để lấy explanation từ database */}
-                  <div style={{ marginTop: '12px', display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
-                    <Button 
-                      size="small"
-                      loading={loadingExplanations[result.questionId]}
-                      onClick={() => handleGetExplanation(result.questionId)}
-                      icon={<FaLightbulb />}
-                      style={{ 
-                        borderColor: '#1890ff',
-                        color: explanations[result.questionId] ? '#52c41a' : '#1890ff'
-                      }}
-                    >
-                      {explanations[result.questionId] ? 'Đã có giải thích chi tiết' : 'Xem giải thích chi tiết từ DB'}
-                    </Button>
-                    
-                    {!explanations[result.questionId] && (
-                      <Button 
-                        size="small"
-                        loading={loadingExplanations[result.questionId]}
-                        onClick={() => handleCreateExplanationWithAI(result.questionId)}
-                        icon={<FaBrain />}
-                        type="dashed"
-                        style={{ 
-                          borderColor: '#ff9c6e',
-                          color: '#ff9c6e'
-                        }}
-                      >
-                        Tạo giải thích bằng AI
-                      </Button>
-                    )}
-                  </div>
-                  
-                  {/* Hiển thị explanation từ database */}
                   {explanations[result.questionId] && (
                     <div className="database-explanation" style={{ marginTop: '12px', padding: '12px', background: '#f0f8ff', borderRadius: '6px', border: '1px solid #d9ecff' }}>
                       <div style={{ display: 'flex', alignItems: 'center', marginBottom: '8px' }}>

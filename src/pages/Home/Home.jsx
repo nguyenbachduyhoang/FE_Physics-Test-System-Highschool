@@ -199,7 +199,6 @@ const Home = () => {
         await loadRecentActivities();
       }
 
-      console.log('✅ Dashboard data loaded successfully');
     } catch (error) {
       console.error('Dashboard error:', error);
       toast.error('Không thể tải dữ liệu dashboard');
@@ -257,11 +256,9 @@ const Home = () => {
   const loadChapters = async () => {
     try {
       const response = await questionBankService.getChapters();
-      console.log('API Response:', response);
 
       if (response?.data?.success) {
         const chaptersData = response.data.data;
-        console.log('Chapters data:', chaptersData);
         
         if (Array.isArray(chaptersData) && chaptersData.length > 0) {
           // Lưu toàn bộ chapters
@@ -277,7 +274,6 @@ const Home = () => {
           }));
           setGradeOptions(gradeOpts);
           
-          console.log('Grade options:', gradeOpts);
         } else {
           console.warn('No chapters data found');
           toast.error('Không có dữ liệu chương học');
@@ -305,8 +301,6 @@ const Home = () => {
   };
 
   const handleGradeChange = (value) => {
-    console.log('Selected grade:', value);
-    console.log('Current chapters:', chapters);
     
     setSelectedGrade(value);
     
@@ -316,11 +310,9 @@ const Home = () => {
     if (value) {
       // Filter chapters by selected grade
       const filtered = chapters.filter(chapter => chapter.grade === value);
-      console.log('Filtered chapters:', filtered);
       
       if (filtered && filtered.length > 0) {
         setFilteredChapters(filtered);
-        console.log(`🎓 Found ${filtered.length} chapters for grade ${value}`);
       } else {
         console.warn(`No chapters found for grade ${value}`);
         setFilteredChapters([]);
@@ -341,11 +333,9 @@ const Home = () => {
     if (value) {
       // Filter chapters by selected grade
       const filtered = chapters.filter(chapter => chapter.grade === value);
-      console.log('Filtered chapters for filter:', filtered);
       
       if (filtered && filtered.length > 0) {
         setFilteredChaptersForFilter(filtered);
-        console.log(`🎓 Found ${filtered.length} chapters for filter grade ${value}`);
       } else {
         console.warn(`No chapters found for filter grade ${value}`);
         setFilteredChaptersForFilter([]);
@@ -355,17 +345,14 @@ const Home = () => {
       // If no grade selected, show all chapters
       setFilteredChaptersForFilter(chapters);
     }
-    console.log('🔍 Filter by grade:', value);
   };
 
   const handleFilterTopicChange = (value) => {
     setFilterTopic(value);
-    console.log('🔍 Filter by topic:', value);
   };
 
   const handleFilterDifficultyChange = (value) => {
     setFilterDifficulty(value);
-    console.log('🔍 Filter by difficulty:', value);
   };
 
   // Navigate to thiMau page with filter params
@@ -385,7 +372,6 @@ const Home = () => {
     const queryString = filterParams.toString();
     const targetUrl = queryString ? `/thiMau?${queryString}` : '/thiMau';
     
-    console.log('🔍 Navigating to thiMau with filters:', targetUrl);
     navigate(targetUrl);
   };
 
@@ -408,41 +394,41 @@ const Home = () => {
         return;
       }
 
+      // Kiểm tra loại câu hỏi - mặc định là true nếu không có giá trị
+      const includeMultipleChoice = values.includeMultipleChoice !== false;
+      const includeEssay = values.includeEssay === true;
+
       // Validation cho loại câu hỏi
-      if (!values.includeMultipleChoice && !values.includeEssay) {
+      if (!includeMultipleChoice && !includeEssay) {
         toast.error('Vui lòng chọn ít nhất một loại câu hỏi (Trắc nghiệm hoặc Tự luận)!');
         return;
       }
 
       // Validation đặc biệt cho mix questions
-      if (values.includeMultipleChoice && values.includeEssay && values.questionCount < 5) {
+      if (includeMultipleChoice && includeEssay && values.questionCount < 5) {
         toast.error('Khi kết hợp cả 2 loại câu hỏi, cần ít nhất 5 câu để phân chia hợp lý!');
         return;
       }
 
       // Thông báo phân chia khi có cả 2 loại
-      if (values.includeMultipleChoice && values.includeEssay) {
+      if (includeMultipleChoice && includeEssay) {
         // Sử dụng custom ratio nếu được chọn, default 70%
         const mcPercentage = values.customRatio && values.multipleChoicePercentage ? 
           values.multipleChoicePercentage / 100 : 0.7;
         const multipleChoiceCount = Math.floor(values.questionCount * mcPercentage);
         const essayCount = values.questionCount - multipleChoiceCount;
         
-        console.log(`📊 Sẽ tạo: ${multipleChoiceCount} câu trắc nghiệm + ${essayCount} câu tự luận`);
         toast.loading(`📊 Đang tạo ${multipleChoiceCount} câu trắc nghiệm + ${essayCount} câu tự luận...`, { id: 'mixed-exam' });
-      } else if (values.includeEssay && !values.includeMultipleChoice) {
+      } else if (includeEssay && !includeMultipleChoice) {
         toast.loading(`✍️ Đang tạo ${values.questionCount} câu tự luận...`, { id: 'essay-only' });
       } else {
         toast.loading(`🔘 Đang tạo ${values.questionCount} câu trắc nghiệm...`, { id: 'mc-only' });
       }
 
       setCreatingExam(true);
-      console.log('🚀 Starting AI exam creation with values:', values);
 
       if (values.useSmartExam) {
-        // Smart exam không cần toast.loading vì đã có ở trên
-
-        // Find selected chapter for naming
+        // Smart exam logic...
         const selectedChapter = chapters.find(c => c.chapterId === values.chapterId);
         const chapterName = selectedChapter ? selectedChapter.chapterName : 'Chương học';
 
@@ -454,29 +440,28 @@ const Home = () => {
           estimatedDuration: values.duration,
           questionCount: values.questionCount,
           chapterId: values.chapterId, 
-          includeMultipleChoice: values.includeMultipleChoice,
-          includeEssay: values.includeEssay,
+          includeMultipleChoice: includeMultipleChoice,
+          includeEssay: includeEssay,
           adaptiveLearning: true
         };
 
-        console.log('🤖 Creating smart exam with criteria:', smartExamCriteria);
         const smartExam = await examService.generateSmartExam(smartExamCriteria);
 
-        toast.dismiss(); // Dismiss all loading toasts
+        toast.dismiss();
 
         if (!smartExam || !smartExam.examId) {
           throw new Error('Smart exam generation failed - no exam ID returned');
         }
 
-        // Dynamic success message based on question types
+        // Dynamic success message
         let successMessage = '🎯 Đã tạo đề thi thông minh ';
-        if (values.includeMultipleChoice && values.includeEssay) {
+        if (includeMultipleChoice && includeEssay) {
           const mcPercentage = values.customRatio && values.multipleChoicePercentage ? 
             values.multipleChoicePercentage / 100 : 0.7;
           const mcCount = Math.floor(values.questionCount * mcPercentage);
           const essayCount = values.questionCount - mcCount;
           successMessage += `với ${mcCount} câu trắc nghiệm + ${essayCount} câu tự luận!`;
-        } else if (values.includeEssay) {
+        } else if (includeEssay) {
           successMessage += `với ${values.questionCount} câu tự luận!`;
         } else {
           successMessage += `với ${values.questionCount} câu trắc nghiệm!`;
@@ -484,7 +469,6 @@ const Home = () => {
 
         toast.success(successMessage, { duration: 4000 });
 
-        // Navigate to smart exam
         setIsModalOpen(false);
         form.resetFields();
         setSelectedGrade(null);
@@ -492,12 +476,10 @@ const Home = () => {
         navigate(`/quiz/${smartExam.examId}`);
 
       } else {
-        // Regular exam không cần toast.loading vì đã có ở trên
-
+        // Regular exam logic...
         const selectedChapter = chapters.find(c => c.chapterId === values.chapterId);
         const chapterName = selectedChapter?.chapterName || 'Vật lý';
 
-        // Sử dụng Exams/generate endpoint thay vì tạo questions riêng lẻ
         const examGenerateData = {
           examName: `Đề thi - ${chapterName} (${new Date().toLocaleDateString('vi-VN')})`,
           description: `Đề thi được tạo cho ${chapterName}`,
@@ -507,30 +489,28 @@ const Home = () => {
           chapterId: values.chapterId,
           questionCount: values.questionCount || 10,
           difficultyLevel: values.difficulty || "medium",
-          includeMultipleChoice: values.includeMultipleChoice !== false,
-          includeEssay: values.includeEssay !== false,
-          // Pass custom ratio if user selected it
+          includeMultipleChoice: includeMultipleChoice,
+          includeEssay: includeEssay,
           customRatio: values.customRatio || false,
           multipleChoicePercentage: values.customRatio ? (values.multipleChoicePercentage || 70) : 70
         };
 
-        console.log('📝 Creating regular exam with data:', examGenerateData);
         const createdExam = await examService.generateExam(examGenerateData);
 
-        toast.dismiss(); // Dismiss all loading toasts
+        toast.dismiss();
         if (!createdExam || !createdExam.examId) {
           throw new Error('Exam generation failed - no exam ID returned');
         }
 
-        // Dynamic success message based on question types
+        // Dynamic success message
         let successMessage = '🎉 Đã tạo đề thi thành công ';
-        if (values.includeMultipleChoice && values.includeEssay) {
+        if (includeMultipleChoice && includeEssay) {
           const mcPercentage = values.customRatio && values.multipleChoicePercentage ? 
             values.multipleChoicePercentage / 100 : 0.7;
           const mcCount = Math.floor(values.questionCount * mcPercentage);
           const essayCount = values.questionCount - mcCount;
           successMessage += `với ${mcCount} câu trắc nghiệm + ${essayCount} câu tự luận!`;
-        } else if (values.includeEssay) {
+        } else if (includeEssay) {
           successMessage += `với ${values.questionCount} câu tự luận!`;
         } else {
           successMessage += `với ${values.questionCount} câu trắc nghiệm!`;
@@ -589,7 +569,7 @@ const Home = () => {
                   onChange={handleFilterTopicChange}
                   value={filterTopic}
                   disabled={!filterGrade}
-                  placeholder={filterGrade ? "Chọn chương học" : "Vui lòng chọn lớp trước"}
+                  // placeholder={filterGrade ? "Chọn chương học" : "Vui lòng chọn lớp trước"}
                 />
               </div>
               <div className="home-sidebar-input">
@@ -645,7 +625,7 @@ const Home = () => {
                       setFilterTopic(null);
                       setFilterDifficulty(null);
                       setFilteredChaptersForFilter(chapters);
-                      toast('🔄 Đã xóa bộ lọc', { icon: 'ℹ️' });
+                      toast.success('Đã xóa bộ lọc', { duration: 2500 });
                     }}
                     whileHover={{ scale: 1.02 }}
                     whileTap={{ scale: 0.98 }}
@@ -949,6 +929,23 @@ const Home = () => {
                       </Select.Option>
                     ))}
                   </Select>
+                </Form.Item>
+
+                <Divider style={{ background: "white", margin: "16px 0" }} />
+
+                <div style={{ marginBottom: "16px" }}>
+                  <span style={{ color: '#fff', fontSize: '14px', fontWeight: 'bold' }}>🎯 Loại đề thi:</span>
+                </div>
+
+                <Form.Item name="useSmartExam" valuePropName="checked" initialValue={false}>
+                  <div className="modal-switch-row">
+                    <span className="modal-label">
+                      🧠 Smart Exam
+                      <br />
+                      <small style={{ opacity: 0.8 }}>Đề thi thích ứng - AI tự động điều chỉnh độ khó</small>
+                    </span>
+                    <Switch />
+                  </div>
                 </Form.Item>
 
                 <Divider style={{ background: "white", margin: "16px 0" }} />
