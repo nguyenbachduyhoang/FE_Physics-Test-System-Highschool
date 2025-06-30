@@ -1,10 +1,9 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { Pagination, Modal, Spin, Alert } from "antd";
 import "./index.scss";
 import LayoutContent from "../../components/layoutContent";
 import EssayQuestion from "../../components/EssayQuestion";
-import { useNavigate, useParams } from "react-router-dom";
-import { uploadFile } from "../../quiz-uploads/firebaseStorage";
+import { useParams } from "react-router-dom";
 import { examService, autoGradingService, essayService } from "../../services";
 import { questionBankService } from "../../services/questionBankService";
 import toast from "react-hot-toast";
@@ -19,20 +18,18 @@ const PhysicsTestSystem = () => {
   const [currentPage, setCurrentPage] = useState(1);
   const [scrollToQuestion, setScrollToQuestion] = useState(null);
   const [showConfirmSubmit, setShowConfirmSubmit] = useState(false);
-  const [uploadedFiles, setUploadedFiles] = useState({}); // 2. State
   const [examData, setExamData] = useState(null);
   const [startTime, setStartTime] = useState(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [essayValidations, setEssayValidations] = useState({});
   const [isSubmitted, setIsSubmitted] = useState(false); // Thêm state để tránh submit nhiều lần
+  const containerRef = useRef(null);
 
   const QUESTIONS_PER_PAGE = 10; 
-  const navigate = useNavigate();
-  const { examId } = useParams(); 
+  const { examId } = useParams();
 
   const loadRealQuestionsFromAI = async (placeholderQuestions) => {
     try {
-      console.log('Attempting to load real AI questions for placeholders...');
       
       const chaptersArray = await questionBankService.getChapters();
       if (!Array.isArray(chaptersArray) || chaptersArray.length === 0) {
@@ -142,7 +139,6 @@ const PhysicsTestSystem = () => {
         if (prev <= 0) {
           clearInterval(timer);
           if (!isSubmitted) { // Kiểm tra trước khi auto submit
-            console.log('⏰ Hết giờ - tự động nộp bài');
             handleSubmit();
           }
           return 0;
@@ -176,18 +172,22 @@ const PhysicsTestSystem = () => {
     }));
   };
 
-  const handlePageChange = (page) => {
-    setCurrentPage(page);
-    setScrollToQuestion(true);
-    window.scrollTo({ top: 0, behavior: "smooth" });
-  };
+      const handlePageChange = (page) => {
+      setCurrentPage(page);
+      // Scroll to top with a small delay to ensure the new page content is rendered
+      setTimeout(() => {
+        if (containerRef.current) {
+          containerRef.current.scrollIntoView({ behavior: "smooth", block: "start" });
+        }
+      }, 0);
+    };
   const scrollToQuestionWithOffset = (id) => {
     const el = document.getElementById(id);
     if (el) {
       el.scrollIntoView({ behavior: "smooth" });
-      console.log(`Scrolling to ${id}`);
     }
   };
+  
   useEffect(() => {
     if (scrollToQuestion !== null) {
       setTimeout(() => {
@@ -267,13 +267,7 @@ const PhysicsTestSystem = () => {
 
   const handleSubmit = async () => {
     try {
-      // Tránh submit nhiều lần
-      if (isSubmitted) {
-        console.log('⚠️ Đã submit rồi, bỏ qua lần gọi này');
-        return;
-      }
-      
-      setIsSubmitted(true); // Đánh dấu đã bắt đầu submit
+      setIsSubmitted(true); 
       
       // Kiểm tra đăng nhập
       const currentUser = JSON.parse(localStorage.getItem('user') || '{}');
@@ -290,7 +284,6 @@ const PhysicsTestSystem = () => {
         return;
       }
 
-      // Kiểm tra validation của các câu hỏi tự luận
       const essayQuestions = questions.filter(q => q.questionType === 'essay' || q.type === 'essay');
       const invalidEssays = essayQuestions.filter(q => {
         const questionId = q.questionId || q.id;
@@ -305,7 +298,6 @@ const PhysicsTestSystem = () => {
       setIsSubmitting(true);
       toast.loading("Đang chấm bài...", { id: "grading" });
 
-      // Tính thời gian làm bài
       const endTime = new Date();
       const timeTakenMs = endTime - startTime;
       const hours = Math.floor(timeTakenMs / (1000 * 60 * 60));
@@ -313,14 +305,12 @@ const PhysicsTestSystem = () => {
       const seconds = Math.floor((timeTakenMs % (1000 * 60)) / 1000);
       const timeTaken = `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
 
-      // Tách riêng essay questions và multiple choice questions cho xử lý
-
       let essayGradingResults = {};
 
       // Chấm điểm các câu tự luận trước
       if (essayQuestions.length > 0) {
         try {
-          toast.loading("Đang chấm điểm các câu tự luận...", { id: "essay-grading" });
+          // toast.loading("Đang chấm điểm các câu tự luận...", { id: "essay-grading" });
           
           const essaySubmissions = essayQuestions
             .filter(q => selectedAnswers[q.questionId || q.id])
@@ -337,7 +327,7 @@ const PhysicsTestSystem = () => {
             });
 
             essayGradingResults = batchGradingResult.results || {};
-            toast.success("Chấm điểm tự luận hoàn thành!", { id: "essay-grading" });
+            // toast.success("Chấm điểm tự luận hoàn thành!", { id: "essay-grading" });
           }
         } catch (error) {
           console.warn('Lỗi khi chấm điểm tự luận:', error);
@@ -367,15 +357,6 @@ const PhysicsTestSystem = () => {
         const selectedChoice = question.answerChoices?.find(choice => 
           choice.choiceLabel === answer
         );
-
-        // Debug: Log thông tin mapping
-        console.log(`🔍 DEBUG Quiz Submit - Question ${questionId}:`, {
-          answer,
-          answerChoices: question.answerChoices,
-          selectedChoice,
-          selectedChoiceId: selectedChoice?.choiceId
-        });
-
         return {
           questionId,
           selectedChoiceId: selectedChoice?.choiceId,
@@ -402,42 +383,29 @@ const PhysicsTestSystem = () => {
       // Lưu kết quả chấm điểm
       localStorage.setItem('latestGradingResult', JSON.stringify(gradingResult));
 
-      console.log('✅ Chấm bài thành công, chuẩn bị chuyển trang...', {
-        gradingResult,
-        examData,
-        timeTaken,
-        currentPath: window.location.pathname
-      });
-
-      toast.success("Chấm bài thành công!", { id: "grading" });
+      toast.success("Chấm bài thành công!", { id: "grading" }); 
       
-      // Chuyển đến trang kết quả
-      console.log('🚀 Đang chuyển đến trang /result...');
-      navigate("/result", { 
-        state: { 
-          gradingResults: gradingResult,
-          examData: examData,
-          timeTaken: timeTaken
-        }
-      });
-
-      console.log('✅ Navigate command đã được thực hiện');
-
-      // Fallback navigation nếu navigate không hoạt động
+      // Lưu tất cả data cần thiết vào localStorage
+      const resultData = {
+        gradingResults: gradingResult,
+        examData: examData,
+        timeTaken: timeTaken,
+        timestamp: Date.now()
+      };
+      
+      console.log('💾 Saving to localStorage:', resultData);
+      localStorage.setItem('resultPageData', JSON.stringify(resultData));
+      
+      // Force reload để đảm bảo component mới được mount
+      console.log('🔄 Navigating to result page...');
+      
+      // Delay ngắn để đảm bảo data được lưu xong
       setTimeout(() => {
-        if (window.location.pathname === '/quiz' || window.location.pathname.includes('/quiz')) {
-          console.log('⚠️ Navigation không hoạt động, sử dụng window.location.href fallback');
-          localStorage.setItem('fallbackNavigationData', JSON.stringify({
-            gradingResults: gradingResult,
-            examData: examData,
-            timeTaken: timeTaken
-          }));
-          window.location.href = '/result';
-        }
-      }, 1000); // Đợi 1 giây trước khi fallback
+        window.location.replace('/result');
+      }, 100);
 
     } catch (error) {
-      console.error("❌ Lỗi khi chấm bài:", error);
+      console.error("Lỗi khi chấm bài:", error);
       setIsSubmitted(false); // Reset để có thể thử lại
       toast.error(
         error.message || "Có lỗi xảy ra khi chấm bài. Vui lòng thử lại sau",
@@ -445,30 +413,12 @@ const PhysicsTestSystem = () => {
       );
     } finally {
       setIsSubmitting(false);
-      console.log('🔄 setIsSubmitting(false) đã được gọi');
     }
   };
-
-  const handleFileUpload = async (questionId, file) => {
-    // 3. Hàm upload
-    try {
-      const url = await uploadFile(file);
-      setUploadedFiles((prev) => ({
-        ...prev,
-        [questionId]: url,
-      }));
-      alert("Upload thành công!");
-    } catch (err) {
-      alert("Upload thất bại!");
-      console.log("Error:", err);
-
-    }
-  };
-
   // Styles cho essay questions đã được chuyển vào EssayQuestion component
 
   return (
-    <div className="Layout-Quiz">
+    <div className="Layout-Quiz" ref={containerRef}>
       <LayoutContent
         layoutType={5}
         content1={
@@ -582,28 +532,6 @@ const PhysicsTestSystem = () => {
                       />
                       <span>Lát kiểm tra lại</span>
                     </label>
-                  </div>
-                  {/* 4. Thêm input upload file */}
-                  <div style={{ marginTop: 8 }}>
-                    <input
-                      type="file"
-                      onChange={(e) => {
-                        if (e.target.files[0]) {
-                          handleFileUpload(question.questionId || question.id, e.target.files[0]);
-                        }
-                      }}
-                    />
-                    {uploadedFiles[question.questionId || question.id] && (
-                      <div>
-                        <a
-                          href={uploadedFiles[question.questionId || question.id]}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                        >
-                          Xem file đã upload
-                        </a>
-                      </div>
-                    )}
                   </div>
                 </div>
               ))

@@ -23,7 +23,7 @@ const EssayQuestion = ({
 
   // Đếm từ và validate
   useEffect(() => {
-    if (!value) {
+    if (!value || value.trim() === '') {
       setWordCount(0);
       setIsValid(false);
       setValidationMessage('Vui lòng nhập câu trả lời');
@@ -31,7 +31,9 @@ const EssayQuestion = ({
       return;
     }
 
-    const words = value.trim().split(/\s+/).filter(word => word.length > 0);
+    // Cải thiện cách đếm từ - loại bỏ ký tự đặc biệt và số
+    const cleanText = value.trim().replace(/[^\w\sàáảãạăắằẳẵặâấầẩẫậèéẻẽẹêếềểễệìíỉĩịòóỏõọôốồổỗộơớờởỡợùúủũụưứừửữựỳýỷỹỵđĐ]/g, ' ');
+    const words = cleanText.split(/\s+/).filter(word => word.length > 0);
     const count = words.length;
     setWordCount(count);
 
@@ -215,9 +217,8 @@ const EssayQuestion = ({
           <div dangerouslySetInnerHTML={{ __html: question.sampleAnswer }} />
         </Card>
       )}
-
       {/* Tips để viết bài tốt hơn */}
-      <div className="essay-tips">
+      {/* <div className="essay-tips">
         <Alert
           message="💡 Mẹo viết bài tự luận hiệu quả"
           description={
@@ -234,7 +235,7 @@ const EssayQuestion = ({
           closable
           style={{ marginTop: 12 }}
         />
-      </div>
+      </div> */}
     </div>
   );
 };

@@ -27,7 +27,6 @@ export default function ExamsPage() {
     setLoading(true);
     try {
       const response = await examService.getAllExams();
-      console.log('Exams response:', response);
       setExams(Array.isArray(response) ? response : []);
     } catch (err) {
       console.error('Fetch exams error:', err);
@@ -118,7 +117,6 @@ export default function ExamsPage() {
   const handleView = async (examId) => {
     try {
       const examDetails = await examService.getExamById(examId);
-      console.log('Exam details:', examDetails);
       
       Modal.info({
         title: "Chi tiết đề thi",
@@ -172,7 +170,6 @@ export default function ExamsPage() {
       const values = await aiForm.validateFields();
       setGeneratingAI(true);
 
-      console.log('Generating smart exam with values:', values);
 
       const smartExamData = {
         name: values.examName,
@@ -185,7 +182,6 @@ export default function ExamsPage() {
 
       const generatedExam = await examService.generateSmartExam(smartExamData);
       
-      console.log('Generated exam:', generatedExam);
       toast.success(`Tạo đề thi AI thành công! Đã tạo ${generatedExam.totalQuestions || 0} câu hỏi`);
       
       setIsAIModalVisible(false);

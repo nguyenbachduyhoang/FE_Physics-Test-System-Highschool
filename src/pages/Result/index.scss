@@ -88,6 +88,22 @@
       border-radius: 4px;
       background: rgba(255, 77, 79, 0.1);
     }
+
+    &.warning {
+      color: #faad14;
+      font-weight: 500;
+      padding: 2px 8px;
+      border-radius: 4px;
+      background: rgba(250, 173, 20, 0.1);
+    }
+
+    &.success {
+      color: #52c41a;
+      font-weight: 500;
+      padding: 2px 8px;
+      border-radius: 4px;
+      background: rgba(82, 196, 26, 0.1);
+    }
   }
 }
 
@@ -355,15 +371,22 @@
     background: #1890ff;
     border: none;
     color: white;
-    padding: 4px 8px;
-    border-radius: 4px;
-    font-size: 12px;
+    padding: 6px 12px;
+    border-radius: 6px;
+    font-size: 13px;
+    font-weight: 500;
     cursor: pointer;
     transition: all 0.3s ease;
+    box-shadow: 0 2px 6px rgba(24, 144, 255, 0.2);
 
     &:hover {
       background: #40a9ff;
       transform: translateY(-1px);
+      box-shadow: 0 4px 12px rgba(24, 144, 255, 0.3);
+    }
+
+    &:active {
+      transform: translateY(0px);
     }
   }
 }
@@ -386,6 +409,30 @@
     
     .btn {
       width: 100%;
+    }
+  }
+
+  .section-title {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.5rem;
+    margin-bottom: 1rem;
+
+    span {
+      margin-left: 0 !important;
+    }
+  }
+
+  // Header buttons responsive
+  div[style*="display: flex"] {
+    flex-direction: column;
+    gap: 8px;
+    width: 100%;
+
+    .btn {
+      width: 100%;
+      font-size: 12px;
+      padding: 8px 12px;
     }
   }
 }
@@ -521,13 +568,24 @@
         }
       }
       
-      &.very_hard {
+      &.very_hard, &.very-hard {
         background: rgba(156, 39, 176, 0.1);
         color: #9C27B0;
         border: 1px solid rgba(156, 39, 176, 0.2);
         
         &:hover {
           background: rgba(156, 39, 176, 0.15);
+          transform: translateY(-2px);
+        }
+      }
+
+      &.very_easy, &.very-easy {
+        background: rgba(139, 195, 74, 0.1);
+        color: #8BC34A;
+        border: 1px solid rgba(139, 195, 74, 0.2);
+        
+        &:hover {
+          background: rgba(139, 195, 74, 0.15);
           transform: translateY(-2px);
         }
       }
@@ -548,5 +606,55 @@
 
   .ant-progress-inner {
     background-color: rgba(25, 214, 180, 0.1);
+  }
+}
+
+// Tùy chỉnh Collapse của Ant Design
+.ant-collapse {
+  background: transparent;
+  border: none;
+
+  .ant-collapse-item {
+    background: #fff;
+    border-radius: 12px;
+    margin-bottom: 16px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+    border: 1px solid rgba(0, 0, 0, 0.05);
+    transition: all 0.3s ease;
+
+    &:hover {
+      box-shadow: 0 4px 16px rgba(25, 214, 180, 0.1);
+      border-color: rgba(25, 214, 180, 0.2);
+    }
+  }
+
+  .ant-collapse-header {
+    padding: 16px 20px;
+    border-radius: 12px 12px 0 0;
+    background: linear-gradient(135deg, rgba(25, 214, 180, 0.02), rgba(25, 214, 180, 0.05));
+    transition: all 0.3s ease;
+
+    &:hover {
+      background: linear-gradient(135deg, rgba(25, 214, 180, 0.05), rgba(25, 214, 180, 0.08));
+    }
+  }
+
+  .ant-collapse-content {
+    border-top: 1px solid rgba(0, 0, 0, 0.05);
+    
+    .ant-collapse-content-box {
+      padding: 20px;
+    }
+  }
+
+  .ant-collapse-arrow {
+    color: #19d6b4;
+    font-size: 14px;
+    transition: all 0.3s ease;
+    
+    &:hover {
+      color: #15b89e;
+      transform: scale(1.1);
+    }
   }
 }

@@ -46,17 +46,15 @@ export const questionBankService = {
         saveToDatabase: questionCriteria.saveToDatabase || false
       };
 
-      console.log('🤖 Generating question with criteria:', requestData);
       const response = await questionAPI.post('/ai-question/generate', requestData);
       
       if (response.data.success) {
-        console.log('✅ Generated question successfully');
         return response.data.data;
       } else {
         throw new Error(response.data.message || 'AI question generation failed');
       }
     } catch (error) {
-      console.error('❌ Question generation error:', error);
+      console.error('Question generation error:', error);
       throw error;
     }
   },
@@ -64,17 +62,15 @@ export const questionBankService = {
   // Generate multiple questions in batch (sử dụng API thực tế)
   generateBatchQuestions: async (batchCriteria) => {
     try {
-      console.log('🤖 Generating batch questions with criteria:', batchCriteria);
       const response = await questionAPI.post('/ai-question/generate-batch', batchCriteria);
       
       if (response.data.success) {
-        console.log('✅ Generated batch questions successfully');
         return response.data.data;
       } else {
         throw new Error(response.data.message || 'Batch question generation failed');
       }
     } catch (error) {
-      console.error('❌ Batch question generation error:', error);
+      console.error('Batch question generation error:', error);
       throw error;
     }
   },
@@ -119,10 +115,7 @@ export const questionBankService = {
   // Get all chapters for question categorization
   getChapters: async () => {
     try {
-      console.log('Fetching chapters from API...');
       const response = await questionAPI.get('/ai-question/chapters');
-      console.log('API Response:', response);
-
       if (response.data.success && Array.isArray(response.data.data)) {
         return response;
       } else {
