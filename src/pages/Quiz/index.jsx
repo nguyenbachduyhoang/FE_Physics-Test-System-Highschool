@@ -332,7 +332,7 @@ const PhysicsTestSystem = () => {
         } catch (error) {
           console.warn('Lỗi khi chấm điểm tự luận:', error);
           toast.dismiss("essay-grading");
-          toast.error("Không thể chấm điểm tự luận, sẽ sử dụng chấm điểm thủ công sau");
+          // toast.error("Không thể chấm điểm tự luận, sẽ sử dụng chấm điểm thủ công sau");
         }
       }
 
