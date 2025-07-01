@@ -44,22 +44,22 @@ const mockData = {
   features: [
     {
       icon: <FaMagic />,
-      title: "🤖 AI Generation",
+      title: "AI Generation",
       desc: "Tạo đề thi tự động bằng trí tuệ nhân tạo với độ chính xác cao",
     },
     {
       icon: <FaLayerGroup />,
-      title: "🧠 Smart Exam",
+      title: "Smart Exam",
       desc: "Đề thi thích ứng - AI tự động điều chỉnh độ khó theo năng lực",
     },
     {
       icon: <FaChartLine />,
-      title: "📊 Analytics AI",
+      title: "Analytics AI",
       desc: "Phân tích chi tiết kết quả học tập bằng machine learning",
     },
     {
       icon: <FaFileExport />,
-      title: "⚡ Real-time",
+      title: "Real-time",
       desc: "Tạo đề thi ngay lập tức, không cần chờ đợi",
     },
   ],
@@ -528,7 +528,6 @@ const Home = () => {
     } catch (error) {
       console.error('AI Exam Generation error:', error);
       toast.dismiss();
-      toast.error('Có lỗi xảy ra khi tạo đề thi. Vui lòng thử lại!');
     } finally {
       setCreatingExam(false);
     }
@@ -674,7 +673,7 @@ const Home = () => {
                 </motion.span>
               </motion.h1>
               <p className="home-main-welcome-desc">
-                🤖 Tạo đề thi bằng AI thông minh, nhanh chóng và chính xác.
+                Tạo đề thi bằng AI thông minh, nhanh chóng và chính xác.
                 PhyGen sử dụng trí tuệ nhân tạo để tạo ra đề thi phù hợp với mọi mức độ học sinh.
               </p>
 
@@ -931,13 +930,13 @@ const Home = () => {
                   </Select>
                 </Form.Item>
 
-                <Divider style={{ background: "white", margin: "16px 0" }} />
+                {/* <Divider style={{ background: "white", margin: "16px 0" }} />
 
                 <div style={{ marginBottom: "16px" }}>
                   <span style={{ color: '#fff', fontSize: '14px', fontWeight: 'bold' }}>🎯 Loại đề thi:</span>
-                </div>
+                </div> */}
 
-                <Form.Item name="useSmartExam" valuePropName="checked" initialValue={false}>
+                {/* <Form.Item name="useSmartExam" valuePropName="checked" initialValue={false}>
                   <div className="modal-switch-row">
                     <span className="modal-label">
                       🧠 Smart Exam
@@ -946,15 +945,15 @@ const Home = () => {
                     </span>
                     <Switch />
                   </div>
-                </Form.Item>
+                </Form.Item> */}
 
-                <Divider style={{ background: "white", margin: "16px 0" }} />
+                {/* <Divider style={{ background: "white", margin: "16px 0" }} />
 
                 <div style={{ marginBottom: "16px" }}>
                   <span style={{ color: '#fff', fontSize: '14px', fontWeight: 'bold' }}>📝 Loại câu hỏi:</span>
-                </div>
+                </div> */}
 
-                <Form.Item name="includeMultipleChoice" valuePropName="checked" initialValue={true}>
+                {/* <Form.Item name="includeMultipleChoice" valuePropName="checked" initialValue={true}>
                   <div className="modal-switch-row">
                     <span className="modal-label">
                       🔘 Trắc nghiệm
@@ -974,10 +973,10 @@ const Home = () => {
                     </span>
                     <Switch />
                   </div>
-                </Form.Item>
+                </Form.Item> */}
 
                 {/* Hiển thị thông tin phân chia khi cả 2 được chọn */}
-                <Form.Item shouldUpdate={(prevValues, curValues) => 
+                {/* <Form.Item shouldUpdate={(prevValues, curValues) => 
                   prevValues.includeMultipleChoice !== curValues.includeMultipleChoice ||
                   prevValues.includeEssay !== curValues.includeEssay ||
                   prevValues.questionCount !== curValues.questionCount ||
@@ -1055,10 +1054,10 @@ const Home = () => {
                     
                     return null;
                   }}
-                </Form.Item>
+                </Form.Item> */}
 
                 {/* Tùy chọn nâng cao */}
-                <Form.Item shouldUpdate={(prevValues, curValues) => 
+                {/* <Form.Item shouldUpdate={(prevValues, curValues) => 
                   prevValues.includeMultipleChoice !== curValues.includeMultipleChoice ||
                   prevValues.includeEssay !== curValues.includeEssay
                 }>
@@ -1124,7 +1123,7 @@ const Home = () => {
                     }
                     return null;
                   }}
-                </Form.Item>
+                </Form.Item> */}
 
                 <Divider style={{ background: "white", margin: "16px 0" }} />
 

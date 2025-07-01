@@ -420,6 +420,18 @@ export const analyticsService = {
       console.warn('Export analytics API not available:', error.message);
       throw new Error('Không thể xuất dữ liệu phân tích');
     }
+  },
+
+  // Thêm API để lấy chi tiết đề thi với câu hỏi
+  getExamById: async (examId) => {
+    try {
+      const response = await analyticsAPI.get(`/exams/${examId}`);
+      return response.data;
+    } catch (error) {
+      console.warn('Exam details API not available:', error.message);
+      // Fallback: trả về null để component tự tạo demo questions
+      return null;
+    }
   }
 };
 

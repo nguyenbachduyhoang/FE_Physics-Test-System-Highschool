@@ -250,49 +250,6 @@
     }
   }
 
-  // Dark mode support
-  @media (prefers-color-scheme: dark) {
-    background: #141414;
-    border: 1px solid #303030;
-
-    .essay-header {
-      border-bottom-color: #303030;
-
-      h4 {
-        color: #177ddc;
-      }
-
-      .essay-meta {
-        color: #a6a6a6;
-
-        .essay-style {
-          background: #162312;
-          border-color: #274916;
-          color: #95de64;
-        }
-      }
-    }
-
-    .essay-textarea {
-      background: #1f1f1f;
-      border-color: #434343;
-      color: #fff;
-
-      &:focus {
-        border-color: #177ddc;
-        box-shadow: 0 0 0 4px rgba(23, 125, 220, 0.1);
-      }
-
-      &::placeholder {
-        color: #595959;
-      }
-    }
-
-    .essay-tips .ant-alert-info {
-      background: linear-gradient(135deg, #111d2c 0%, #0f1419 100%);
-      border-color: #177ddc;
-    }
-  }
 }
 
 @keyframes slideIn {

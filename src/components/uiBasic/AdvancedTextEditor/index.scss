@@ -1,0 +1,226 @@
+.advanced-text-editor {
+  border: 1px solid #d9d9d9;
+  border-radius: 6px;
+  background: #fff;
+  transition: all 0.3s;
+
+  &:hover {
+    border-color: #40a9ff;
+  }
+
+  &:focus-within {
+    border-color: #1890ff;
+    box-shadow: 0 0 0 2px rgba(24, 144, 255, 0.2);
+  }
+
+  .editor-toolbar {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 0;
+    border-bottom: 1px solid #f0f0f0;
+    margin-bottom: 8px;
+  }
+
+  .editor-content {
+    display: flex;
+    gap: 12px;
+
+    .editor-textarea {
+      flex: 1;
+      min-height: 200px;
+      padding: 12px;
+      border: none;
+      outline: none;
+      resize: vertical;
+      font-family: inherit;
+      font-size: 14px;
+      line-height: 1.6;
+      color: #262626;
+
+      &::placeholder {
+        color: #bfbfbf;
+      }
+
+      &:disabled {
+        background: #f5f5f5;
+        color: #00000040;
+        cursor: not-allowed;
+      }
+    }
+
+    .editor-preview {
+      flex: 1;
+      border-left: 1px solid #f0f0f0;
+      background: #fafafa;
+
+      .preview-header {
+        padding: 8px 12px;
+        background: #f0f0f0;
+        border-bottom: 1px solid #e0e0e0;
+        font-size: 12px;
+        font-weight: 500;
+        color: #666;
+      }
+
+      .preview-content {
+        padding: 12px;
+        min-height: 176px; // 200px - header
+        line-height: 1.6;
+        color: #262626;
+        overflow-y: auto;
+
+        h3 {
+          margin: 16px 0 8px 0;
+          font-size: 16px;
+          font-weight: 600;
+          color: #262626;
+
+          &:first-child {
+            margin-top: 0;
+          }
+        }
+
+        strong {
+          font-weight: 600;
+        }
+
+        em {
+          font-style: italic;
+        }
+
+        ul {
+          margin: 8px 0;
+          padding-left: 20px;
+
+          li {
+            margin: 4px 0;
+          }
+        }
+
+        img {
+          max-width: 100%;
+          height: auto;
+          border-radius: 4px;
+          margin: 8px 0;
+          display: block;
+        }
+
+        a {
+          color: #1890ff;
+          text-decoration: none;
+
+          &:hover {
+            text-decoration: underline;
+          }
+        }
+      }
+    }
+  }
+
+  .editor-help {
+    margin-top: 8px;
+    padding: 4px 0;
+    border-top: 1px solid #f0f0f0;
+  }
+
+  /* Override MD Editor styles */
+  .w-md-editor {
+    background-color: #fff !important;
+    
+    .w-md-editor-bar {
+      border-bottom: 1px solid #e8e8e8 !important;
+    }
+    
+    .w-md-editor-area {
+      .w-md-editor-text-textarea,
+      .w-md-editor-text {
+        font-size: 14px !important;
+        line-height: 1.6 !important;
+        color: #262626 !important;
+        
+        &:focus {
+          border-color: #1890ff !important;
+          box-shadow: 0 0 0 2px rgba(24, 144, 255, 0.2) !important;
+        }
+      }
+    }
+
+    .w-md-editor-preview {
+      background-color: #fafafa !important;
+      
+      h1, h2, h3, h4, h5, h6 {
+        color: #262626 !important;
+      }
+      
+      p {
+        color: #595959 !important;
+        line-height: 1.6 !important;
+      }
+      
+      code {
+        background-color: #f5f5f5 !important;
+        color: #d32f2f !important;
+        padding: 2px 4px !important;
+        border-radius: 3px !important;
+      }
+      
+      pre {
+        background-color: #f5f5f5 !important;
+        border: 1px solid #e8e8e8 !important;
+        
+        code {
+          background-color: transparent !important;
+          color: #262626 !important;
+        }
+      }
+      
+      blockquote {
+        border-left: 4px solid #1890ff !important;
+        background-color: #f6f8fa !important;
+        color: #595959 !important;
+      }
+      
+      img {
+        max-width: 100% !important;
+        height: auto !important;
+        border-radius: 4px !important;
+        margin: 8px 0 !important;
+      }
+      
+      table {
+        border-collapse: collapse !important;
+        
+        th, td {
+          border: 1px solid #e8e8e8 !important;
+          padding: 8px 12px !important;
+        }
+        
+        th {
+          background-color: #f0f0f0 !important;
+          font-weight: 600 !important;
+        }
+      }
+      
+      ul, ol {
+        color: #595959 !important;
+        
+        li {
+          margin: 4px 0 !important;
+        }
+      }
+    }
+  }
+
+  /* Responsive */
+  @media (max-width: 768px) {
+    .w-md-editor {
+      .w-md-editor-area {
+        .w-md-editor-text-textarea,
+        .w-md-editor-text {
+          font-size: 13px !important;
+        }
+      }
+    }
+  }
+} 

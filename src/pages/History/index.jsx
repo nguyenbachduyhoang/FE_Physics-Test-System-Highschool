@@ -20,7 +20,7 @@ import toast from "react-hot-toast";
 import { useNavigate } from "react-router-dom";
 import "./index.scss";
 
-const classes = ["Tất cả môn học", "Vật lý", "Toán", "Hóa học"];
+const classes = ["Vật lý"];
 const timeFilters = ["Tất cả thời gian", "Hôm nay", "Tuần này", "Tháng này"];
 
 // Parse ngày từ format "HH:mm dd/MM/yyyy"

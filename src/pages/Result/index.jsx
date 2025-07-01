@@ -175,6 +175,8 @@ const ResultContent = () => {
           examData = location.state.examData;
           timeTaken = location.state.timeTaken;
           console.log('✅ Using navigation state:', results);
+          console.log('🔢 Debug - TotalPointsEarned:', results?.totalPointsEarned);
+          console.log('🔢 Debug - PercentageScore:', results?.percentageScore);
         }
         
         // 2. Thử resultPageData
@@ -582,7 +584,7 @@ const ResultContent = () => {
           />
         </div>
 
-        <div className="stats-card">
+        {/* <div className="stats-card">
           <FaChartLine className="stats-icon" />
           <div className="stats-label">Thời gian làm bài</div>
           <div className="stats-value">
@@ -593,7 +595,7 @@ const ResultContent = () => {
               Hoàn thành
             </div>
           )}
-        </div>
+        </div> */}
 
         <div className="stats-card">
           <FaTrophy className="stats-icon" />

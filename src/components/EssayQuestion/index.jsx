@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Card, Progress, Alert, Tooltip, Button } from 'antd';
 import { CheckCircleOutlined, ExclamationCircleOutlined, InfoCircleOutlined } from '@ant-design/icons';
 import './index.scss';
+import AdvancedTextEditor from '../uiBasic/AdvancedTextEditor';
 
 const EssayQuestion = ({ 
   question, 
@@ -147,15 +148,14 @@ const EssayQuestion = ({
         </Card>
       )}
 
-      {/* Textarea chính */}
+      {/* Advanced Text Editor */}
       <div className="essay-input-container">
-        <textarea
-          className={`essay-textarea ${!isValid ? 'essay-textarea--invalid' : ''}`}
-          placeholder="Nhập câu trả lời của bạn... Hãy trình bày một cách có logic, sử dụng thuật ngữ khoa học chính xác và đưa ra ví dụ cụ thể."
+        <AdvancedTextEditor
           value={value || ''}
-          onChange={(e) => onChange(e.target.value)}
+          onChange={onChange}
+          placeholder="Nhập câu trả lời của bạn... Hãy trình bày một cách có logic, sử dụng thuật ngữ khoa học chính xác và đưa ra ví dụ cụ thể."
           disabled={disabled}
-          rows={8}
+          minHeight="200px"
         />
         
         {/* Word count và progress */}
