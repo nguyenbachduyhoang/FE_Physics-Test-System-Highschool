@@ -6,6 +6,7 @@ import PhysicsTestSystem from "./pages/Quiz";
 import ThiMau from "./pages/SampleTest";
 import Layout from "./components/layout";
 import Result from "./pages/Result";
+import FAQ from "./pages/FAQ";
 import History from "./pages/History";
 import Users from "./pages/Admin/users";
 import Questions from "./pages/Admin/questions";
@@ -19,6 +20,7 @@ import ProtectedRoute from "./components/ProtectedRoute";
 import AuthRedirect from "./components/AuthRedirect";
 import DebugInfo from "./components/DebugInfo";
 import { Toaster } from "react-hot-toast";
+import Guide from "./pages/Guide";
 
 const router = createBrowserRouter([
   {
@@ -86,6 +88,14 @@ const router = createBrowserRouter([
       {
         path: "history",
         element: <History />,
+      },
+      {
+        path: "faq",
+        element: <FAQ />,
+      },
+      {
+        path: "guide",
+        element: <Guide />,
       },
     ],
   },
