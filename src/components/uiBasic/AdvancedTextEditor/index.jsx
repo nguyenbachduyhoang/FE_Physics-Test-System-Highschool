@@ -2,7 +2,7 @@ import React, { useState, useRef } from 'react';
 import MDEditor from '@uiw/react-md-editor';
 import { Button, message } from 'antd';
 import { CloudUploadOutlined } from '@ant-design/icons';
-import { uploadFile } from '../../../quiz-uploads/firebaseStorage';
+import { smartUpload } from '../../../quiz-uploads/firebaseStorage';
 import './index.scss';
 
 const AdvancedTextEditor = ({ 
@@ -36,7 +36,7 @@ const AdvancedTextEditor = ({
     console.log('Starting upload...'); // Debug
     
     try {
-      const imageUrl = await uploadFile(file, 'essay-images');
+      const imageUrl = await smartUpload(file, 'essay-images');
       console.log('Upload successful:', imageUrl); // Debug
       
       // Chèn markdown image vào vị trí cursor
