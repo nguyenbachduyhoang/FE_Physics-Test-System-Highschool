@@ -14,7 +14,14 @@ const authAPI = axios.create({
 authAPI.interceptors.request.use((config) => {
   const token = localStorage.getItem('token');
   if (token) {
-    config.headers.Authorization = `Bearer ${token}`;
+    // 🔒 Đảm bảo token có prefix "Bearer "
+    const tokenWithPrefix = token.startsWith('Bearer ') ? token : `Bearer ${token}`;
+    config.headers.Authorization = tokenWithPrefix;
+    
+    // Debug token
+    console.debug('🔑 Token being sent:', tokenWithPrefix);
+  } else {
+    console.debug('⚠️ No token found in localStorage');
   }
   return config;
 });
@@ -193,9 +200,18 @@ export const authService = {
         isActive: user.is_active || user.isActive
       };
 
-      localStorage.setItem('token', token);
+      // 🔒 Đảm bảo token có prefix "Bearer "
+      const tokenWithPrefix = token.startsWith('Bearer ') ? token : `Bearer ${token}`;
+      
+      // Debug
+      console.debug('🔑 Setting auth data:', { 
+        token: tokenWithPrefix,
+        user: normalizedUser 
+      });
+
+      localStorage.setItem('token', tokenWithPrefix);
       localStorage.setItem('user', JSON.stringify(normalizedUser));
-      authAPI.defaults.headers.common['Authorization'] = `Bearer ${token}`;
+      authAPI.defaults.headers.common['Authorization'] = tokenWithPrefix;
     } catch (error) {
       console.error('Error setting auth data:', error);
       throw new Error('Failed to process login response');
