@@ -3,7 +3,7 @@ import Home from "./pages/Home/Home";
 import { createBrowserRouter, RouterProvider } from "react-router-dom";
 import Login from "./pages/login";
 import PhysicsTestSystem from "./pages/Quiz";
-import ThiMau from "./pages/ThiMau";
+import ThiMau from "./pages/SampleTest";
 import Layout from "./components/layout";
 import Result from "./pages/Result";
 import History from "./pages/History";
@@ -14,8 +14,10 @@ import Reports from "./pages/Admin/reports";
 import AdminDashboard from "./pages/Admin/dashboard";
 import AdminLayout from "./pages/Admin/AdminLayout";
 import TestAPIPage from "./pages/Admin/test-api";
+import EssayManagement from "./pages/Admin/essays";
 import ProtectedRoute from "./components/ProtectedRoute";
 import AuthRedirect from "./components/AuthRedirect";
+import DebugInfo from "./components/DebugInfo";
 import { Toaster } from "react-hot-toast";
 
 const router = createBrowserRouter([
@@ -47,6 +49,7 @@ const router = createBrowserRouter([
       { path: "dashboard", element: <AdminDashboard /> }, 
       { path: "users", element: <Users /> }, 
       { path: "questions", element: <Questions /> }, 
+      { path: "essays", element: <EssayManagement /> },
       { path: "exams", element: <Exams /> }, 
       { path: "reports", element: <Reports /> },
       { path: "test-api", element: <TestAPIPage /> }, 
@@ -93,6 +96,7 @@ const App = () => {
     <>
       <RouterProvider router={router} />
       <Toaster />
+      <DebugInfo />
     </>
   );
 };

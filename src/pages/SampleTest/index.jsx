@@ -12,10 +12,10 @@ const ThiMau = () => {
   const [selectedTest, setSelectedTest] = useState(null);
   const [loading, setLoading] = useState(true);
   const [tests, setTests] = useState([]);
+  const [loadingQuestions, setLoadingQuestions] = useState(false);
   const navigate = useNavigate();
   const location = useLocation();
 
-  // Load filtered exams from API based on URL params
   useEffect(() => {
     loadFilteredExams();
   }, [location.search]);
@@ -24,7 +24,6 @@ const ThiMau = () => {
     try {
       setLoading(true);
       
-      // Parse URL params for filters
       const searchParams = new URLSearchParams(location.search);
       const filters = {
         grade: searchParams.get('grade') || '',
@@ -32,11 +31,20 @@ const ThiMau = () => {
         difficulty: searchParams.get('difficulty') || ''
       };
 
-      // Use analytics API to get filtered sample exams
-      const examsData = await analyticsService.getSampleExams(filters);
+      // BƯỚC 2: Thử API debug trước
+      let examsData = await analyticsService.getSampleExams(filters);
+
+      // BƯỚC 3: Nếu debug API không có dữ liệu, thử API gốc
+      if (!examsData || examsData.length === 0) {
+        examsData = await analyticsService.getSampleExams(filters);
+      }
+
+      // BƯỚC 4: Nếu vẫn không có dữ liệu, thử lấy tất cả (không filter)
+      if (!examsData || examsData.length === 0) {
+        examsData = await analyticsService.getSampleExams({});
+      }
       
-      // Transform exam data to match expected format
-      const transformedTests = examsData.map(exam => ({
+      const transformedTests = (examsData || []).map(exam => ({
         id: exam.examId,
         title: exam.examName,
         subject: exam.description || "Đề thi vật lý",
@@ -64,11 +72,89 @@ const ThiMau = () => {
     }
   };
 
-  
-
-  const handleViewDetails = (test) => {
-    setSelectedTest(test);
+  const handleViewDetails = async (test) => {
+    setSelectedTest({ ...test, questions: [] });
     setIsModalVisible(true);
+    setLoadingQuestions(true);
+
+    try {
+      const examDetails = await analyticsService.getExamById(test.id);
+      console.log('🔍 SampleTest - API Response:', examDetails);
+      
+      if (examDetails && examDetails.questions && examDetails.questions.length > 0) {
+        console.log('✅ SampleTest - Found questions:', examDetails.questions.length);
+        
+        // Map API response to component format
+        const mappedQuestions = examDetails.questions.map((examQuestion, index) => {
+          console.log(`📝 Question ${index + 1}:`, examQuestion.question);
+          return {
+            id: index + 1,
+            questionText: examQuestion.question?.questionText || 'Câu hỏi không có nội dung',
+            options: examQuestion.question?.answerChoices?.map(choice => 
+              `${choice.choiceLabel}. ${choice.choiceText}`
+            ) || [],
+            correctAnswer: examQuestion.question?.answerChoices?.find(choice => 
+              choice.isCorrect
+            )?.choiceLabel || 'A'
+          };
+        });
+        
+        console.log('🎯 SampleTest - Mapped questions:', mappedQuestions);
+        
+        setSelectedTest(prev => ({
+          ...prev,
+          questions: mappedQuestions
+        }));
+      } else {
+        console.log('⚠️ SampleTest - No questions found, using demo');
+        // Fallback: Demo questions nếu API không có data
+        const demoQuestions = [
+          {
+            id: 1,
+            questionText: "Định luật I Newton phát biểu về:",
+            options: [
+              "A. Trạng thái cân bằng của vật",
+              "B. Mối quan hệ giữa lực và gia tốc", 
+              "C. Định luật tác dụng và phản tác dụng",
+              "D. Định luật bảo toàn động lượng"
+            ],
+            correctAnswer: "A"
+          },
+          {
+            id: 2, 
+            questionText: "Trong chuyển động thẳng đều, vận tốc của vật:",
+            options: [
+              "A. Tăng theo thời gian",
+              "B. Giảm theo thời gian",
+              "C. Không đổi theo thời gian", 
+              "D. Bằng 0"
+            ],
+            correctAnswer: "C"
+          },
+          {
+            id: 3,
+            questionText: "Đơn vị của gia tốc trong hệ SI là:",
+            options: [
+              "A. m/s",
+              "B. m/s²",
+              "C. kg.m/s²", 
+              "D. N"
+            ],
+            correctAnswer: "B"
+          }
+        ];
+        
+        setSelectedTest(prev => ({
+          ...prev,
+          questions: demoQuestions
+        }));
+      }
+    } catch (error) {
+      console.error('Error loading exam details:', error);
+      toast.error('Không thể tải chi tiết đề thi');
+    } finally {
+      setLoadingQuestions(false);
+    }
   };
 
   const handleModalClose = () => {
@@ -125,7 +211,6 @@ const ThiMau = () => {
                         </div>
                         <div className="section-desc">{test.subject}</div>
                       </div>
-                      {/* Thay thế tiến độ hoàn thành bằng ghi chú hoặc thông tin khác */}
                       <div className="test-card-section note-section">
                         <div
                           className="section-title"
@@ -196,23 +281,30 @@ const ThiMau = () => {
         styles={{ body: { maxHeight: "80vh", overflowY: "auto", padding: 4 } }}
       >
         <div className="modal-subject">{selectedTest?.subject}</div>
-        {selectedTest?.questions?.map((question) => (
-          <div key={question.id} className="question-card">
-            <h3>{`Câu ${question.id}: ${question.question}`}</h3>
-            <p>Chọn đáp án đúng:</p>
-            <div className="options-group">
-              <Radio.Group
-                style={{ display: "flex", flexDirection: "column", gap: 8 }}
-              >
-                {question.options.map((option, index) => (
-                  <Radio key={index} value={option}>
-                    {option}
-                  </Radio>
-                ))}
-              </Radio.Group>
-            </div>
+        {loadingQuestions ? (
+          <div style={{ textAlign: 'center', padding: '50px' }}>
+            <Spin size="large" />
+            <p style={{ marginTop: '16px' }}>Đang tải chi tiết đề thi...</p>
           </div>
-        ))}
+        ) : (
+          selectedTest?.questions?.map((question) => (
+            <div key={question.id} className="question-card">
+              <h3>{`Câu ${question.id}: ${question.questionText}`}</h3>
+              <p>Chọn đáp án đúng:</p>
+              <div className="options-group">
+                <Radio.Group
+                  style={{ display: "flex", flexDirection: "column", gap: 8 }}
+                >
+                  {(question.options || []).map((option, index) => (
+                    <Radio key={index} value={option}>
+                      {option}
+                    </Radio>
+                  ))}
+                </Radio.Group>
+              </div>
+            </div>
+          ))
+        )}
       </Modal>
     </>
   );

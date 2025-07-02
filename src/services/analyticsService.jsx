@@ -65,19 +65,6 @@ export const analyticsService = {
     }
   },
 
-  // Get filtered exams
-  getFilteredExams: async (filters = {}) => {
-    try {
-      const response = await analyticsAPI.get('/analytics/filtered-exams', {
-        params: filters
-      });
-      return response.data.success ? response.data.data : response.data;
-    } catch (error) {
-      console.warn('Filtered exams API not available:', error.message);
-      return [];
-    }
-  },
-
   // Get exam statistics
   getExamStats: async () => {
     try {
@@ -96,10 +83,8 @@ export const analyticsService = {
     }
   },
 
-  // Get sample exams with filters
   getSampleExams: async (filters = {}) => {
     try {
-      console.log('🔍 Getting sample exams with filters:', filters);
       const response = await analyticsAPI.get('/analytics/sample-exams', {
         params: {
           grade: filters.grade,
@@ -112,7 +97,7 @@ export const analyticsService = {
       const sampleExams = response.data.success ? response.data.data : response.data;
       return Array.isArray(sampleExams) ? sampleExams : [];
     } catch (error) {
-      console.warn('❌ Sample exams API not available:', error.message);
+      console.warn('Sample exams API not available:', error.message);
       return [];
     }
   },
@@ -434,6 +419,18 @@ export const analyticsService = {
     } catch (error) {
       console.warn('Export analytics API not available:', error.message);
       throw new Error('Không thể xuất dữ liệu phân tích');
+    }
+  },
+
+  // Thêm API để lấy chi tiết đề thi với câu hỏi
+  getExamById: async (examId) => {
+    try {
+      const response = await analyticsAPI.get(`/exams/${examId}`);
+      return response.data;
+    } catch (error) {
+      console.warn('Exam details API not available:', error.message);
+      // Fallback: trả về null để component tự tạo demo questions
+      return null;
     }
   }
 };

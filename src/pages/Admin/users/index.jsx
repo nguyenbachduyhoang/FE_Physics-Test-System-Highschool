@@ -37,18 +37,15 @@ export default function UsersPage() {
       };
       
       const response = await userService.getAllUsers(params);
-      console.log('Raw API response:', response);
       
       if (response && response.items && Array.isArray(response.items)) {
         // Map dữ liệu để đảm bảo có id
         const mappedUsers = response.items.map(user => {
-          console.log('Original user data:', user);
           return {
             ...user,
             id: user.userId || user.UserId || user.id // Ưu tiên userId
           };
         });
-        console.log('Mapped users:', mappedUsers);
         setUsers(mappedUsers);
         setPagination({
           current: response.currentPage || 1,
@@ -57,13 +54,11 @@ export default function UsersPage() {
         });
       } else if (response && Array.isArray(response)) {
         const mappedUsers = response.map(user => {
-          console.log('Original user data:', user);
           return {
             ...user,
             id: user.userId || user.UserId || user.id
           };
         });
-        console.log('Mapped users:', mappedUsers);
         setUsers(mappedUsers);
         setPagination(prev => ({ ...prev, total: response.length }));
       } else {
@@ -132,7 +127,6 @@ export default function UsersPage() {
 
   // Delete user
   const handleDelete = async (userId) => {
-    console.log('Attempting to delete user with ID:', userId);
     
     if (!userId) {
       toast.error("Không tìm thấy ID người dùng!");
@@ -144,19 +138,15 @@ export default function UsersPage() {
     if (confirmDelete) {
       setLoading(true);
       try {
-        console.log('Sending delete request for ID:', userId);
         await userService.deleteUser(userId);
         toast.success("Xóa người dùng thành công!");
         
         // Cập nhật state users ngay lập tức
         setUsers(prevUsers => {
-          console.log('Previous users:', prevUsers);
           const newUsers = prevUsers.filter(user => {
             const currentId = user.userId || user.UserId || user.id;
-            console.log('Comparing', currentId, 'with', userId);
             return currentId !== userId;
           });
-          console.log('New users after filter:', newUsers);
           return newUsers;
         });
         
@@ -262,7 +252,6 @@ export default function UsersPage() {
       title: "Thao tác",
       key: "action",
       render: (_, record) => {
-        console.log("Record data:", record);
         const userId = record.id || record.userId || record.UserId;
         return (
           <Space>
@@ -277,7 +266,6 @@ export default function UsersPage() {
               size="small" 
               danger 
               onClick={() => {
-                console.log("Deleting user with ID:", userId);
                 handleDelete(userId);
               }}
               title="Xóa"

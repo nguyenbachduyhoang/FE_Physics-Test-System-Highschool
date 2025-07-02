@@ -6,6 +6,8 @@ import questionBankService from './questionBankService.jsx';
 import analyticsService from './analyticsService.jsx';
 import adminService from './adminService.jsx';
 import autoGradingService from './autoGradingService.jsx';
+import { essayService } from './essayService.jsx';
+import { explanationService } from './explanationService.jsx';
 
 // Export all services
 export {
@@ -15,7 +17,9 @@ export {
   questionBankService,
   analyticsService,
   adminService,
-  autoGradingService
+  autoGradingService,
+  essayService,
+  explanationService
 };
 
 // Re-export with short aliases for convenience
@@ -26,7 +30,9 @@ export {
   questionBankService as questionBank,
   analyticsService as analytics,
   adminService as admin,
-  autoGradingService as autoGrading
+  autoGradingService as autoGrading,
+  essayService as essay,
+  explanationService as explanation
 };
 
 // Utility để đảm bảo data luôn là array và safe cho Table components

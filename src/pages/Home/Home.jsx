@@ -44,22 +44,22 @@ const mockData = {
   features: [
     {
       icon: <FaMagic />,
-      title: "🤖 AI Generation",
+      title: "AI Generation",
       desc: "Tạo đề thi tự động bằng trí tuệ nhân tạo với độ chính xác cao",
     },
     {
       icon: <FaLayerGroup />,
-      title: "🧠 Smart Exam",
+      title: "Smart Exam",
       desc: "Đề thi thích ứng - AI tự động điều chỉnh độ khó theo năng lực",
     },
     {
       icon: <FaChartLine />,
-      title: "📊 Analytics AI",
+      title: "Analytics AI",
       desc: "Phân tích chi tiết kết quả học tập bằng machine learning",
     },
     {
       icon: <FaFileExport />,
-      title: "⚡ Real-time",
+      title: "Real-time",
       desc: "Tạo đề thi ngay lập tức, không cần chờ đợi",
     },
   ],
@@ -104,7 +104,6 @@ const Home = () => {
   const [filterTopic, setFilterTopic] = useState(null);
   const [filterDifficulty, setFilterDifficulty] = useState(null);
   const [filteredChaptersForFilter, setFilteredChaptersForFilter] = useState([]);
-  
   // Dynamic options loaded from API
   const [gradeOptions, setGradeOptions] = useState([]);
   const [difficultyOptions] = useState([
@@ -147,7 +146,6 @@ const Home = () => {
         }));
         setGradeOptions(gradeOpts);
 
-        console.log('📋 Filter options loaded:', { grades: gradeOpts.length });
       }
     } catch (error) {
       console.error('❌ Error loading filter options:', error);
@@ -201,7 +199,6 @@ const Home = () => {
         await loadRecentActivities();
       }
 
-      console.log('✅ Dashboard data loaded successfully');
     } catch (error) {
       console.error('Dashboard error:', error);
       toast.error('Không thể tải dữ liệu dashboard');
@@ -259,11 +256,9 @@ const Home = () => {
   const loadChapters = async () => {
     try {
       const response = await questionBankService.getChapters();
-      console.log('API Response:', response);
 
       if (response?.data?.success) {
         const chaptersData = response.data.data;
-        console.log('Chapters data:', chaptersData);
         
         if (Array.isArray(chaptersData) && chaptersData.length > 0) {
           // Lưu toàn bộ chapters
@@ -279,7 +274,6 @@ const Home = () => {
           }));
           setGradeOptions(gradeOpts);
           
-          console.log('Grade options:', gradeOpts);
         } else {
           console.warn('No chapters data found');
           toast.error('Không có dữ liệu chương học');
@@ -307,8 +301,6 @@ const Home = () => {
   };
 
   const handleGradeChange = (value) => {
-    console.log('Selected grade:', value);
-    console.log('Current chapters:', chapters);
     
     setSelectedGrade(value);
     
@@ -318,11 +310,9 @@ const Home = () => {
     if (value) {
       // Filter chapters by selected grade
       const filtered = chapters.filter(chapter => chapter.grade === value);
-      console.log('Filtered chapters:', filtered);
       
       if (filtered && filtered.length > 0) {
         setFilteredChapters(filtered);
-        console.log(`🎓 Found ${filtered.length} chapters for grade ${value}`);
       } else {
         console.warn(`No chapters found for grade ${value}`);
         setFilteredChapters([]);
@@ -343,11 +333,9 @@ const Home = () => {
     if (value) {
       // Filter chapters by selected grade
       const filtered = chapters.filter(chapter => chapter.grade === value);
-      console.log('Filtered chapters for filter:', filtered);
       
       if (filtered && filtered.length > 0) {
         setFilteredChaptersForFilter(filtered);
-        console.log(`🎓 Found ${filtered.length} chapters for filter grade ${value}`);
       } else {
         console.warn(`No chapters found for filter grade ${value}`);
         setFilteredChaptersForFilter([]);
@@ -357,18 +345,14 @@ const Home = () => {
       // If no grade selected, show all chapters
       setFilteredChaptersForFilter(chapters);
     }
-    
-    console.log('🔍 Filter by grade:', value);
   };
 
   const handleFilterTopicChange = (value) => {
     setFilterTopic(value);
-    console.log('🔍 Filter by topic:', value);
   };
 
   const handleFilterDifficultyChange = (value) => {
     setFilterDifficulty(value);
-    console.log('🔍 Filter by difficulty:', value);
   };
 
   // Navigate to thiMau page with filter params
@@ -388,7 +372,6 @@ const Home = () => {
     const queryString = filterParams.toString();
     const targetUrl = queryString ? `/thiMau?${queryString}` : '/thiMau';
     
-    console.log('🔍 Navigating to thiMau with filters:', targetUrl);
     navigate(targetUrl);
   };
 
@@ -411,19 +394,41 @@ const Home = () => {
         return;
       }
 
+      // Kiểm tra loại câu hỏi - mặc định là true nếu không có giá trị
+      const includeMultipleChoice = values.includeMultipleChoice !== false;
+      const includeEssay = values.includeEssay === true;
+
       // Validation cho loại câu hỏi
-      if (!values.includeMultipleChoice && !values.includeEssay) {
+      if (!includeMultipleChoice && !includeEssay) {
         toast.error('Vui lòng chọn ít nhất một loại câu hỏi (Trắc nghiệm hoặc Tự luận)!');
         return;
       }
 
+      // Validation đặc biệt cho mix questions
+      if (includeMultipleChoice && includeEssay && values.questionCount < 5) {
+        toast.error('Khi kết hợp cả 2 loại câu hỏi, cần ít nhất 5 câu để phân chia hợp lý!');
+        return;
+      }
+
+      // Thông báo phân chia khi có cả 2 loại
+      if (includeMultipleChoice && includeEssay) {
+        // Sử dụng custom ratio nếu được chọn, default 70%
+        const mcPercentage = values.customRatio && values.multipleChoicePercentage ? 
+          values.multipleChoicePercentage / 100 : 0.7;
+        const multipleChoiceCount = Math.floor(values.questionCount * mcPercentage);
+        const essayCount = values.questionCount - multipleChoiceCount;
+        
+        toast.loading(`📊 Đang tạo ${multipleChoiceCount} câu trắc nghiệm + ${essayCount} câu tự luận...`, { id: 'mixed-exam' });
+      } else if (includeEssay && !includeMultipleChoice) {
+        toast.loading(`✍️ Đang tạo ${values.questionCount} câu tự luận...`, { id: 'essay-only' });
+      } else {
+        toast.loading(`🔘 Đang tạo ${values.questionCount} câu trắc nghiệm...`, { id: 'mc-only' });
+      }
+
       setCreatingExam(true);
-      console.log('🚀 Starting AI exam creation with values:', values);
 
       if (values.useSmartExam) {
-        toast.loading('🧠 AI đang tạo đề thi thông minh...', { id: 'smart-generating' });
-
-        // Find selected chapter for naming
+        // Smart exam logic...
         const selectedChapter = chapters.find(c => c.chapterId === values.chapterId);
         const chapterName = selectedChapter ? selectedChapter.chapterName : 'Chương học';
 
@@ -435,25 +440,35 @@ const Home = () => {
           estimatedDuration: values.duration,
           questionCount: values.questionCount,
           chapterId: values.chapterId, 
-          includeMultipleChoice: values.includeMultipleChoice,
-          includeEssay: values.includeEssay,
+          includeMultipleChoice: includeMultipleChoice,
+          includeEssay: includeEssay,
           adaptiveLearning: true
         };
 
-        console.log('🤖 Creating smart exam with criteria:', smartExamCriteria);
         const smartExam = await examService.generateSmartExam(smartExamCriteria);
 
-        toast.dismiss('smart-generating');
+        toast.dismiss();
 
         if (!smartExam || !smartExam.examId) {
           throw new Error('Smart exam generation failed - no exam ID returned');
         }
 
-        toast.success(`🎯 Đã tạo đề thi thông minh với ${smartExam.totalQuestions || values.questionCount} câu hỏi!`, {
-          duration: 4000
-        });
+        // Dynamic success message
+        let successMessage = '🎯 Đã tạo đề thi thông minh ';
+        if (includeMultipleChoice && includeEssay) {
+          const mcPercentage = values.customRatio && values.multipleChoicePercentage ? 
+            values.multipleChoicePercentage / 100 : 0.7;
+          const mcCount = Math.floor(values.questionCount * mcPercentage);
+          const essayCount = values.questionCount - mcCount;
+          successMessage += `với ${mcCount} câu trắc nghiệm + ${essayCount} câu tự luận!`;
+        } else if (includeEssay) {
+          successMessage += `với ${values.questionCount} câu tự luận!`;
+        } else {
+          successMessage += `với ${values.questionCount} câu trắc nghiệm!`;
+        }
 
-        // Navigate to smart exam
+        toast.success(successMessage, { duration: 4000 });
+
         setIsModalOpen(false);
         form.resetFields();
         setSelectedGrade(null);
@@ -461,12 +476,10 @@ const Home = () => {
         navigate(`/quiz/${smartExam.examId}`);
 
       } else {
-        toast.loading('📝 Đang tạo đề thi thông thường...', { id: 'regular-generating' });
-
+        // Regular exam logic...
         const selectedChapter = chapters.find(c => c.chapterId === values.chapterId);
         const chapterName = selectedChapter?.chapterName || 'Vật lý';
 
-        // Sử dụng Exams/generate endpoint thay vì tạo questions riêng lẻ
         const examGenerateData = {
           examName: `Đề thi - ${chapterName} (${new Date().toLocaleDateString('vi-VN')})`,
           description: `Đề thi được tạo cho ${chapterName}`,
@@ -476,20 +489,34 @@ const Home = () => {
           chapterId: values.chapterId,
           questionCount: values.questionCount || 10,
           difficultyLevel: values.difficulty || "medium",
-          includeMultipleChoice: values.includeMultipleChoice !== false,
-          includeEssay: values.includeEssay !== false
+          includeMultipleChoice: includeMultipleChoice,
+          includeEssay: includeEssay,
+          customRatio: values.customRatio || false,
+          multipleChoicePercentage: values.customRatio ? (values.multipleChoicePercentage || 70) : 70
         };
 
-        console.log('📝 Creating regular exam with data:', examGenerateData);
         const createdExam = await examService.generateExam(examGenerateData);
 
-        toast.dismiss('regular-generating');
+        toast.dismiss();
         if (!createdExam || !createdExam.examId) {
           throw new Error('Exam generation failed - no exam ID returned');
         }
-        toast.success(`🎉 Đã tạo đề thi thành công với ${createdExam.totalQuestions || values.questionCount} câu hỏi!`, {
-          duration: 4000
-        });
+
+        // Dynamic success message
+        let successMessage = '🎉 Đã tạo đề thi thành công ';
+        if (includeMultipleChoice && includeEssay) {
+          const mcPercentage = values.customRatio && values.multipleChoicePercentage ? 
+            values.multipleChoicePercentage / 100 : 0.7;
+          const mcCount = Math.floor(values.questionCount * mcPercentage);
+          const essayCount = values.questionCount - mcCount;
+          successMessage += `với ${mcCount} câu trắc nghiệm + ${essayCount} câu tự luận!`;
+        } else if (includeEssay) {
+          successMessage += `với ${values.questionCount} câu tự luận!`;
+        } else {
+          successMessage += `với ${values.questionCount} câu trắc nghiệm!`;
+        }
+
+        toast.success(successMessage, { duration: 4000 });
 
         setIsModalOpen(false);
         form.resetFields();
@@ -501,7 +528,6 @@ const Home = () => {
     } catch (error) {
       console.error('AI Exam Generation error:', error);
       toast.dismiss();
-      toast.error('Có lỗi xảy ra khi tạo đề thi. Vui lòng thử lại!');
     } finally {
       setCreatingExam(false);
     }
@@ -543,7 +569,7 @@ const Home = () => {
                   onChange={handleFilterTopicChange}
                   value={filterTopic}
                   disabled={!filterGrade}
-                  placeholder={filterGrade ? "Chọn chương học" : "Vui lòng chọn lớp trước"}
+                  // placeholder={filterGrade ? "Chọn chương học" : "Vui lòng chọn lớp trước"}
                 />
               </div>
               <div className="home-sidebar-input">
@@ -599,7 +625,7 @@ const Home = () => {
                       setFilterTopic(null);
                       setFilterDifficulty(null);
                       setFilteredChaptersForFilter(chapters);
-                      toast('🔄 Đã xóa bộ lọc', { icon: 'ℹ️' });
+                      toast.success('Đã xóa bộ lọc', { duration: 2500 });
                     }}
                     whileHover={{ scale: 1.02 }}
                     whileTap={{ scale: 0.98 }}
@@ -648,7 +674,7 @@ const Home = () => {
                 </motion.span>
               </motion.h1>
               <p className="home-main-welcome-desc">
-                🤖 Tạo đề thi bằng AI thông minh, nhanh chóng và chính xác.
+                Tạo đề thi bằng AI thông minh, nhanh chóng và chính xác.
                 PhyGen sử dụng trí tuệ nhân tạo để tạo ra đề thi phù hợp với mọi mức độ học sinh.
               </p>
 
@@ -894,7 +920,6 @@ const Home = () => {
                 <Form.Item
                   name="duration"
                   label={<span style={{ color: '#fff' }}>Thời gian thi</span>}
-                  initialValue={45}
                   rules={[{ required: true, message: 'Vui lòng chọn thời gian!' }]}
                 >
                   <Select placeholder="Chọn thời gian thi">
@@ -906,13 +931,30 @@ const Home = () => {
                   </Select>
                 </Form.Item>
 
-                <Divider style={{ background: "white", margin: "16px 0" }} />
+                {/* <Divider style={{ background: "white", margin: "16px 0" }} />
+
+                <div style={{ marginBottom: "16px" }}>
+                  <span style={{ color: '#fff', fontSize: '14px', fontWeight: 'bold' }}>🎯 Loại đề thi:</span>
+                </div> */}
+
+                {/* <Form.Item name="useSmartExam" valuePropName="checked" initialValue={false}>
+                  <div className="modal-switch-row">
+                    <span className="modal-label">
+                      🧠 Smart Exam
+                      <br />
+                      <small style={{ opacity: 0.8 }}>Đề thi thích ứng - AI tự động điều chỉnh độ khó</small>
+                    </span>
+                    <Switch />
+                  </div>
+                </Form.Item> */}
+
+                {/* <Divider style={{ background: "white", margin: "16px 0" }} />
 
                 <div style={{ marginBottom: "16px" }}>
                   <span style={{ color: '#fff', fontSize: '14px', fontWeight: 'bold' }}>📝 Loại câu hỏi:</span>
-                </div>
+                </div> */}
 
-                <Form.Item name="includeMultipleChoice" valuePropName="checked" initialValue={true}>
+                {/* <Form.Item name="includeMultipleChoice" valuePropName="checked" initialValue={true}>
                   <div className="modal-switch-row">
                     <span className="modal-label">
                       🔘 Trắc nghiệm
@@ -932,7 +974,157 @@ const Home = () => {
                     </span>
                     <Switch />
                   </div>
-                </Form.Item>
+                </Form.Item> */}
+
+                {/* Hiển thị thông tin phân chia khi cả 2 được chọn */}
+                {/* <Form.Item shouldUpdate={(prevValues, curValues) => 
+                  prevValues.includeMultipleChoice !== curValues.includeMultipleChoice ||
+                  prevValues.includeEssay !== curValues.includeEssay ||
+                  prevValues.questionCount !== curValues.questionCount ||
+                  prevValues.customRatio !== curValues.customRatio ||
+                  prevValues.multipleChoicePercentage !== curValues.multipleChoicePercentage
+                }>
+                  {({ getFieldValue }) => {
+                    const includeMultipleChoice = getFieldValue('includeMultipleChoice');
+                    const includeEssay = getFieldValue('includeEssay');
+                    const questionCount = getFieldValue('questionCount') || 10;
+                    const customRatio = getFieldValue('customRatio');
+                    const mcPercentage = customRatio && getFieldValue('multipleChoicePercentage') ? 
+                      getFieldValue('multipleChoicePercentage') / 100 : 0.7;
+                    
+                    if (includeMultipleChoice && includeEssay) {
+                      const multipleChoiceCount = Math.floor(questionCount * mcPercentage);
+                      const essayCount = questionCount - multipleChoiceCount;
+                      
+                      return (
+                        <div style={{ 
+                          background: 'rgba(255,255,255,0.1)', 
+                          padding: '12px', 
+                          borderRadius: '8px',
+                          border: '1px solid rgba(255,255,255,0.2)',
+                          marginTop: '12px'
+                        }}>
+                          <div style={{ color: '#fff', fontSize: '13px', marginBottom: '8px' }}>
+                            📊 <strong>Phân chia câu hỏi tự động:</strong>
+                          </div>
+                          <div style={{ color: '#fff', fontSize: '12px', lineHeight: '1.5' }}>
+                            🔘 <strong>{multipleChoiceCount} câu trắc nghiệm</strong> ({Math.round(mcPercentage * 100)}%)<br/>
+                            ✍️ <strong>{essayCount} câu tự luận</strong> ({100 - Math.round(mcPercentage * 100)}%)
+                          </div>
+                          <div style={{ color: 'rgba(255,255,255,0.7)', fontSize: '11px', marginTop: '6px' }}>
+                            {customRatio ? 
+                              '⚙️ Tỷ lệ tùy chỉnh theo yêu cầu của bạn' : 
+                              '💡 Tỷ lệ này được AI tối ưu để cân bằng giữa đánh giá nhanh và sâu'
+                            }
+                          </div>
+                        </div>
+                      );
+                    }
+                    
+                    if (includeMultipleChoice && !includeEssay) {
+                      return (
+                        <div style={{ 
+                          background: 'rgba(34, 197, 94, 0.1)', 
+                          padding: '10px', 
+                          borderRadius: '6px',
+                          border: '1px solid rgba(34, 197, 94, 0.3)',
+                          marginTop: '8px'
+                        }}>
+                          <div style={{ color: '#22c55e', fontSize: '12px' }}>
+                            🔘 <strong>{questionCount} câu trắc nghiệm</strong> - Đánh giá nhanh, khách quan
+                          </div>
+                        </div>
+                      );
+                    }
+                    
+                    if (!includeMultipleChoice && includeEssay) {
+                      return (
+                        <div style={{ 
+                          background: 'rgba(168, 85, 247, 0.1)', 
+                          padding: '10px', 
+                          borderRadius: '6px',
+                          border: '1px solid rgba(168, 85, 247, 0.3)',
+                          marginTop: '8px'
+                        }}>
+                          <div style={{ color: '#a855f7', fontSize: '12px' }}>
+                            ✍️ <strong>{questionCount} câu tự luận</strong> - Đánh giá sâu, tư duy phản biện
+                          </div>
+                        </div>
+                      );
+                    }
+                    
+                    return null;
+                  }}
+                </Form.Item> */}
+
+                {/* Tùy chọn nâng cao */}
+                {/* <Form.Item shouldUpdate={(prevValues, curValues) => 
+                  prevValues.includeMultipleChoice !== curValues.includeMultipleChoice ||
+                  prevValues.includeEssay !== curValues.includeEssay
+                }>
+                  {({ getFieldValue }) => {
+                    const includeMultipleChoice = getFieldValue('includeMultipleChoice');
+                    const includeEssay = getFieldValue('includeEssay');
+                    
+                    if (includeMultipleChoice && includeEssay) {
+                      return (
+                        <>
+                          <Divider style={{ background: "white", margin: "16px 0" }} />
+                          <div style={{ marginBottom: "16px" }}>
+                            <span style={{ color: '#fff', fontSize: '14px', fontWeight: 'bold' }}>
+                              ⚙️ Tùy chọn nâng cao (Tùy chọn):
+                            </span>
+                          </div>
+                          
+                          <Form.Item name="customRatio" valuePropName="checked" initialValue={false}>
+                            <div className="modal-switch-row">
+                              <span className="modal-label">
+                                🎛️ Tùy chỉnh tỷ lệ phân chia
+                                <br />
+                                <small style={{ opacity: 0.8 }}>Tự điều chỉnh % trắc nghiệm và tự luận</small>
+                              </span>
+                              <Switch />
+                            </div>
+                          </Form.Item>
+
+                          <Form.Item shouldUpdate={(prevValues, curValues) => 
+                            prevValues.customRatio !== curValues.customRatio
+                          }>
+                            {({ getFieldValue }) => {
+                              const customRatio = getFieldValue('customRatio');
+                              
+                              if (customRatio) {
+                                return (
+                                  <Form.Item
+                                    name="multipleChoicePercentage"
+                                    label={<span style={{ color: '#fff' }}>Tỷ lệ trắc nghiệm (%)</span>}
+                                    initialValue={70}
+                                  >
+                                    <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                                      <InputNumber 
+                                        min={20} 
+                                        max={80} 
+                                        step={10}
+                                        style={{ width: '80px' }} 
+                                        formatter={value => `${value}%`}
+                                        parser={value => value.replace('%', '')}
+                                      />
+                                      <span style={{ color: 'rgba(255,255,255,0.7)', fontSize: '12px' }}>
+                                        (Tự luận sẽ chiếm {100 - (getFieldValue('multipleChoicePercentage') || 70)}%)
+                                      </span>
+                                    </div>
+                                  </Form.Item>
+                                );
+                              }
+                              return null;
+                            }}
+                          </Form.Item>
+                        </>
+                      );
+                    }
+                    return null;
+                  }}
+                </Form.Item> */}
 
                 <Divider style={{ background: "white", margin: "16px 0" }} />
 

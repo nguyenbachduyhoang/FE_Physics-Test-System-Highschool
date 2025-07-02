@@ -14,7 +14,14 @@ const authAPI = axios.create({
 authAPI.interceptors.request.use((config) => {
   const token = localStorage.getItem('token');
   if (token) {
-    config.headers.Authorization = `Bearer ${token}`;
+    // 🔒 Đảm bảo token có prefix "Bearer "
+    const tokenWithPrefix = token.startsWith('Bearer ') ? token : `Bearer ${token}`;
+    config.headers.Authorization = tokenWithPrefix;
+    
+    // Debug token
+    console.debug('🔑 Token being sent:', tokenWithPrefix);
+  } else {
+    console.debug('⚠️ No token found in localStorage');
   }
   return config;
 });
@@ -116,17 +123,8 @@ export const authService = {
   getCurrentUser: () => {
     const user = localStorage.getItem('user');
     const parsedUser = user ? JSON.parse(user) : null;
-    
-    // Debug log for role checking
-    if (parsedUser) {
-      console.log('Current user:', parsedUser);
-      console.log('User role:', parsedUser.role);
-    }
-    
     return parsedUser;
   },
-
-
 
   // Check if user is authenticated
   isAuthenticated: () => {
@@ -174,14 +172,50 @@ export const authService = {
 
   // Set auth data
   setAuthData: (loginResponse) => {
-    const token = loginResponse.access_token || loginResponse.token;
-    if (!token) {
-      throw new Error('No token received from login response');
+    try {
+      let token;
+      let user;
+
+      // Handle wrapped response format
+      if (loginResponse.data) {
+        token = loginResponse.data.access_token;
+        user = loginResponse.data.user;
+      } else {
+        // Handle direct response format
+        token = loginResponse.access_token;
+        user = loginResponse.user;
+      }
+
+      if (!token || !user) {
+        throw new Error('Invalid login response format');
+      }
+
+      // Transform user data to consistent format
+      const normalizedUser = {
+        userId: user.id || user.userId,
+        username: user.username,
+        email: user.email,
+        fullName: user.full_name || user.fullName,
+        role: user.role,
+        isActive: user.is_active || user.isActive
+      };
+
+      // 🔒 Đảm bảo token có prefix "Bearer "
+      const tokenWithPrefix = token.startsWith('Bearer ') ? token : `Bearer ${token}`;
+      
+      // Debug
+      console.debug('🔑 Setting auth data:', { 
+        token: tokenWithPrefix,
+        user: normalizedUser 
+      });
+
+      localStorage.setItem('token', tokenWithPrefix);
+      localStorage.setItem('user', JSON.stringify(normalizedUser));
+      authAPI.defaults.headers.common['Authorization'] = tokenWithPrefix;
+    } catch (error) {
+      console.error('Error setting auth data:', error);
+      throw new Error('Failed to process login response');
     }
-    
-    localStorage.setItem('token', token);
-    localStorage.setItem('user', JSON.stringify(loginResponse.user));
-    authAPI.defaults.headers.common['Authorization'] = `Bearer ${token}`;
   },
 };
 

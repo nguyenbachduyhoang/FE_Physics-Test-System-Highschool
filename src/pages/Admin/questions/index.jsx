@@ -28,7 +28,6 @@ export default function QuestionsPage() {
     try {
       const params = search ? { search } : {};
       const response = await questionBankService.getQuestions(params);
-      console.log('Questions response:', response);
       
       if (!response || !Array.isArray(response)) {
         setQuestions([]);

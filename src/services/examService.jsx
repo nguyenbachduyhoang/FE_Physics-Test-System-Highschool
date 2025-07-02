@@ -1,4 +1,5 @@
 import axios from 'axios';
+import { authService } from './authService';
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 
   (window.location.hostname === 'localhost' ? 'http://localhost:5298' : 'https://be-phygens-production.up.railway.app');
@@ -22,11 +23,15 @@ examAPI.interceptors.request.use((config) => {
 // Handle auth errors
 examAPI.interceptors.response.use(
   (response) => response,
-  (error) => {
+  async (error) => {
     if (error.response?.status === 401) {
-      localStorage.removeItem('token');
-      localStorage.removeItem('user');
-      window.location.href = '/login';
+      // Thử lấy user từ authService thay vì trực tiếp từ localStorage
+      const currentUser = authService.getCurrentUser();
+      if (!currentUser) {
+        localStorage.removeItem('token');
+        localStorage.removeItem('user');
+        window.location.href = '/login';
+      }
     }
     return Promise.reject(error);
   }
@@ -129,14 +134,51 @@ export const examService = {
     return response.data.success ? response.data.data : response.data;
   },
 
-  // Get student's exam history (for future implementation)
+  // Get student's exam history
   getMyExamHistory: async () => {
-    const user = JSON.parse(localStorage.getItem('user'));
-    if (!user || !user.id) {
-      throw new Error('User not found');
+    try {
+      const currentUser = authService.getCurrentUser();
+      const token = authService.getToken();
+      
+      if (!currentUser || !token) {
+        throw new Error('Unauthorized - Please login again');
+      }
+
+      const response = await examAPI.get(`/Exams/history/${currentUser.userId}`);
+      
+      if (Array.isArray(response.data)) {
+        return response.data;
+      }
+      
+      // Nếu có wrapper, extract data
+      if (response.data && response.data.success && Array.isArray(response.data.data)) {
+        return response.data.data;
+      }
+      
+      // Nếu có data nhưng không có success wrapper
+      if (response.data && Array.isArray(response.data.data)) {
+        return response.data.data;
+      }
+      
+      console.warn('Unexpected response format:', response.data);
+      return [];
+    } catch (error) {
+      if (error.message === 'Unauthorized - Please login again' || error.response?.status === 401) {
+        // Thử verify token với backend trước khi logout
+        try {
+          await authService.verifyAuth();
+        } catch (verifyError) {
+          console.log('verifyError', verifyError);
+          localStorage.removeItem('token');
+          localStorage.removeItem('user');
+          window.location.href = '/login';
+        }
+        return [];
+      }
+      
+      console.error('Error fetching exam history:', error);
+      throw error;
     }
-    const response = await examAPI.get(`/Exams/history/${user.id}`);
-    return response.data.success ? response.data.data : response.data;
   },
 
   // =============== EXAM VALIDATION & GRADING ===============
