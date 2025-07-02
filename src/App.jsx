@@ -17,6 +17,7 @@ import TestAPIPage from "./pages/Admin/test-api";
 import EssayManagement from "./pages/Admin/essays";
 import ProtectedRoute from "./components/ProtectedRoute";
 import AuthRedirect from "./components/AuthRedirect";
+import DebugInfo from "./components/DebugInfo";
 import { Toaster } from "react-hot-toast";
 
 const router = createBrowserRouter([
@@ -95,6 +96,7 @@ const App = () => {
     <>
       <RouterProvider router={router} />
       <Toaster />
+      <DebugInfo />
     </>
   );
 };
