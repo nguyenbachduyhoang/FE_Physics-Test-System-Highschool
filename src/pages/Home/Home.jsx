@@ -549,6 +549,7 @@ const Home = () => {
                 Lọc đề thi
               </h3>
               <div className="home-sidebar-input">
+                {console.log('gradeOptions:', gradeOptions)}
                 <Cselect
                   label="Chọn lớp"
                   options={gradeOptions}
