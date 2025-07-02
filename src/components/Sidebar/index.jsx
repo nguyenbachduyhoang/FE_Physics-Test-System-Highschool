@@ -39,12 +39,12 @@ const AdminSidebar = () => {
       label: "Ngân hàng câu hỏi",
       path: "/admin/questions",
     },
-    {
-      key: "essays",
-      icon: <EditOutlined />,
-      label: "Câu hỏi tự luận",
-      path: "/admin/essays",
-    },
+    // {
+    //   key: "essays",
+    //   icon: <EditOutlined />,
+    //   label: "Câu hỏi tự luận",
+    //   path: "/admin/essays",
+    // },
     {
       key: "exams",
       icon: <FileTextOutlined />,

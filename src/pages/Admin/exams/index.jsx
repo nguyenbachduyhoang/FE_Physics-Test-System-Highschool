@@ -16,6 +16,13 @@ export default function ExamsPage() {
   const [editingExam, setEditingExam] = useState(null);
   const [form] = Form.useForm();
   
+  // Pagination state
+  const [pagination, setPagination] = useState({
+    current: 1,
+    pageSize: 10,
+    total: 0
+  });
+  
   // AI Smart Exam states
   const [isAIModalVisible, setIsAIModalVisible] = useState(false);
   const [aiForm] = Form.useForm();
@@ -23,15 +30,26 @@ export default function ExamsPage() {
   const [generatingAI, setGeneratingAI] = useState(false);
 
   // Fetch exams from API
-  const fetchExams = async () => {
+  const fetchExams = async (params = {}) => {
     setLoading(true);
     try {
-      const response = await examService.getAllExams();
-      setExams(Array.isArray(response) ? response : []);
+      const response = await examService.getAllExams({
+        page: params.current || pagination.current,
+        pageSize: params.pageSize || pagination.pageSize
+      });
+
+      setExams(response.data || []);
+      setPagination({
+        ...pagination,
+        current: params.current || pagination.current,
+        pageSize: params.pageSize || pagination.pageSize,
+        total: response.total || 0
+      });
     } catch (err) {
       console.error('Fetch exams error:', err);
       const errorMessage = examService.formatError(err);
       toast.error(`Lỗi tải danh sách đề thi: ${errorMessage}`);
+      setExams([]);
     } finally {
       setLoading(false);
     }
@@ -299,6 +317,14 @@ export default function ExamsPage() {
     },
   ];
 
+  // Handle table change for pagination
+  const handleTableChange = (newPagination) => {
+    fetchExams({
+      current: newPagination.current,
+      pageSize: newPagination.pageSize
+    });
+  };
+
   return (
     <div className="admin-exams-page">
       <div className="exams-header">
@@ -353,7 +379,9 @@ export default function ExamsPage() {
         rowKey="examId"
         loading={loading}
         pagination={{
-          pageSize: 10,
+          current: pagination.current,
+          pageSize: pagination.pageSize,
+          total: pagination.total,
           showSizeChanger: true,
           showQuickJumper: true,
           showTotal: (total, range) => 
@@ -361,6 +389,7 @@ export default function ExamsPage() {
         }}
         className="exams-table"
         scroll={{ x: 1000 }}
+        onChange={handleTableChange}
       />
 
       <Modal

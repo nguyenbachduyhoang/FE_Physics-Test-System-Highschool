@@ -2,7 +2,7 @@ import React, { useState, useEffect } from "react";
 import { Tag, Button, Space, Modal, Form, Input, Select, Card, Empty, Alert, Spin } from "antd";
 import SafeTable from "../../../components/uiBasic/SafeTable";
 import { PlusOutlined, EditOutlined, DeleteOutlined, EyeOutlined, ReloadOutlined, SearchOutlined, BulbOutlined } from "@ant-design/icons";
-import { questionBankService, adminService } from "../../../services";
+import { questionBankService } from "../../../services";
 import toast from "react-hot-toast";
 import "./index.scss";
 
@@ -11,35 +11,65 @@ const { TextArea } = Input;
 const { Search } = Input;
 
 export default function QuestionsPage() {
-  const [questions, setQuestions] = useState([]);
   const [loading, setLoading] = useState(false);
+  const [questions, setQuestions] = useState([]);
+  const [searchTerm, setSearchTerm] = useState('');
   const [isModalVisible, setIsModalVisible] = useState(false);
   const [editingQuestion, setEditingQuestion] = useState(null);
-  const [searchTerm, setSearchTerm] = useState('');
   const [chapters, setChapters] = useState([]);
   const [showAIModal, setShowAIModal] = useState(false);
   const [aiGenerating, setAiGenerating] = useState(false);
+  const [pagination, setPagination] = useState({
+    current: 1,
+    pageSize: 10,
+    total: 0
+  });
+  const [sortBy, setSortBy] = useState('createdAt');
+  const [sortDirection, setSortDirection] = useState('desc');
   const [form] = Form.useForm();
   const [aiForm] = Form.useForm();
 
-  // Fetch questions from API
-  const fetchQuestions = async (search = '') => {
+  // Fetch questions from API with pagination
+  const fetchQuestions = async (page = 1, pageSize = 10, search = '', sort = 'createdAt', direction = 'desc') => {
     setLoading(true);
     try {
-      const params = search ? { search } : {};
+      const params = {
+        page,
+        pageSize,
+        search,
+        sortBy: sort,
+        sortDirection: direction
+      };
       const response = await questionBankService.getQuestions(params);
       
-      if (!response || !Array.isArray(response)) {
-        setQuestions([]);
-        toast.error("Không thể tải dữ liệu câu hỏi");
+      if (response?.data?.success) {
+        const questionsData = response.data.data;
+        
+        if (Array.isArray(questionsData) && questionsData.length > 0) {
+          setQuestions(questionsData);
+          setPagination({
+            current: response.data.currentPage || page,
+            pageSize: response.data.pageSize || pageSize,
+            total: response.data.totalCount || questionsData.length
+          });
+        } else {
+          console.warn('No questions data found');
+          toast.error('Không có dữ liệu câu hỏi');
+          setQuestions([]);
+          setPagination(prev => ({ ...prev, total: 0 }));
+        }
       } else {
-        setQuestions(response);
+        console.error('API response not successful:', response);
+        toast.error('Không thể tải danh sách câu hỏi');
+        setQuestions([]);
+        setPagination(prev => ({ ...prev, total: 0 }));
       }
     } catch (err) {
       console.error('Fetch questions error:', err);
-      const errorMessage = adminService.formatError(err);
+      const errorMessage = err.response?.data?.message || err.message;
       toast.error(`Lỗi tải dữ liệu: ${errorMessage}`);
       setQuestions([]);
+      setPagination(prev => ({ ...prev, total: 0 }));
     } finally {
       setLoading(false);
     }
@@ -53,55 +83,118 @@ export default function QuestionsPage() {
   // Fetch chapters for AI generation
   const fetchChapters = async () => {
     try {
-      const chaptersData = await questionBankService.getChapters();
-      setChapters(chaptersData || []);
-    } catch (err) {
-      console.error('Fetch chapters error:', err);
+      const response = await questionBankService.getChapters();
+      
+      if (response?.data?.success) {
+        const chaptersData = response.data.data;
+        
+        if (Array.isArray(chaptersData) && chaptersData.length > 0) {
+          setChapters(chaptersData);
+        } else {
+          console.warn('No chapters data found');
+          toast.error('Không có dữ liệu chương học');
+          setChapters([]);
+        }
+      } else {
+        console.error('API response not successful:', response);
+        toast.error('Không thể tải danh sách chương học');
+        setChapters([]);
+      }
+    } catch (error) {
+      console.error('Error loading chapters:', error);
+      toast.error('Lỗi khi tải danh sách chương học');
+      setChapters([]);
     }
   };
 
   // Handle search
   const handleSearch = (value) => {
     setSearchTerm(value);
-    fetchQuestions(value);
+    fetchQuestions(1, pagination.pageSize, value, sortBy, sortDirection);
+  };
+
+  // Handle table change (pagination, filters, sorter)
+  const handleTableChange = (paginationInfo, filters, sorter) => {
+    let newSortBy = sortBy;
+    let newSortDirection = sortDirection;
+    
+    if (sorter && sorter.field) {
+      newSortBy = sorter.field;
+      newSortDirection = sorter.order === 'descend' ? 'desc' : 'asc';
+      setSortBy(newSortBy);
+      setSortDirection(newSortDirection);
+    }
+    
+    fetchQuestions(
+      paginationInfo.current, 
+      paginationInfo.pageSize, 
+      searchTerm,
+      newSortBy,
+      newSortDirection
+    );
   };
 
   // Handle create/update question
   const handleOk = async () => {
     try {
       const values = await form.validateFields();
+      console.log('Form values:', values); // Debug log
+      
+      // Tìm thông tin chapter từ chapterId
+      const selectedChapter = chapters.find(c => c.chapterId === values.chapterId);
       
       const questionData = {
         questionText: values.questionText,
         difficultyLevel: values.difficultyLevel,
-        topic: values.topic,
+        chapterId: values.chapterId,
+        topic: selectedChapter?.chapterName || '',
+        questionType: values.questionType || "multiple_choice",
         explanation: values.explanation || "",
-        answers: values.answers || []
+        isActive: true,
+        saveToDatabase: true, // Thêm flag này để lưu vào database
+        isMockQuestion: false // Đánh dấu không phải mock question
       };
 
       if (editingQuestion) {
         // Update question
-        await questionBankService.updateQuestion(editingQuestion.questionId, questionData);
-        toast.success("Cập nhật câu hỏi thành công!");
+        const response = await questionBankService.updateQuestion(editingQuestion.questionId, questionData);
+        console.log('Update response:', response);
+        if (response.data?.success) {
+          toast.success("Cập nhật câu hỏi thành công!");
+          setIsModalVisible(false);
+          setEditingQuestion(null);
+          form.resetFields();
+          fetchQuestions(pagination.current, pagination.pageSize, searchTerm, sortBy, sortDirection);
+        } else {
+          throw new Error(response.data?.message || 'Cập nhật thất bại');
+        }
       } else {
         // Create question
-        await questionBankService.createQuestion(questionData);
-        toast.success("Thêm câu hỏi thành công!");
+        const response = await questionBankService.createQuestion(questionData);
+        console.log('Create response:', response);
+        if (response.data?.success) {
+          toast.success("Thêm câu hỏi thành công!");
+          setIsModalVisible(false);
+          form.resetFields();
+          fetchQuestions(pagination.current, pagination.pageSize, searchTerm, sortBy, sortDirection);
+        } else {
+          throw new Error(response.data?.message || 'Thêm mới thất bại');
+        }
       }
-
-      setIsModalVisible(false);
-      setEditingQuestion(null);
-      form.resetFields();
-      fetchQuestions(searchTerm);
     } catch (err) {
       console.error('Save question error:', err);
-      const errorMessage = questionBankService.formatError(err);
-      
-      if (errorMessage.includes('chưa được implement')) {
-        toast.error("Tính năng này đang được phát triển");
-      } else {
-        toast.error(`Lỗi lưu câu hỏi: ${errorMessage}`);
+      if (err.response?.data?.errors) {
+        // Log validation errors from backend
+        console.log('Validation errors:', err.response.data.errors);
+        Object.entries(err.response.data.errors).forEach(([field, errors]) => {
+          form.setFields([{
+            name: field,
+            errors: Array.isArray(errors) ? errors : [errors]
+          }]);
+        });
       }
+      const errorMessage = err.response?.data?.message || err.message;
+      toast.error(`Lỗi: ${errorMessage}`);
     }
   };
 
@@ -117,7 +210,7 @@ export default function QuestionsPage() {
         try {
           await questionBankService.deleteQuestion(questionId);
           toast.success("Xóa câu hỏi thành công!");
-          fetchQuestions(searchTerm);
+          fetchQuestions(pagination.current, pagination.pageSize, searchTerm, sortBy, sortDirection);
         } catch (err) {
           console.error('Delete question error:', err);
           const errorMessage = questionBankService.formatError(err);
@@ -156,7 +249,8 @@ export default function QuestionsPage() {
     form.setFieldsValue({
       questionText: question.questionText,
       difficultyLevel: question.difficultyLevel,
-      topic: question.topic?.topicName || question.topic,
+      chapterId: question.chapterId,
+      questionType: question.questionType,
       explanation: question.explanation
     });
   };
@@ -192,7 +286,7 @@ export default function QuestionsPage() {
       
       if (generatedQuestion) {
         toast.success('Đã tạo câu hỏi bằng AI thành công!');
-        fetchQuestions(searchTerm);
+        fetchQuestions(pagination.current, pagination.pageSize, searchTerm, sortBy, sortDirection);
         setShowAIModal(false);
         aiForm.resetFields();
       }
@@ -309,7 +403,7 @@ const columns = [
           />
           <Button 
             icon={<ReloadOutlined />} 
-            onClick={() => fetchQuestions(searchTerm)}
+            onClick={() => fetchQuestions(pagination.current, pagination.pageSize, searchTerm, sortBy, sortDirection)}
             style={{ marginRight: 8 }}
           >
             Làm mới
@@ -363,12 +457,16 @@ const columns = [
         rowKey="questionId"
         loading={loading}
         pagination={{
-          pageSize: 10,
+          current: pagination.current,
+          pageSize: pagination.pageSize,
+          total: pagination.total,
           showSizeChanger: true,
           showQuickJumper: true,
           showTotal: (total, range) => 
             `${range[0]}-${range[1]} của ${total} câu hỏi`,
+          pageSizeOptions: ['10', '20', '50', '100']
         }}
+        onChange={handleTableChange}
         className="questions-table"
         scroll={{ x: 1000 }}
       />
@@ -403,11 +501,31 @@ const columns = [
           </Form.Item>
 
           <Form.Item
-            name="topic"
-            label="Chủ đề"
-            rules={[{ required: true, message: 'Vui lòng nhập chủ đề!' }]}
+            name="chapterId"
+            label="Chương"
+            rules={[{ required: true, message: 'Vui lòng chọn chương!' }]}
           >
-            <Input placeholder="Nhập chủ đề (VD: Vật lý 10 - Cơ học)" />
+            <Select placeholder="Chọn chương">
+              {Array.isArray(chapters) ? chapters.map(chapter => (
+                <Option key={chapter.chapterId} value={chapter.chapterId}>
+                  {chapter.chapterName}
+                </Option>
+              )) : []}
+            </Select>
+          </Form.Item>
+
+          <Form.Item
+            name="questionType"
+            label="Loại câu hỏi"
+            rules={[{ required: true, message: 'Vui lòng chọn loại câu hỏi!' }]}
+            initialValue="multiple_choice"
+          >
+            <Select placeholder="Chọn loại câu hỏi">
+              <Option value="multiple_choice">Trắc nghiệm</Option>
+              <Option value="true_false">Đúng/Sai</Option>
+              <Option value="fill_blank">Điền từ</Option>
+              <Option value="essay">Tự luận</Option>
+            </Select>
           </Form.Item>
 
           <Form.Item
@@ -431,91 +549,91 @@ const columns = [
               placeholder="Nhập giải thích chi tiết cho câu hỏi..."
             />
           </Form.Item>
-                  </Form>
-        </Modal>
+        </Form>
+      </Modal>
 
-        {/* AI Generation Modal */}
-        <Modal
-          title="Tạo câu hỏi bằng AI"
-          open={showAIModal}
-          onOk={handleAIGenerateSubmit}
-          onCancel={() => {
-            setShowAIModal(false);
-            aiForm.resetFields();
-          }}
-          confirmLoading={aiGenerating}
-          destroyOnClose
-          okText="Tạo câu hỏi"
-          cancelText="Hủy"
-        >
-          <Form form={aiForm} layout="vertical">
-            <Form.Item
-              name="topic"
-              label="Chủ đề"
-              rules={[{ required: true, message: 'Vui lòng nhập chủ đề!' }]}
-            >
-              <Input placeholder="VD: Cơ học, Điện học, Quang học..." />
-            </Form.Item>
+      {/* AI Generation Modal */}
+      <Modal
+        title="Tạo câu hỏi bằng AI"
+        open={showAIModal}
+        onOk={handleAIGenerateSubmit}
+        onCancel={() => {
+          setShowAIModal(false);
+          aiForm.resetFields();
+        }}
+        confirmLoading={aiGenerating}
+        destroyOnClose
+        okText="Tạo câu hỏi"
+        cancelText="Hủy"
+      >
+        <Form form={aiForm} layout="vertical">
+          <Form.Item
+            name="topic"
+            label="Chủ đề"
+            rules={[{ required: true, message: 'Vui lòng nhập chủ đề!' }]}
+          >
+            <Input placeholder="VD: Cơ học, Điện học, Quang học..." />
+          </Form.Item>
 
+          <Form.Item
+            name="difficultyLevel"
+            label="Mức độ khó"
+            rules={[{ required: true, message: 'Vui lòng chọn mức độ khó!' }]}
+            initialValue="medium"
+          >
+            <Select placeholder="Chọn mức độ khó">
+              <Option value="easy">Dễ</Option>
+              <Option value="medium">Trung bình</Option>
+              <Option value="hard">Khó</Option>
+            </Select>
+          </Form.Item>
+
+          <Form.Item
+            name="questionType"
+            label="Loại câu hỏi"
+            rules={[{ required: true, message: 'Vui lòng chọn loại câu hỏi!' }]}
+            initialValue="multiple_choice"
+          >
+            <Select placeholder="Chọn loại câu hỏi">
+              <Option value="multiple_choice">Trắc nghiệm</Option>
+              <Option value="true_false">Đúng/Sai</Option>
+              <Option value="fill_blank">Điền từ</Option>
+              <Option value="essay">Tự luận</Option>
+            </Select>
+          </Form.Item>
+
+          <Form.Item
+            name="count"
+            label="Số lượng câu hỏi"
+            initialValue={1}
+            rules={[
+              { required: true, message: 'Vui lòng nhập số lượng!' },
+              { type: 'number', min: 1, max: 10, message: 'Số lượng từ 1-10 câu hỏi!' }
+            ]}
+          >
+            <Select>
+              {[1,2,3,4,5,6,7,8,9,10].map(num => (
+                <Option key={num} value={num}>{num} câu hỏi</Option>
+              ))}
+            </Select>
+          </Form.Item>
+
+          {chapters.length > 0 && (
             <Form.Item
-              name="difficultyLevel"
-              label="Mức độ khó"
-              rules={[{ required: true, message: 'Vui lòng chọn mức độ khó!' }]}
-              initialValue="medium"
+              name="topicId"
+              label="Chương (tùy chọn)"
             >
-              <Select placeholder="Chọn mức độ khó">
-                <Option value="easy">Dễ</Option>
-                <Option value="medium">Trung bình</Option>
-                <Option value="hard">Khó</Option>
+              <Select placeholder="Chọn chương học cụ thể..." allowClear>
+                {Array.isArray(chapters) ? chapters.map(chapter => (
+                  <Option key={chapter.topicId} value={chapter.topicId}>
+                    {chapter.topicName}
+                  </Option>
+                )) : []}
               </Select>
             </Form.Item>
-
-            <Form.Item
-              name="questionType"
-              label="Loại câu hỏi"
-              rules={[{ required: true, message: 'Vui lòng chọn loại câu hỏi!' }]}
-              initialValue="multiple_choice"
-            >
-              <Select placeholder="Chọn loại câu hỏi">
-                <Option value="multiple_choice">Trắc nghiệm</Option>
-                <Option value="true_false">Đúng/Sai</Option>
-                <Option value="fill_blank">Điền từ</Option>
-                <Option value="essay">Tự luận</Option>
-              </Select>
-            </Form.Item>
-
-            <Form.Item
-              name="count"
-              label="Số lượng câu hỏi"
-              initialValue={1}
-              rules={[
-                { required: true, message: 'Vui lòng nhập số lượng!' },
-                { type: 'number', min: 1, max: 10, message: 'Số lượng từ 1-10 câu hỏi!' }
-              ]}
-            >
-              <Select>
-                {[1,2,3,4,5,6,7,8,9,10].map(num => (
-                  <Option key={num} value={num}>{num} câu hỏi</Option>
-                ))}
-              </Select>
-            </Form.Item>
-
-            {chapters.length > 0 && (
-              <Form.Item
-                name="topicId"
-                label="Chương (tùy chọn)"
-              >
-                <Select placeholder="Chọn chương học cụ thể..." allowClear>
-                  {Array.isArray(chapters) ? chapters.map(chapter => (
-                    <Option key={chapter.topicId} value={chapter.topicId}>
-                      {chapter.topicName}
-                    </Option>
-                  )) : []}
-                </Select>
-              </Form.Item>
-            )}
-          </Form>
-        </Modal>
-      </div>
-    );
-  }
+          )}
+        </Form>
+      </Modal>
+    </div>
+  );
+}

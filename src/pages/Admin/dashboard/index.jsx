@@ -4,7 +4,6 @@ import React, { useState, useEffect } from "react";
 import "./index.scss";
 import { BarChart, Bar, LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend } from 'recharts';
 import { Spin, Alert, Card, Row, Col, Tag } from 'antd';
-import { UserOutlined, QuestionCircleOutlined, FileTextOutlined, EyeOutlined } from '@ant-design/icons';
 import AdminSidebar from "../../../components/Sidebar";
 import {analyticsService } from "../../../services";
 import toast from "react-hot-toast";
@@ -236,7 +235,7 @@ const AdminDashboard = () => {
 
   const renderDashboardContent = () => (
     <>
-      <Row gutter={[16, 16]} style={{ marginTop: '24px' }}>
+      {/* <Row gutter={[16, 16]} style={{ marginTop: '24px' }}>
         <Col span={24}>
           <Card 
             title="📊 Lượt thi gần đây" 
@@ -256,7 +255,7 @@ const AdminDashboard = () => {
             />
           </Card>
         </Col>
-      </Row>
+      </Row> */}
       {/* Content Grid - Users and Activities */}
       <div className="content-grid">
         <div className="content-section">

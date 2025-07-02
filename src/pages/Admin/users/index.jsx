@@ -1,5 +1,6 @@
+/* eslint-disable no-unused-vars */
 import React, { useEffect, useState } from "react";
-import { Tag, Button, Avatar, Space, Modal, Form, Input, Select, Pagination, Spin } from "antd";
+import { Tag, Button, Avatar, Space, Modal, Form, Input, Select, Switch, Pagination, Spin } from "antd";
 import SafeTable from "../../../components/uiBasic/SafeTable";
 import { UserOutlined, PlusOutlined, EditOutlined, DeleteOutlined, SearchOutlined } from "@ant-design/icons";
 import { userService } from "../../../services";
@@ -25,50 +26,45 @@ export default function UsersPage() {
   const [form] = Form.useForm();
 
   // Fetch users with pagination and filters
-  const fetchUsers = async (page = 1, pageSize = 10, search = '', sort = 'username', direction = 'asc') => {
+  const fetchUsers = async (params = {}) => {
     setLoading(true);
     try {
-      const params = {
-        page,
-        pageSize,
-        search,
-        sortBy: sort,
-        sortDirection: direction
-      };
+      const { current, pageSize, search } = { ...pagination, ...params };
       
-      const response = await userService.getAllUsers(params);
+      const response = await userService.getAllUsers({
+        page: current,
+        pageSize,
+        search: search || searchTerm
+      });
       
       if (response && response.items && Array.isArray(response.items)) {
-        // Map dữ liệu để đảm bảo có id
-        const mappedUsers = response.items.map(user => {
-          return {
-            ...user,
-            id: user.userId || user.UserId || user.id // Ưu tiên userId
-          };
-        });
-        setUsers(mappedUsers);
+        setUsers(response.items.map(user => ({
+          ...user,
+          id: user.userId || user.UserId || user.id
+        })));
         setPagination({
-          current: response.currentPage || 1,
-          pageSize: response.pageSize || 10,
-          total: response.totalCount || 0
+          ...pagination,
+          current: response.currentPage || current,
+          pageSize: response.pageSize || pageSize,
+          total: response.totalCount || response.items.length
         });
-      } else if (response && Array.isArray(response)) {
-        const mappedUsers = response.map(user => {
-          return {
-            ...user,
-            id: user.userId || user.UserId || user.id
-          };
-        });
-        setUsers(mappedUsers);
-        setPagination(prev => ({ ...prev, total: response.length }));
-      } else {
-        setUsers([]);
-        setPagination(prev => ({ ...prev, total: 0 }));
+      } else if (Array.isArray(response)) {
+        setUsers(response.map(user => ({
+          ...user,
+          id: user.userId || user.UserId || user.id
+        })));
+        setPagination(prev => ({
+          ...prev,
+          current,
+          pageSize,
+          total: response.length
+        }));
       }
     } catch (err) {
       console.error('Fetch users error:', err);
       const errorMessage = userService.formatError(err);
       toast.error(`Lỗi tải danh sách người dùng: ${errorMessage}`);
+      setUsers([]);
     } finally {
       setLoading(false);
     }
@@ -81,36 +77,32 @@ export default function UsersPage() {
   // Handle search
   const handleSearch = (value) => {
     setSearchTerm(value);
-    fetchUsers(1, pagination.pageSize, value, sortBy, sortDirection);
+    fetchUsers({ current: 1, search: value });
   };
 
   // Handle pagination change
-  const handleTableChange = (paginationInfo, filters, sorter) => {
-    let newSortBy = sortBy;
-    let newSortDirection = sortDirection;
-    
-    if (sorter && sorter.field) {
-      newSortBy = sorter.field;
-      newSortDirection = sorter.order === 'descend' ? 'desc' : 'asc';
-      setSortBy(newSortBy);
-      setSortDirection(newSortDirection);
-    }
-    
-    fetchUsers(paginationInfo.current, paginationInfo.pageSize, searchTerm, newSortBy, newSortDirection);
+  const handleTableChange = (newPagination) => {
+    fetchUsers({
+      current: newPagination.current,
+      pageSize: newPagination.pageSize
+    });
   };
 
   // Add or update user
   const handleOk = async () => {
     try {
       const values = await form.validateFields();
+      console.log('Form values:', values); // Debug log
       
       if (editingUser) {
         // Update user
-        await userService.updateUser(editingUser.id, values);
+        const response = await userService.updateUser(editingUser.id, values);
+        console.log('Update response:', response); // Debug log
         toast.success("Cập nhật người dùng thành công!");
       } else {
         // Create user
-        await userService.createUser(values);
+        const response = await userService.createUser(values);
+        console.log('Create response:', response); // Debug log
         toast.success("Thêm người dùng thành công!");
       }
       
@@ -121,6 +113,16 @@ export default function UsersPage() {
     } catch (err) {
       console.error('Save user error:', err);
       const errorMessage = userService.formatError(err);
+      if (err.response?.data?.errors) {
+        // Log validation errors from backend
+        console.log('Validation errors:', err.response.data.errors);
+        Object.entries(err.response.data.errors).forEach(([field, errors]) => {
+          form.setFields([{
+            name: field,
+            errors: Array.isArray(errors) ? errors : [errors]
+          }]);
+        });
+      }
       toast.error(`Lỗi lưu người dùng: ${errorMessage}`);
     }
   };
@@ -344,6 +346,17 @@ export default function UsersPage() {
       >
         <Form form={form} layout="vertical">
           <Form.Item 
+            name="username" 
+            label="Tên đăng nhập" 
+            rules={[
+              { required: true, message: 'Vui lòng nhập tên đăng nhập!' },
+              { min: 3, message: 'Tên đăng nhập phải có ít nhất 3 ký tự!' }
+            ]}
+          >
+            <Input placeholder="Nhập tên đăng nhập" />
+          </Form.Item>
+
+          <Form.Item 
             name="full_name" 
             label="Họ tên" 
             rules={[
@@ -388,6 +401,15 @@ export default function UsersPage() {
               <Option value="admin">Quản trị viên</Option>
             </Select>
           </Form.Item>
+{/* 
+          <Form.Item
+            name="isActive"
+            label="Trạng thái"
+            valuePropName="checked"
+            initialValue={true}
+          >
+            <Switch checkedChildren="Hoạt động" unCheckedChildren="Không hoạt động" />
+          </Form.Item> */}
 
         </Form>
       </Modal>

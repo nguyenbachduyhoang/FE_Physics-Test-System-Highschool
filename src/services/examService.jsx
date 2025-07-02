@@ -42,8 +42,34 @@ export const examService = {
   
   // Get all exams with filters
   getAllExams: async (params = {}) => {
-    const response = await examAPI.get('/exams', { params });
-    return response.data.success ? response.data.data : response.data;
+    const response = await examAPI.get('/exams', { 
+      params: {
+        page: params.page || 1,
+        pageSize: params.pageSize || 10
+      }
+    });
+    
+    // Kiểm tra và format response
+    if (response.data.success) {
+      return {
+        data: response.data.data,
+        total: response.data.total || response.data.data.length
+      };
+    }
+    
+    // Nếu response là array trực tiếp
+    if (Array.isArray(response.data)) {
+      return {
+        data: response.data,
+        total: response.data.length
+      };
+    }
+    
+    // Fallback
+    return {
+      data: [],
+      total: 0
+    };
   },
 
   // Get exam by ID

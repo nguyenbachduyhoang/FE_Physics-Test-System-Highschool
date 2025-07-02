@@ -161,13 +161,27 @@ export const questionBankService = {
   // =============== QUESTION CRUD (Future Implementation) ===============
   
   // Get all questions with filters
-  getQuestions: async (filters = {}) => {
+  getQuestions: async (params = {}) => {
     try {
-      const response = await questionAPI.get('/ai-question', { params: filters });
-      return response.data.questions || [];
+      const response = await questionAPI.get('/ai-question', { params });
+      if (response.data.success) {
+        return {
+          data: {
+            success: true,
+            message: response.data.message,
+            data: response.data.data.questions || [],
+            currentPage: response.data.data.currentPage || 1,
+            pageSize: response.data.data.pageSize || 10,
+            totalCount: response.data.data.totalCount || 0
+          }
+        };
+      } else {
+        console.warn('Invalid questions data format:', response.data);
+        throw new Error('Dữ liệu câu hỏi không hợp lệ');
+      }
     } catch (err) {
-      console.warn('Questions API error:', err.message);
-      return [];
+      console.error('Questions API error:', err);
+      throw err;
     }
   },
 
