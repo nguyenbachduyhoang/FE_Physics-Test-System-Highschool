@@ -14,16 +14,24 @@ const authAPI = axios.create({
 authAPI.interceptors.request.use((config) => {
   const token = localStorage.getItem('token');
   if (token) {
-    // 🔒 Đảm bảo token có prefix "Bearer "
-    const tokenWithPrefix = token.startsWith('Bearer ') ? token : `Bearer ${token}`;
-    config.headers.Authorization = tokenWithPrefix;
+    // Debug token before sending
+    console.debug('🔑 Token found in localStorage:', token);
     
-    // Debug token
-    console.debug('🔑 Token being sent:', tokenWithPrefix);
+    // Use token as is, backend will add Bearer prefix if needed
+    config.headers.Authorization = token;
+    
+    // Debug final headers
+    console.debug('📨 Request headers:', {
+      url: config.url,
+      headers: config.headers
+    });
   } else {
-    console.debug('⚠️ No token found in localStorage');
+    console.warn('⚠️ No token found in localStorage for request:', config.url);
   }
   return config;
+}, (error) => {
+  console.error('❌ Request interceptor error:', error);
+  return Promise.reject(error);
 });
 
 authAPI.interceptors.response.use(
@@ -48,7 +56,12 @@ export const authService = {
     
     // Handle wrapped API response format
     if (response.data.success && response.data.data) {
-      return response.data.data;
+      const loginData = response.data.data;
+      // Validate required fields
+      if (!loginData.access_token || !loginData.user) {
+        throw new Error('Invalid login response format');
+      }
+      return loginData;
     } else {
       throw new Error(response.data.message || 'Login failed');
     }
@@ -171,50 +184,55 @@ export const authService = {
   },
 
   // Set auth data
-  setAuthData: (loginResponse) => {
+  setAuthData: (loginData) => {
     try {
-      let token;
-      let user;
+      console.debug('🔐 Setting auth data:', loginData);
 
-      // Handle wrapped response format
-      if (loginResponse.data) {
-        token = loginResponse.data.access_token;
-        user = loginResponse.data.user;
-      } else {
-        // Handle direct response format
-        token = loginResponse.access_token;
-        user = loginResponse.user;
+      if (!loginData || !loginData.access_token || !loginData.user) {
+        console.error('❌ Invalid login data:', loginData);
+        throw new Error('Invalid login data format');
       }
 
-      if (!token || !user) {
-        throw new Error('Invalid login response format');
-      }
+      const { access_token, user } = loginData;
 
       // Transform user data to consistent format
       const normalizedUser = {
-        userId: user.id || user.userId,
+        userId: user.id,
         username: user.username,
         email: user.email,
-        fullName: user.full_name || user.fullName,
+        fullName: user.full_name,
         role: user.role,
-        isActive: user.is_active || user.isActive
+        isActive: true // Default to true since we got a successful login
       };
 
-      // 🔒 Đảm bảo token có prefix "Bearer "
-      const tokenWithPrefix = token.startsWith('Bearer ') ? token : `Bearer ${token}`;
-      
-      // Debug
-      console.debug('🔑 Setting auth data:', { 
-        token: tokenWithPrefix,
+      // Validate required fields
+      if (!normalizedUser.userId || !normalizedUser.username) {
+        console.error('❌ Invalid user data:', user);
+        throw new Error('Invalid user data format');
+      }
+
+      // Store token as is, without Bearer prefix
+      console.debug('💾 Saving to localStorage:', { 
+        token: access_token,
         user: normalizedUser 
       });
 
-      localStorage.setItem('token', tokenWithPrefix);
+      // Save to localStorage
+      localStorage.setItem('token', access_token);
       localStorage.setItem('user', JSON.stringify(normalizedUser));
-      authAPI.defaults.headers.common['Authorization'] = tokenWithPrefix;
+      
+      // Set default headers
+      authAPI.defaults.headers.common['Authorization'] = access_token;
+
+      console.debug('✅ Auth data set successfully');
+      return { token: access_token, user: normalizedUser };
     } catch (error) {
-      console.error('Error setting auth data:', error);
-      throw new Error('Failed to process login response');
+      console.error('❌ Error setting auth data:', error);
+      // Clear any partial data
+      localStorage.removeItem('token');
+      localStorage.removeItem('user');
+      delete authAPI.defaults.headers.common['Authorization'];
+      throw error;
     }
   },
 };

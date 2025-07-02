@@ -138,7 +138,6 @@ const HistoryContent = () => {
             completedExams: 0,
             accuracy: 0
           });
-          toast.info('Bạn chưa có lịch sử làm bài nào');
         }
       } catch (error) {
         console.error('Error:', error);
@@ -195,7 +194,6 @@ const HistoryContent = () => {
     console.log('🔄 Retaking exam:', item);
     // Logic để làm lại bài thi - cần exam ID
     // navigate(`/quiz/${examId}`);
-    toast.info('Tính năng làm lại bài thi sẽ được cập nhật sớm');
   };
 
   // Xử lý chia sẻ
