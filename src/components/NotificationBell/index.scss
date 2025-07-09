@@ -1,0 +1,208 @@
+.notification-bell-button {
+  color: white;
+  border: none;
+  background: transparent;
+  transition: all 0.3s ease;
+
+  &:hover {
+    color: #fff;
+    background: rgba(255, 255, 255, 0.1);
+    transform: scale(1.05);
+  }
+
+  .anticon {
+    font-size: 18px;
+  }
+}
+
+.notification-dropdown-overlay {
+  .ant-dropdown-menu {
+    padding: 0;
+    border-radius: 8px;
+    box-shadow: 0 6px 16px 0 rgba(0, 0, 0, 0.08),
+                0 3px 6px -4px rgba(0, 0, 0, 0.12),
+                0 9px 28px 8px rgba(0, 0, 0, 0.05);
+  }
+}
+
+.notification-dropdown {
+  width: 380px;
+  max-height: 500px;
+  background: white;
+  border-radius: 8px;
+  overflow: hidden;
+
+  .notification-header {
+    padding: 16px;
+    background: #fafafa;
+    border-bottom: 1px solid #f0f0f0;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+
+    .ant-typography {
+      color: #262626;
+    }
+  }
+
+  .notification-actions {
+    padding: 8px 16px;
+    background: #fafafa;
+    border-bottom: 1px solid #f0f0f0;
+  }
+
+  .notification-list {
+    max-height: 320px;
+    overflow-y: auto;
+
+    .notification-item {
+      padding: 12px 16px;
+      border-bottom: 1px solid #f5f5f5;
+      transition: all 0.2s ease;
+
+      &:hover {
+        background: #f8f9fa;
+      }
+
+      &.unread {
+        background: #f0f8ff;
+        border-left: 3px solid #1890ff;
+
+        .notification-title {
+          position: relative;
+
+          .unread-dot {
+            position: absolute;
+            top: 2px;
+            right: -12px;
+            width: 8px;
+            height: 8px;
+            background: #ff4d4f;
+            border-radius: 50%;
+            border: 2px solid white;
+          }
+        }
+      }
+
+      &.read {
+        opacity: 0.8;
+      }
+
+      .ant-list-item-meta {
+        align-items: flex-start;
+
+        .ant-list-item-meta-avatar {
+          margin-right: 12px;
+        }
+
+        .ant-list-item-meta-content {
+          .ant-list-item-meta-title {
+            margin-bottom: 4px;
+            line-height: 1.4;
+          }
+
+          .ant-list-item-meta-description {
+            line-height: 1.4;
+          }
+        }
+      }
+
+      .ant-list-item-action {
+        margin-left: 8px;
+
+        li {
+          padding: 0 2px;
+        }
+      }
+    }
+  }
+
+  .notification-footer {
+    padding: 8px 16px;
+    background: #fafafa;
+    border-top: 1px solid #f0f0f0;
+    text-align: center;
+  }
+}
+
+.notification-title {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.notification-content {
+  .ant-typography {
+    margin-bottom: 2px;
+  }
+}
+
+.notification-icon {
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  animation: pulse 2s infinite;
+
+  @keyframes pulse {
+    0% {
+      box-shadow: 0 0 0 0 rgba(24, 144, 255, 0.7);
+    }
+    70% {
+      box-shadow: 0 0 0 10px rgba(24, 144, 255, 0);
+    }
+    100% {
+      box-shadow: 0 0 0 0 rgba(24, 144, 255, 0);
+    }
+  }
+}
+
+// Badge styling
+.ant-badge {
+  .ant-badge-count {
+    min-width: 12px;
+    height: 18px;
+    font-size: 13px;
+    font-weight: bold;
+    line-height: 18px;
+    border-radius: 11px;
+    transform: scale(1.1);
+  }
+}
+
+// Scrollbar styling for notification list
+.notification-list {
+  &::-webkit-scrollbar {
+    width: 6px;
+  }
+
+  &::-webkit-scrollbar-track {
+    background: #f1f1f1;
+    border-radius: 3px;
+  }
+
+  &::-webkit-scrollbar-thumb {
+    background: #c1c1c1;
+    border-radius: 3px;
+
+    &:hover {
+      background: #a8a8a8;
+    }
+  }
+}
+
+// Responsive
+@media (max-width: 768px) {
+  .notification-dropdown {
+    width: 320px;
+    
+    .notification-header {
+      padding: 12px;
+    }
+    
+    .notification-list {
+      max-height: 280px;
+      
+      .notification-item {
+        padding: 10px 12px;
+      }
+    }
+  }
+} 

@@ -81,25 +81,54 @@ export const examService = {
   // Create new exam
   createExam: async (examData) => {
     const response = await examAPI.post('/exams', examData);
-    return response.data.success ? response.data.data : response.data;
+    return response.data; // Return full response để frontend có thể check success
   },
 
   // Update exam
   updateExam: async (examId, examData) => {
     const response = await examAPI.put(`/exams/${examId}`, examData);
-    return response.data.success ? response.data.data : response.data;
+    return response.data; // Return full response để frontend có thể check success
   },
 
-  // Delete exam
+  // Delete exam  
   deleteExam: async (examId) => {
-    const response = await examAPI.delete(`/exams/${examId}`);
-    return response.data.success ? response.data.data : response.data;
+    try {
+      const response = await examAPI.delete(`/exams/${examId}`);
+      console.log('Delete exam response:', response.data);
+      
+      // Handle different response formats
+      if (response.data && response.data.success === true) {
+        return {
+          success: true,
+          message: response.data.message || 'Xóa đề thi thành công!',
+          data: response.data.data
+        };
+      }
+      
+      // If no success field but status is 200, consider it successful
+      if (response.status === 200) {
+        return {
+          success: true,
+          message: response.data.message || 'Xóa đề thi thành công!',
+          data: response.data
+        };
+      }
+      
+      return response.data;
+    } catch (error) {
+      console.error('Delete exam error:', error);
+      throw {
+        success: false,
+        message: error.response?.data?.message || error.message || 'Lỗi khi xóa đề thi',
+        error: error.response?.data || error
+      };
+    }
   },
 
   // Generate exam from criteria
   generateExam: async (generateData) => {
-    const response = await examAPI.post('/Exams/generate', generateData);
-    return response.data.success ? response.data.data : response.data;
+    const response = await examAPI.post('/exams/generate', generateData);
+    return response.data; // Return full response để frontend có thể check success
   },
 
   // =============== SMART EXAM APIs ===============
@@ -170,7 +199,7 @@ export const examService = {
         throw new Error('Unauthorized - Please login again');
       }
 
-      const response = await examAPI.get(`/Exams/history/${currentUser.userId}`);
+      const response = await examAPI.get(`/exams/history/${currentUser.userId}`);
       
       if (Array.isArray(response.data)) {
         return response.data;

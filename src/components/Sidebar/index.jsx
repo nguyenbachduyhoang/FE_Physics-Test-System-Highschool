@@ -8,6 +8,7 @@ import {
   FileTextOutlined,
   BarChartOutlined,
   EditOutlined,
+  BellOutlined,
   MenuFoldOutlined,
   MenuUnfoldOutlined,
   LogoutOutlined, // thêm dòng này
@@ -56,6 +57,12 @@ const AdminSidebar = () => {
       icon: <BarChartOutlined />,
       label: "Thống kê & Báo cáo",
       path: "/admin/reports",
+    },
+    {
+      key: "notifications",
+      icon: <BellOutlined />,
+      label: "Quản lý Thông báo",
+      path: "/admin/notifications",
     },
    
   ];

@@ -3,6 +3,7 @@ import { Outlet, Navigate, useNavigate } from "react-router-dom";
 import "./AdminLayout.scss";
 import AdminSidebar from "../../components/Sidebar";
 import { authService } from "../../services/authService";
+import NotificationBell from "../../components/NotificationBell";
 
 export default function AdminLayout() {
     const [activeSection, setActiveSection] = useState("dashboard");
@@ -78,6 +79,7 @@ export default function AdminLayout() {
                         <h1>Trang Quản Trị</h1>
                         <div className="admin-user-info">
                             <span>Xin chào, {user.fullName || user.username}</span>
+                            <NotificationBell />
                             <button 
                                 onClick={handleLogout}
                                 className="logout-btn"

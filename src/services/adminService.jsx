@@ -132,10 +132,8 @@ export const adminService = {
   // =============== QUESTION MANAGEMENT APIs ===============
   // eslint-disable-next-line no-unused-vars
   getQuestions: async (params = {}) => {
-    // Tạm thời trả về empty array vì chưa có API list questions
-    // Có thể sử dụng /ai-question/chapters để lấy chapters
     try {
-      const response = await adminAPI.get('/ai-question/chapters');
+      const response = await adminAPI.get('/questions/chapters');
       return response.data.success ? [] : []; // Trả về empty vì đây là chapters, không phải questions
     } catch (error) {
       console.log('Questions API not available yet, returning empty array', error);
@@ -144,12 +142,12 @@ export const adminService = {
   },
 
   getChapters: async () => {
-    const response = await adminAPI.get('/ai-question/chapters');
+    const response = await adminAPI.get('/questions/chapters');
     return response.data.success ? response.data.data : response.data;
   },
 
   generateQuestion: async (questionData) => {
-    const response = await adminAPI.post('/ai-question/generate', questionData);
+    const response = await adminAPI.post('/questions/ai-generated', questionData);
     return response.data.success ? response.data.data : response.data;
   },
 
