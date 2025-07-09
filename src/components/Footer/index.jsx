@@ -4,7 +4,10 @@ import {
   MailOutlined,
   PhoneOutlined,
   EnvironmentOutlined,
+  QuestionCircleOutlined,
+  InfoCircleOutlined,
 } from "@ant-design/icons";
+import { Link } from "react-router-dom";
 
 const Footer = () => (
   <div className="footer">
@@ -27,8 +30,16 @@ const Footer = () => (
     <div className="footer-col">
       <div className="footer-title">Hỗ trợ</div>
       <ul className="footer-list">
-        <li>Hướng dẫn sử dụng</li>
-        <li>Câu hỏi thường gặp</li>
+        <li>
+          <span>
+            <a href="/guide">Hướng dẫn sử dụng</a>
+          </span>
+        </li>
+        <li>
+          <span>
+            <a href="/faq">Câu hỏi thường gặp</a>
+          </span>
+        </li>
         <li>Liên hệ</li>
         <li>Báo lỗi</li>
       </ul>
@@ -39,16 +50,21 @@ const Footer = () => (
         <li>
           <MailOutlined className="footer-icon" />
           <span>
-            <b>support@phygen.vn</b>
+            <a href="mailto:support@phygen.vn">support@phygen.vn</a>
           </span>
         </li>
         <li>
           <PhoneOutlined className="footer-icon" />
-          <span>1900 1234</span>
+          <span>
+            <a href="tel:19001234" style={{ marginRight: 8 }}>1900 1234</a>
+            <a href="https://wa.me/19001234" target="_blank" rel="noopener noreferrer" title="Chat qua WhatsApp">🟢</a>
+          </span>
         </li>
         <li>
           <EnvironmentOutlined className="footer-icon" />
-          <span>TP Hồ Chí Minh</span>
+          <span>
+            <a href="https://bom.so/EBar04" target="_blank" rel="noopener noreferrer">TP Hồ Chí Minh</a>
+          </span>
         </li>
       </ul>
     </div>
