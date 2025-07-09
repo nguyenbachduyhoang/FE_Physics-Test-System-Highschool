@@ -1,0 +1,149 @@
+.user-detail-page {
+  padding: 20px;
+  
+  .loading-container,
+  .error-container {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    min-height: 300px;
+    gap: 16px;
+  }
+
+  .header-card,
+  .profile-card,
+  .history-card,
+  .bio-card {
+    margin-bottom: 16px;
+  }
+
+  .profile-card {
+    background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);
+    border: 1px solid #e2e8f0;
+    
+    .ant-avatar {
+      border: 3px solid #fff;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    }
+    
+    .ant-descriptions-item-label {
+      font-weight: 600;
+      color: #374151;
+    }
+  }
+
+  .history-card {
+    .ant-table-small {
+      .ant-table-thead > tr > th {
+        background: #f8fafc;
+        font-weight: 600;
+      }
+    }
+    
+    .ant-progress {
+      margin-bottom: 4px;
+    }
+  }
+
+  .bio-card .ant-typography {
+    background: #f0fdf4;
+    padding: 16px;
+    border-radius: 6px;
+    border-left: 4px solid #22c55e;
+  }
+
+  // Statistics cards
+  .ant-statistic {
+    .ant-statistic-title {
+      font-size: 14px;
+      color: #6b7280;
+    }
+    
+    .ant-statistic-content {
+      color: #1f2937;
+    }
+    
+    .ant-statistic-content-prefix {
+      color: #3b82f6;
+    }
+  }
+
+  // Role and status tags
+  .ant-tag {
+    border-radius: 12px;
+    padding: 2px 8px;
+    font-weight: 500;
+  }
+
+  // Modal customization
+  .ant-modal-content {
+    border-radius: 8px;
+  }
+  
+  .ant-form-item-label > label {
+    font-weight: 600;
+  }
+
+  // Copy text styling
+  .ant-typography-copy {
+    color: #6b7280;
+    
+    &:hover {
+      color: #3b82f6;
+    }
+  }
+
+  // Responsive
+  @media (max-width: 768px) {
+    padding: 12px;
+    
+    .header-card .ant-row {
+      flex-direction: column;
+      gap: 12px;
+    }
+    
+    .profile-card {
+      .ant-row {
+        flex-direction: column;
+        text-align: center;
+      }
+      
+      .ant-descriptions {
+        margin-top: 16px;
+        
+        .ant-descriptions-item {
+          padding-bottom: 8px;
+        }
+      }
+    }
+
+    .ant-col {
+      margin-bottom: 12px;
+    }
+
+    .ant-table-wrapper {
+      overflow-x: auto;
+    }
+  }
+
+  @media (max-width: 576px) {
+    .ant-descriptions {
+      .ant-descriptions-item {
+        span {
+          font-size: 12px;
+        }
+      }
+    }
+    
+    .ant-statistic {
+      .ant-statistic-title {
+        font-size: 12px;
+      }
+      
+      .ant-statistic-content {
+        font-size: 16px;
+      }
+    }
+  }
+} 

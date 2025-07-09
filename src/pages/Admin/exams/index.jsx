@@ -1,20 +1,26 @@
 import React, { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 import { Tag, Button, Space, Modal, Form, Input, Select, InputNumber, Spin, Card, Divider } from "antd";
 import SafeTable from "../../../components/uiBasic/SafeTable";
-import { PlusOutlined, EditOutlined, DeleteOutlined, EyeOutlined, ReloadOutlined, RobotOutlined } from "@ant-design/icons";
+import { PlusOutlined, EditOutlined, DeleteOutlined, EyeOutlined, ReloadOutlined, RobotOutlined, SearchOutlined } from "@ant-design/icons";
 import { examService, questionBankService } from "../../../services";
 import toast from "react-hot-toast";
+import notificationService from "../../../services/notificationService";
+import systemNotificationService from "../../../services/systemNotificationService";
 import "./index.scss";
 
 const { Option } = Select;
 const { TextArea } = Input;
+const { Search } = Input;
 
 export default function ExamsPage() {
+  const navigate = useNavigate();
   const [exams, setExams] = useState([]);
   const [loading, setLoading] = useState(false);
   const [isModalVisible, setIsModalVisible] = useState(false);
   const [editingExam, setEditingExam] = useState(null);
   const [form] = Form.useForm();
+  const [searchTerm, setSearchTerm] = useState('');
   
   // Pagination state
   const [pagination, setPagination] = useState({
@@ -29,13 +35,19 @@ export default function ExamsPage() {
   const [chapters, setChapters] = useState([]);
   const [generatingAI, setGeneratingAI] = useState(false);
 
+  // Delete confirmation state
+  const [deleteModalVisible, setDeleteModalVisible] = useState(false);
+  const [examToDelete, setExamToDelete] = useState(null);
+  const [deleting, setDeleting] = useState(false);
+
   // Fetch exams from API
   const fetchExams = async (params = {}) => {
     setLoading(true);
     try {
       const response = await examService.getAllExams({
         page: params.current || pagination.current,
-        pageSize: params.pageSize || pagination.pageSize
+        pageSize: params.pageSize || pagination.pageSize,
+        search: params.search || searchTerm
       });
 
       setExams(response.data || []);
@@ -55,14 +67,46 @@ export default function ExamsPage() {
     }
   };
 
+  // Handle search
+  const handleSearch = (value) => {
+    setSearchTerm(value);
+    fetchExams({
+      current: 1,
+      pageSize: pagination.pageSize,
+      search: value
+    });
+  };
+
   // Fetch chapters for AI generation
   const fetchChapters = async () => {
     try {
-      const chaptersData = await questionBankService.getChapters();
-      setChapters(Array.isArray(chaptersData) ? chaptersData : []);
+      const response = await questionBankService.getChapters();
+      console.log('🎯 Raw response:', response);
+      console.log('🎯 Response type:', typeof response);
+      console.log('🎯 Is array?', Array.isArray(response));
+      console.log('🎯 Has data?', !!response?.data);
+      console.log('🎯 Data success?', !!response?.data?.success);
+      
+      let chaptersData = [];
+      
+      // Try multiple response formats
+      if (response?.data?.success && Array.isArray(response.data.data)) {
+        // Home.jsx format: {data: {success: true, data: [...]}}
+        chaptersData = response.data.data;
+        console.log('🎯 Using Home.jsx format');
+      } else if (Array.isArray(response)) {
+        // Direct array format: [...]
+        chaptersData = response;
+        console.log('🎯 Using direct array format');
+      } else {
+        console.warn('🎯 Unknown format, setting empty');
+      }
+      
+      console.log('🎯 Final chapters:', chaptersData.length, 'items');
+      setChapters(chaptersData);
     } catch (err) {
       console.error('Fetch chapters error:', err);
-      toast.error('Lỗi tải danh sách chương');
+      setChapters([]);
     }
   };
 
@@ -70,6 +114,18 @@ export default function ExamsPage() {
     fetchExams();
     fetchChapters();
   }, []);
+
+  // ✅ Debug chapters state changes
+  useEffect(() => {
+  }, [chapters]);
+
+  // ✅ Force refresh chapters for testing
+  const forceRefreshChapters = () => {
+    setChapters([]); // Clear first
+    setTimeout(() => {
+      fetchChapters(); // Reload after 100ms
+    }, 100);
+  };
 
   // Handle create/update exam
   const handleOk = async () => {
@@ -81,21 +137,43 @@ export default function ExamsPage() {
         description: values.description,
         durationMinutes: values.durationMinutes,
         examType: values.examType,
-        createdBy: "admin", // You might want to get this from current user
         questions: [] // Empty for now, can be added later
       };
 
       if (editingExam) {
         // Update exam
-        await examService.updateExam(editingExam.examId, {
+        const response = await examService.updateExam(editingExam.examId, {
           ...examData,
           isPublished: values.isPublished
         });
-        toast.success("Cập nhật đề thi thành công!");
+        console.log('Update response:', response);
+        
+        if (response.success) {
+          notificationService.showSuccess(response.message || "Cập nhật đề thi thành công!");
+          
+          // Push notification for exam update
+          systemNotificationService.notifyExamUpdated({
+            examName: examData.examName
+          });
+        } else {
+          throw new Error(response.message || 'Cập nhật thất bại');
+        }
       } else {
         // Create exam
-        await examService.createExam(examData);
-        toast.success("Tạo đề thi thành công!");
+        const response = await examService.createExam(examData);
+        console.log('Create response:', response);
+        
+        if (response.success) {
+          notificationService.showSuccess(response.message || "Tạo đề thi thành công!");
+          
+          // Push notification for new exam creation
+          systemNotificationService.notifyExamCreated({
+            examName: examData.examName,
+            questionCount: examData.questions?.length || 0
+          });
+        } else {
+          throw new Error(response.message || 'Tạo mới thất bại');
+        }
       }
 
       setIsModalVisible(false);
@@ -104,57 +182,61 @@ export default function ExamsPage() {
       fetchExams();
     } catch (err) {
       console.error('Save exam error:', err);
-      const errorMessage = examService.formatError(err);
+      const errorMessage = err.response?.data?.message || err.message;
       toast.error(`Lỗi lưu đề thi: ${errorMessage}`);
     }
   };
 
   // Handle delete exam
-  const handleDelete = async (examId) => {
-    Modal.confirm({
-      title: "Xác nhận xóa đề thi",
-      content: "Bạn chắc chắn muốn xóa đề thi này? Hành động này không thể hoàn tác.",
-      okText: "Xóa",
-      okType: "danger",
-      cancelText: "Hủy",
-      onOk: async () => {
-        try {
-          await examService.deleteExam(examId);
-          toast.success("Xóa đề thi thành công!");
-          fetchExams();
-        } catch (err) {
-          console.error('Delete exam error:', err);
-          const errorMessage = examService.formatError(err);
-          toast.error(`Lỗi xóa đề thi: ${errorMessage}`);
+  const handleDelete = (examId) => {
+    setExamToDelete(examId);
+    setDeleteModalVisible(true);
+  };
+
+  // Confirm delete exam
+  const confirmDelete = async () => {
+    if (!examToDelete) return;
+    
+    // Find exam info before deleting
+    const examToDeleteInfo = exams.find(exam => exam.examId === examToDelete);
+    
+    setDeleting(true);
+    try {
+      const response = await examService.deleteExam(examToDelete);
+      console.log('Delete response:', response);
+      
+      // Check for different response formats
+      const success = response?.success || response?.data?.success || response?.status === 'success';
+      const message = response?.message || response?.data?.message || "Xóa đề thi thành công!";
+      
+      if (success !== false) { // Consider success if not explicitly false
+        notificationService.showSuccess(message);
+        
+        // Send system notification to all users about exam deletion
+        if (examToDeleteInfo) {
+          systemNotificationService.notifyExamDeleted({
+            examName: examToDeleteInfo.examName
+          });
         }
-      },
-    });
+        
+        fetchExams();
+      } else {
+        throw new Error(message || 'Xóa thất bại');
+      }
+    } catch (err) {
+      console.error('Delete exam error:', err);
+      const errorMessage = err.response?.data?.message || err.message;
+      notificationService.showError(`Lỗi xóa đề thi: ${errorMessage}`);
+    } finally {
+      setDeleting(false);
+      setDeleteModalVisible(false);
+      setExamToDelete(null);
+    }
   };
 
   // Handle view exam details
-  const handleView = async (examId) => {
-    try {
-      const examDetails = await examService.getExamById(examId);
-      
-      Modal.info({
-        title: "Chi tiết đề thi",
-        content: (
-          <div>
-            <p><strong>Tên đề thi:</strong> {examDetails.examName}</p>
-            <p><strong>Mô tả:</strong> {examDetails.description}</p>
-            <p><strong>Thời gian:</strong> {examDetails.durationMinutes} phút</p>
-            <p><strong>Loại đề thi:</strong> {examDetails.examType}</p>
-            <p><strong>Số câu hỏi:</strong> {examDetails.questions?.length || 0}</p>
-            <p><strong>Trạng thái:</strong> {examDetails.isPublished ? "Đã xuất bản" : "Nháp"}</p>
-            <p><strong>Ngày tạo:</strong> {new Date(examDetails.createdAt).toLocaleString('vi-VN')}</p>
-          </div>
-        ),
-        width: 600,
-      });
-    } catch (err) {
-      console.error('View exam error:', err);
-      toast.error("Không thể xem chi tiết đề thi");
-    }
+  const handleView = (examId) => {
+    navigate(`/admin/exams/${examId}`);
   };
 
   // Handle edit exam
@@ -190,38 +272,59 @@ export default function ExamsPage() {
 
 
       const smartExamData = {
-        name: values.examName,
+        examName: values.examName, // ✅ Sửa field name
         description: values.description,
-        examType: values.examType || 'smart_exam',
+        durationMinutes: values.durationMinutes || 45, // ✅ Thêm thời gian làm bài
+        examType: values.examType || 'ai_generated',
         questionCount: values.questionCount,
         difficultyLevel: values.difficultyLevel,
         chapterId: values.chapterId
       };
 
-      const generatedExam = await examService.generateSmartExam(smartExamData);
+      const response = await examService.generateExam(smartExamData); // ✅ Gọi đúng API
+      console.log('🎯 Full AI exam response:', response); // ✅ Debug response
       
-      toast.success(`Tạo đề thi AI thành công! Đã tạo ${generatedExam.totalQuestions || 0} câu hỏi`);
-      
-      setIsAIModalVisible(false);
-      aiForm.resetFields();
-      await fetchExams(); // Refresh exam list
+              // ✅ Check multiple response formats
+        if (response.success || response.data?.success) {
+          const generatedExam = response.data || response;
+          toast.success(`Tạo đề thi AI thành công! Exam ID: ${generatedExam.examId}`);
+          
+          // Push notification for AI-generated exam
+          const examName = generatedExam.examName || values.examName || 'Đề thi AI';
+          const questionCount = generatedExam.questionCount || values.questionCount || 0;
+          
+          if (examName && examName.trim()) {
+            systemNotificationService.notifyExamCreated({
+              examName: examName.trim(),
+              questionCount: questionCount
+            });
+          } else {
+            console.warn('⚠️ Skipping notification - examName is empty');
+          }
+          
+          setIsAIModalVisible(false);
+          aiForm.resetFields();
+          await fetchExams(); // Refresh exam list
+        } else {
+          throw new Error(response.message || response.data?.message || 'Tạo đề thi thất bại');
+        }
     } catch (err) {
       console.error('AI generate exam error:', err);
-      const errorMessage = examService.formatError(err);
+      const errorMessage = err.response?.data?.message || err.message || 'Lỗi không xác định';
       toast.error(`Lỗi tạo đề thi AI: ${errorMessage}`);
     } finally {
       setGeneratingAI(false);
     }
   };
 
-  // Get status color and text
-  const getStatusDisplay = (isPublished) => {
-    if (isPublished) {
-      return <Tag color="green">Đã xuất bản</Tag>;
-    } else {
-      return <Tag color="orange">Nháp</Tag>;
-    }
-  };
+  // // Get status color and text
+  // const getStatusDisplay = (isPublished) => {
+  //   if (isPublished) {
+  //     return <Tag color="green">Đã xuất bản</Tag>;
+  //   } else {
+  //     return <Tag color="orange">Nháp</Tag>;
+  //   }
+  // };
 
   const getExamTypeDisplay = (examType) => {
     const typeMap = {
@@ -234,19 +337,65 @@ export default function ExamsPage() {
     return typeMap[examType] || examType;
   };
 
+  // Generate exam code
+  const generateExamCode = (examId, examType) => {
+    const timestamp = new Date().getTime().toString().slice(-6);
+    const typePrefix = getExamTypePrefix(examType);
+    return `${typePrefix}${timestamp}_${examId?.slice(-4) || '0000'}`;
+  };
+
+  // Get exam type prefix
+  const getExamTypePrefix = (examType) => {
+    switch (examType?.toLowerCase()) {
+      case '15p': return 'EX15_';
+      case '1tiet': return 'EX45_';
+      case 'cuoiky': return 'EXFN_';
+      case 'giua_ki': return 'EXMD_';
+      case 'smart_exam': return 'EXAI_';
+      default: return 'EXAM_';
+    }
+  };
+
   const columns = [
+    {
+      title: "Mã đề thi",
+      dataIndex: "examId",
+      key: "examCode",
+      render: (examId, record) => {
+        const code = generateExamCode(examId, record.examType);
+        return (
+          <Tag color="cyan" style={{ fontFamily: 'monospace' }}>
+            {code}
+          </Tag>
+        );
+      },
+      width: 140,
+    },
     {
       title: "Tên đề thi",
       dataIndex: "examName",
       key: "examName",
-      render: (text) => <span style={{ fontWeight: 500 }}>{text}</span>,
-      ellipsis: true,
+      render: (text) => (
+        <span style={{ fontWeight: 500 }} title={text}>
+          {text}
+        </span>
+      ),
+      ellipsis: {
+        showTitle: false,
+      },
     },
     {
       title: "Mô tả",
       dataIndex: "description",
       key: "description",
-      ellipsis: true,
+      render: (text) => (
+        <span title={text}>
+          {text}
+        </span>
+      ),
+      ellipsis: {
+        showTitle: false,
+      },
       width: 200,
     },
     {
@@ -273,13 +422,13 @@ export default function ExamsPage() {
       ),
       width: 120,
     },
-    {
-      title: "Trạng thái",
-      dataIndex: "isPublished",
-      key: "isPublished",
-      render: (isPublished) => getStatusDisplay(isPublished),
-      width: 100,
-    },
+    // {
+    //   title: "Trạng thái",
+    //   dataIndex: "isPublished",
+    //   key: "isPublished",
+    //   render: (isPublished) => getStatusDisplay(isPublished),
+    //   width: 100,
+    // },
     {
       title: "Ngày tạo",
       dataIndex: "createdAt",
@@ -330,6 +479,14 @@ export default function ExamsPage() {
       <div className="exams-header">
         <h1>Quản lý đề thi</h1>
         <div className="exams-actions">
+          <Search
+            placeholder="Tìm kiếm đề thi..."
+            allowClear
+            enterButton={<SearchOutlined />}
+            size="middle"
+            onSearch={handleSearch}
+            style={{ width: 300, marginRight: 16 }}
+          />
           <Button 
             icon={<ReloadOutlined />} 
             onClick={fetchExams}
@@ -386,6 +543,7 @@ export default function ExamsPage() {
           showQuickJumper: true,
           showTotal: (total, range) => 
             `${range[0]}-${range[1]} của ${total} đề thi`,
+          pageSizeOptions: ['10', '20', '50', '100']
         }}
         className="exams-table"
         scroll={{ x: 1000 }}
@@ -529,22 +687,59 @@ export default function ExamsPage() {
               />
             </Form.Item>
 
+            <Form.Item
+              name="durationMinutes"
+              label="Thời gian làm bài (phút)"
+              rules={[
+                { required: true, message: 'Vui lòng nhập thời gian!' },
+                { type: 'number', min: 1, message: 'Thời gian phải lớn hơn 0!' }
+              ]}
+              initialValue={45}
+            >
+              <InputNumber 
+                min={1} 
+                max={300} 
+                placeholder="45"
+                style={{ width: '100%' }}
+              />
+            </Form.Item>
+
+            {/* ✅ Debug section - temporary */}
+            <div style={{ marginBottom: 16, padding: 8, background: '#f0f0f0', borderRadius: 4, fontSize: 12 }}>
+              <strong>🔧 Debug:</strong> {chapters.length} chapters loaded 
+              <Button size="small" onClick={forceRefreshChapters} style={{ marginLeft: 8 }}>
+                🔄 Refresh Chapters
+              </Button>
+            </div>
+
             <div style={{ display: 'flex', gap: 16 }}>
               <Form.Item
                 name="chapterId"
-                label="Chương học"
+                label={`Chương học (${chapters.length} chapters)`}
                 rules={[{ required: true, message: 'Vui lòng chọn chương!' }]}
                 style={{ flex: 1 }}
               >
-                <Select placeholder="Chọn chương học">
-                  {chapters.map(chapter => (
-                    <Option 
-                      key={chapter.chapterId || chapter.ChapterId} 
-                      value={chapter.chapterId || chapter.ChapterId}
-                    >
-                      {chapter.chapterName || chapter.ChapterName} - Lớp {chapter.grade || chapter.Grade}
-                    </Option>
-                  ))}
+                <Select 
+                  placeholder={chapters.length > 0 ? "Chọn chương học" : "Đang tải chapters..."}
+                  notFoundContent={chapters.length === 0 ? "Đang tải..." : "Không có dữ liệu"}
+                  onDropdownVisibleChange={(visible) => {
+                    if (visible) {
+                      console.log('🎯 Dropdown opened, chapters available:', chapters.length);
+                      console.log('🎯 All chapters:', chapters);
+                    }
+                  }}
+                >
+                  {chapters.map(chapter => {
+                    console.log('🎯 Rendering chapter option:', chapter);
+                    return (
+                      <Option 
+                        key={chapter.chapterId || chapter.ChapterId} 
+                        value={chapter.chapterId || chapter.ChapterId}
+                      >
+                        {chapter.chapterName || chapter.ChapterName} - Lớp {chapter.grade || chapter.Grade}
+                      </Option>
+                    );
+                  })}
                 </Select>
               </Form.Item>
 
@@ -596,6 +791,23 @@ export default function ExamsPage() {
             </div>
           </Form>
         </Spin>
+      </Modal>
+
+      {/* Delete Confirmation Modal */}
+      <Modal
+        title="Xác nhận xóa đề thi"
+        open={deleteModalVisible}
+        onOk={confirmDelete}
+        onCancel={() => {
+          setDeleteModalVisible(false);
+          setExamToDelete(null);
+        }}
+        okText="Xóa"
+        okType="danger"
+        cancelText="Hủy"
+        confirmLoading={deleting}
+      >
+        <p>Bạn chắc chắn muốn xóa đề thi này? Hành động này không thể hoàn tác.</p>
       </Modal>
     </div>
   );

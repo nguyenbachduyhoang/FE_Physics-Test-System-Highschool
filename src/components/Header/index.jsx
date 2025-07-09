@@ -12,6 +12,7 @@ import "./index.scss";
 import { Link } from 'react-router-dom';
 import { useNavigate } from "react-router-dom";
 import { authService } from "../../services/authService";
+import NotificationBell from "../NotificationBell";
 
 const Header = () => {
   const navigate = useNavigate();
@@ -65,6 +66,7 @@ const Header = () => {
             placeholder="Tìm kiếm"
           />
         </div>
+        <NotificationBell />
         <div className="logout-button" onClick={handleLogout}>
           <LogoutOutlined />
         </div>

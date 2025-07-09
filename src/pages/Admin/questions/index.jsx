@@ -1,8 +1,10 @@
 import React, { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 import { Tag, Button, Space, Modal, Form, Input, Select, Card, Empty, Alert, Spin } from "antd";
 import SafeTable from "../../../components/uiBasic/SafeTable";
 import { PlusOutlined, EditOutlined, DeleteOutlined, EyeOutlined, ReloadOutlined, SearchOutlined, BulbOutlined } from "@ant-design/icons";
 import { questionBankService } from "../../../services";
+import systemNotificationService from "../../../services/systemNotificationService";
 import toast from "react-hot-toast";
 import "./index.scss";
 
@@ -11,6 +13,7 @@ const { TextArea } = Input;
 const { Search } = Input;
 
 export default function QuestionsPage() {
+  const navigate = useNavigate();
   const [loading, setLoading] = useState(false);
   const [questions, setQuestions] = useState([]);
   const [searchTerm, setSearchTerm] = useState('');
@@ -28,6 +31,11 @@ export default function QuestionsPage() {
   const [sortDirection, setSortDirection] = useState('desc');
   const [form] = Form.useForm();
   const [aiForm] = Form.useForm();
+  
+  // Delete confirmation state
+  const [deleteModalVisible, setDeleteModalVisible] = useState(false);
+  const [questionToDelete, setQuestionToDelete] = useState(null);
+  const [deleting, setDeleting] = useState(false);
 
   // Fetch questions from API with pagination
   const fetchQuestions = async (page = 1, pageSize = 10, search = '', sort = 'createdAt', direction = 'desc') => {
@@ -84,21 +92,24 @@ export default function QuestionsPage() {
   const fetchChapters = async () => {
     try {
       const response = await questionBankService.getChapters();
+
       
-      if (response?.data?.success) {
-        const chaptersData = response.data.data;
-        
-        if (Array.isArray(chaptersData) && chaptersData.length > 0) {
-          setChapters(chaptersData);
-        } else {
-          console.warn('No chapters data found');
-          toast.error('Không có dữ liệu chương học');
-          setChapters([]);
-        }
+      let chaptersData = [];
+      
+      // Try multiple response formats
+      if (response?.data?.success && Array.isArray(response.data.data)) {
+        // Format: {data: {success: true, data: [...]}}
+        chaptersData = response.data.data;
+      } else if (Array.isArray(response)) {
+        // Format: [...]
+        chaptersData = response;
       } else {
-        console.error('API response not successful:', response);
-        toast.error('Không thể tải danh sách chương học');
-        setChapters([]);
+        console.warn('🎯 Unknown format, setting empty');
+      }
+      setChapters(chaptersData);
+      
+      if (chaptersData.length === 0) {
+        toast.warning('Không có dữ liệu chương học');
       }
     } catch (error) {
       console.error('Error loading chapters:', error);
@@ -138,9 +149,8 @@ export default function QuestionsPage() {
   const handleOk = async () => {
     try {
       const values = await form.validateFields();
-      console.log('Form values:', values); // Debug log
+      console.log('Form values:', values); 
       
-      // Tìm thông tin chapter từ chapterId
       const selectedChapter = chapters.find(c => c.chapterId === values.chapterId);
       
       const questionData = {
@@ -151,34 +161,64 @@ export default function QuestionsPage() {
         questionType: values.questionType || "multiple_choice",
         explanation: values.explanation || "",
         isActive: true,
-        saveToDatabase: true, // Thêm flag này để lưu vào database
-        isMockQuestion: false // Đánh dấu không phải mock question
+        saveToDatabase: true, 
+        isMockQuestion: false 
       };
+      
+      // Add answer choices based on question type (MANUAL ONLY)
+      if (values.questionType === 'multiple_choice') {
+        questionData.answerChoices = [
+          { choiceLabel: 'A', choiceText: values.choiceA, isCorrect: values.correctAnswer === 'A' },
+          { choiceLabel: 'B', choiceText: values.choiceB, isCorrect: values.correctAnswer === 'B' },
+          { choiceLabel: 'C', choiceText: values.choiceC, isCorrect: values.correctAnswer === 'C' },
+          { choiceLabel: 'D', choiceText: values.choiceD, isCorrect: values.correctAnswer === 'D' }
+        ];
+      } else if (values.questionType === 'true_false') {
+        questionData.answerChoices = [
+          { choiceLabel: 'Đúng', choiceText: 'Đúng', isCorrect: values.correctAnswer === 'true' },
+          { choiceLabel: 'Sai', choiceText: 'Sai', isCorrect: values.correctAnswer === 'false' }
+        ];
+      } else if (values.questionType === 'fill_blank') {
+        questionData.correctAnswer = values.correctAnswer;
+      }
+      // Essay không cần answer choices cố định
+      
+      console.log('📝 Manual question data:', questionData);
 
       if (editingQuestion) {
-        // Update question
+        // Update question - backend trả về response.data trực tiếp từ service
         const response = await questionBankService.updateQuestion(editingQuestion.questionId, questionData);
         console.log('Update response:', response);
-        if (response.data?.success) {
-          toast.success("Cập nhật câu hỏi thành công!");
+        if (response.success) {
+          toast.success(response.message || "Cập nhật câu hỏi thành công!");
           setIsModalVisible(false);
           setEditingQuestion(null);
           form.resetFields();
           fetchQuestions(pagination.current, pagination.pageSize, searchTerm, sortBy, sortDirection);
         } else {
-          throw new Error(response.data?.message || 'Cập nhật thất bại');
+          throw new Error(response.message || 'Cập nhật thất bại');
         }
       } else {
-        // Create question
+        // Create question - backend trả về response.data trực tiếp từ service
         const response = await questionBankService.createQuestion(questionData);
         console.log('Create response:', response);
-        if (response.data?.success) {
-          toast.success("Thêm câu hỏi thành công!");
+        if (response.success) {
+          toast.success(response.message || "Thêm câu hỏi thành công!");
+          
+          // Send system notification for manual question creation
+          systemNotificationService.sendSystemNotification({
+            title: '📝 Câu hỏi mới đã có!',
+            message: `Admin vừa tạo câu hỏi về "${selectedChapter?.chapterName || 'chủ đề'}" thủ công`,
+            type: 'info',
+            icon: '✍️',
+            url: '/admin/questions'
+          });
+          
           setIsModalVisible(false);
           form.resetFields();
           fetchQuestions(pagination.current, pagination.pageSize, searchTerm, sortBy, sortDirection);
         } else {
-          throw new Error(response.data?.message || 'Thêm mới thất bại');
+          throw new Error(response.message || 'Thêm mới thất bại');
         }
       }
     } catch (err) {
@@ -198,61 +238,93 @@ export default function QuestionsPage() {
     }
   };
 
-  // Handle delete question
-  const handleDelete = async (questionId) => {
-    Modal.confirm({
-      title: "Xác nhận xóa câu hỏi",
-      content: "Bạn chắc chắn muốn xóa câu hỏi này? Hành động này không thể hoàn tác.",
-      okText: "Xóa",
-      okType: "danger",
-      cancelText: "Hủy",
-      onOk: async () => {
-        try {
-          await questionBankService.deleteQuestion(questionId);
-          toast.success("Xóa câu hỏi thành công!");
-          fetchQuestions(pagination.current, pagination.pageSize, searchTerm, sortBy, sortDirection);
-        } catch (err) {
-          console.error('Delete question error:', err);
-          const errorMessage = questionBankService.formatError(err);
-          
-          if (errorMessage.includes('chưa được implement')) {
-            toast.error("Tính năng này đang được phát triển");
-          } else {
-            toast.error(`Lỗi xóa câu hỏi: ${errorMessage}`);
-          }
-        }
-      },
-    });
+  // Handle delete question - show confirmation modal
+  const handleDelete = (questionId) => {
+    console.log('handleDelete called with questionId:', questionId);
+    setQuestionToDelete(questionId);
+    setDeleteModalVisible(true);
+  };
+
+  // Confirm delete question
+  const confirmDelete = async () => {
+    if (!questionToDelete) return;
+    
+    setDeleting(true);
+    try {
+      console.log('Calling deleteQuestion API with ID:', questionToDelete);
+      const response = await questionBankService.deleteQuestion(questionToDelete);
+      console.log('Delete response:', response);
+      
+      if (response && response.success) {
+        toast.success(response.message || "Xóa câu hỏi thành công!");
+        fetchQuestions(pagination.current, pagination.pageSize, searchTerm, sortBy, sortDirection);
+        setDeleteModalVisible(false);
+        setQuestionToDelete(null);
+      } else {
+        console.error('Response success is false:', response);
+        throw new Error(response?.message || 'Xóa thất bại');
+      }
+    } catch (err) {
+      console.error('Delete question error:', err);
+      const errorMessage = err.response?.data?.message || err.message;
+      toast.error(`Lỗi xóa câu hỏi: ${errorMessage}`);
+    } finally {
+      setDeleting(false);
+    }
+  };
+
+  // Cancel delete
+  const cancelDelete = () => {
+    console.log('Delete cancelled');
+    setDeleteModalVisible(false);
+    setQuestionToDelete(null);
   };
 
   // Handle view question details
   const handleView = (question) => {
-    Modal.info({
-      title: "Chi tiết câu hỏi",
-      content: (
-        <div>
-          <p><strong>Nội dung:</strong> {question.questionText}</p>
-          <p><strong>Chủ đề:</strong> {question.topic?.topicName || question.topic || 'Chưa phân loại'}</p>
-          <p><strong>Mức độ:</strong> {getDifficultyText(question.difficultyLevel)}</p>
-          <p><strong>Giải thích:</strong> {question.explanation || 'Chưa có giải thích'}</p>
-          <p><strong>Ngày tạo:</strong> {question.createdAt ? new Date(question.createdAt).toLocaleString('vi-VN') : 'N/A'}</p>
-        </div>
-      ),
-      width: 600,
-    });
+    navigate(`/admin/questions/${question.questionId}`);
   };
 
   // Handle edit question
   const handleEdit = (question) => {
     setEditingQuestion(question);
     setIsModalVisible(true);
-    form.setFieldsValue({
+    
+    const formValues = {
       questionText: question.questionText,
       difficultyLevel: question.difficultyLevel,
       chapterId: question.chapterId,
       questionType: question.questionType,
       explanation: question.explanation
-    });
+    };
+    
+    // Load answer choices if available
+    if (question.answerChoices && Array.isArray(question.answerChoices)) {
+      const choices = question.answerChoices;
+      
+      if (question.questionType === 'multiple_choice') {
+        const choiceA = choices.find(c => c.choiceLabel === 'A');
+        const choiceB = choices.find(c => c.choiceLabel === 'B');
+        const choiceC = choices.find(c => c.choiceLabel === 'C');
+        const choiceD = choices.find(c => c.choiceLabel === 'D');
+        const correctChoice = choices.find(c => c.isCorrect);
+        
+        formValues.choiceA = choiceA?.choiceText || '';
+        formValues.choiceB = choiceB?.choiceText || '';
+        formValues.choiceC = choiceC?.choiceText || '';
+        formValues.choiceD = choiceD?.choiceText || '';
+        formValues.correctAnswer = correctChoice?.choiceLabel || '';
+      } else if (question.questionType === 'true_false') {
+        const correctChoice = choices.find(c => c.isCorrect);
+        formValues.correctAnswer = correctChoice?.choiceLabel === 'Đúng' ? 'true' : 'false';
+      }
+    } else if (question.correctAnswer) {
+      // For fill_blank type
+      formValues.correctAnswer = question.correctAnswer;
+    }
+    
+    console.log('📝 Edit form values:', formValues);
+    form.setFieldsValue(formValues);
   };
 
   // Handle add new question
@@ -272,27 +344,65 @@ export default function QuestionsPage() {
   const handleAIGenerateSubmit = async () => {
     try {
       const values = await aiForm.validateFields();
+      console.log('🎯 AI form values:', values);
+      console.log('🎯 Available chapters:', chapters);
+      
       setAiGenerating(true);
       
+      // Find selected chapter for additional data
+      const selectedChapter = chapters.find(c => c.chapterId === values.chapterId);
+      console.log('🎯 Selected chapter:', selectedChapter);
+      
       const criteria = {
-        topicId: values.topicId || chapters[0]?.topicId || 1,
-        difficultyLevel: values.difficultyLevel,
-        questionType: values.questionType,
-        count: values.count || 1,
-        topic: values.topic
+        chapterId: values.chapterId || selectedChapter?.chapterId,
+        topicId: selectedChapter?.topicId || 1,
+        difficultyLevel: values.difficultyLevel || 'medium',
+        questionType: values.questionType || 'multiple_choice',
+        topic: values.topic || selectedChapter?.chapterName || 'Vật lý',
+        chapterName: selectedChapter?.chapterName || 'Chương học',
+        saveToDatabase: true
       };
       
-      const generatedQuestion = await questionBankService.generateQuestion(criteria);
+      console.log('🎯 AI generation criteria:', criteria);
       
-      if (generatedQuestion) {
-        toast.success('Đã tạo câu hỏi bằng AI thành công!');
+      // Validate required fields
+      if (!criteria.topic?.trim()) {
+        throw new Error('Vui lòng nhập chủ đề câu hỏi');
+      }
+      
+      if (!criteria.difficultyLevel) {
+        throw new Error('Vui lòng chọn mức độ khó');
+      }
+      
+      // Generate single question
+      const response = await questionBankService.generateQuestion(criteria);
+      console.log('🎯 AI generation response:', response);
+      
+      if (response?.success) {
+        const successMessage = response.message || 'Đã tạo câu hỏi AI thành công!';
+        
+        // Show success toast
+        toast.success(successMessage);
+        
+        // Send system notification
+        systemNotificationService.sendSystemNotification({
+          title: '✨ Câu hỏi AI mới đã có!',
+          message: `Câu hỏi về "${criteria.topic}" vừa được tạo bằng AI`,
+          type: 'success',
+          icon: '🤖',
+          url: '/admin/questions'
+        });
+        
+        // Refresh questions list and close modal
         fetchQuestions(pagination.current, pagination.pageSize, searchTerm, sortBy, sortDirection);
         setShowAIModal(false);
         aiForm.resetFields();
+      } else {
+        throw new Error(response?.message || 'Tạo câu hỏi AI thất bại');
       }
     } catch (err) {
       console.error('AI Generation error:', err);
-      const errorMessage = questionBankService.formatError(err);
+      const errorMessage = err.response?.data?.message || err.message || 'Lỗi không xác định';
       toast.error(`Lỗi tạo câu hỏi AI: ${errorMessage}`);
     } finally {
       setAiGenerating(false);
@@ -318,7 +428,27 @@ export default function QuestionsPage() {
     }
   };
 
+  // Generate question code
+  const generateQuestionCode = (questionId, chapterId) => {
+    const timestamp = new Date().getTime().toString().slice(-6);
+    return `QS${chapterId || '00'}_${timestamp}_${questionId?.slice(-4) || '0000'}`;
+  };
+
 const columns = [
+  {
+    title: "Mã câu hỏi",
+    dataIndex: "questionId",
+    key: "questionCode",
+    render: (questionId, record) => {
+      const code = generateQuestionCode(questionId, record.chapterId);
+      return (
+        <Tag color="blue" style={{ fontFamily: 'monospace' }}>
+          {code}
+        </Tag>
+      );
+    },
+    width: 150,
+  },
   {
     title: "Nội dung câu hỏi",
       dataIndex: "questionText",
@@ -333,12 +463,16 @@ const columns = [
   {
     title: "Chủ đề",
       key: "topic",
-      render: (_, record) => (
-        <Tag color="blue">
-          {record.topic?.topicName || record.topic || 'Chưa phân loại'}
-        </Tag>
-      ),
+      render: (_, record) => {
+        const topicText = record.topic?.topicName || record.topic || 'Chưa phân loại';
+        return (
+          <Tag color="blue" title={topicText}>
+            {topicText.length > 20 ? `${topicText.substring(0, 20)}` : topicText}
+          </Tag>
+        );
+      },
       width: 150,
+      ellipsis: true,
   },
   {
     title: "Mức độ",
@@ -414,7 +548,7 @@ const columns = [
             loading={aiGenerating}
             style={{ marginRight: 8 }}
           >
-            Tạo câu hỏi AI
+            🤖 Tạo câu hỏi AI
           </Button>
           <Button type="primary" icon={<PlusOutlined />} onClick={handleAdd}>
             Thêm câu hỏi
@@ -540,6 +674,100 @@ const columns = [
             </Select>
           </Form.Item>
 
+          {/* Đáp án cho câu trắc nghiệm */}
+          <Form.Item noStyle shouldUpdate={(prevValues, currentValues) => prevValues.questionType !== currentValues.questionType}>
+            {({ getFieldValue }) => {
+              const questionType = getFieldValue('questionType');
+              
+              if (questionType === 'multiple_choice') {
+                return (
+                  <>
+                    <Form.Item label="Đáp án trắc nghiệm" style={{ marginBottom: 8 }}>
+                      <div style={{ fontSize: '12px', color: '#666', marginBottom: 8 }}>
+                        Nhập 4 đáp án A, B, C, D và chọn đáp án đúng:
+                      </div>
+                    </Form.Item>
+                    
+                    <Form.Item
+                      name="choiceA"
+                      label="Đáp án A"
+                      rules={[{ required: true, message: 'Vui lòng nhập đáp án A!' }]}
+                    >
+                      <Input placeholder="Nhập nội dung đáp án A..." />
+                    </Form.Item>
+                    
+                    <Form.Item
+                      name="choiceB"
+                      label="Đáp án B"
+                      rules={[{ required: true, message: 'Vui lòng nhập đáp án B!' }]}
+                    >
+                      <Input placeholder="Nhập nội dung đáp án B..." />
+                    </Form.Item>
+                    
+                    <Form.Item
+                      name="choiceC"
+                      label="Đáp án C"
+                      rules={[{ required: true, message: 'Vui lòng nhập đáp án C!' }]}
+                    >
+                      <Input placeholder="Nhập nội dung đáp án C..." />
+                    </Form.Item>
+                    
+                    <Form.Item
+                      name="choiceD"
+                      label="Đáp án D"
+                      rules={[{ required: true, message: 'Vui lòng nhập đáp án D!' }]}
+                    >
+                      <Input placeholder="Nhập nội dung đáp án D..." />
+                    </Form.Item>
+                    
+                    <Form.Item
+                      name="correctAnswer"
+                      label="Đáp án đúng"
+                      rules={[{ required: true, message: 'Vui lòng chọn đáp án đúng!' }]}
+                    >
+                      <Select placeholder="Chọn đáp án đúng">
+                        <Option value="A">A</Option>
+                        <Option value="B">B</Option>
+                        <Option value="C">C</Option>
+                        <Option value="D">D</Option>
+                      </Select>
+                    </Form.Item>
+                  </>
+                );
+              }
+              
+              if (questionType === 'true_false') {
+                return (
+                  <Form.Item
+                    name="correctAnswer"
+                    label="Đáp án đúng"
+                    rules={[{ required: true, message: 'Vui lòng chọn đáp án đúng!' }]}
+                  >
+                    <Select placeholder="Chọn đáp án đúng">
+                      <Option value="true">Đúng</Option>
+                      <Option value="false">Sai</Option>
+                    </Select>
+                  </Form.Item>
+                );
+              }
+              
+              if (questionType === 'fill_blank') {
+                return (
+                  <Form.Item
+                    name="correctAnswer"
+                    label="Đáp án đúng"
+                    rules={[{ required: true, message: 'Vui lòng nhập đáp án đúng!' }]}
+                  >
+                    <Input placeholder="Nhập đáp án đúng cho chỗ trống..." />
+                  </Form.Item>
+                );
+              }
+              
+              // Essay không cần đáp án cố định
+              return null;
+            }}
+          </Form.Item>
+
           <Form.Item
             name="explanation"
             label="Giải thích (tùy chọn)"
@@ -554,7 +782,7 @@ const columns = [
 
       {/* AI Generation Modal */}
       <Modal
-        title="Tạo câu hỏi bằng AI"
+        title="🤖 Tạo câu hỏi bằng AI"
         open={showAIModal}
         onOk={handleAIGenerateSubmit}
         onCancel={() => {
@@ -602,37 +830,37 @@ const columns = [
             </Select>
           </Form.Item>
 
+
+
           <Form.Item
-            name="count"
-            label="Số lượng câu hỏi"
-            initialValue={1}
-            rules={[
-              { required: true, message: 'Vui lòng nhập số lượng!' },
-              { type: 'number', min: 1, max: 10, message: 'Số lượng từ 1-10 câu hỏi!' }
-            ]}
+            name="chapterId"
+            label="Chương (bỏ chọn)"
+            extra={`Debug: ${chapters.length} chapters loaded`}
           >
-            <Select>
-              {[1,2,3,4,5,6,7,8,9,10].map(num => (
-                <Option key={num} value={num}>{num} câu hỏi</Option>
-              ))}
+            <Select placeholder="Chọn chương học cụ thể..." allowClear>
+              {Array.isArray(chapters) ? chapters.map(chapter => (
+                <Option key={chapter.chapterId} value={chapter.chapterId}>
+                  {chapter.chapterName}
+                </Option>
+              )) : []}
             </Select>
           </Form.Item>
-
-          {chapters.length > 0 && (
-            <Form.Item
-              name="topicId"
-              label="Chương (tùy chọn)"
-            >
-              <Select placeholder="Chọn chương học cụ thể..." allowClear>
-                {Array.isArray(chapters) ? chapters.map(chapter => (
-                  <Option key={chapter.topicId} value={chapter.topicId}>
-                    {chapter.topicName}
-                  </Option>
-                )) : []}
-              </Select>
-            </Form.Item>
-          )}
         </Form>
+      </Modal>
+
+      {/* Delete Confirmation Modal */}
+      <Modal
+        title="Xác nhận xóa câu hỏi"
+        open={deleteModalVisible}
+        onOk={confirmDelete}
+        onCancel={cancelDelete}
+        okText="Xóa"
+        okType="danger"
+        cancelText="Hủy"
+        confirmLoading={deleting}
+        destroyOnClose
+      >
+        <p>Bạn chắc chắn muốn xóa câu hỏi này? Hành động này không thể hoàn tác.</p>
       </Modal>
     </div>
   );

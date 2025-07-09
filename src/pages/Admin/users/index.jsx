@@ -1,8 +1,9 @@
 /* eslint-disable no-unused-vars */
 import React, { useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { Tag, Button, Avatar, Space, Modal, Form, Input, Select, Switch, Pagination, Spin } from "antd";
 import SafeTable from "../../../components/uiBasic/SafeTable";
-import { UserOutlined, PlusOutlined, EditOutlined, DeleteOutlined, SearchOutlined } from "@ant-design/icons";
+import { UserOutlined, PlusOutlined, EditOutlined, DeleteOutlined, EyeOutlined, SearchOutlined } from "@ant-design/icons";
 import { userService } from "../../../services";
 import toast from "react-hot-toast";
 import "./index.scss";
@@ -11,6 +12,7 @@ const { Option } = Select;
 const { Search } = Input;
 
 export default function UsersPage() {
+  const navigate = useNavigate();
   const [users, setUsers] = useState([]);
   const [loading, setLoading] = useState(false);
   const [editingUser, setEditingUser] = useState(null);
@@ -184,6 +186,11 @@ export default function UsersPage() {
     form.resetFields();
   };
 
+  // Handle view user details
+  const handleView = (userId) => {
+    navigate(`/admin/users/${userId}`);
+  };
+
   // Format role display
   const getRoleColor = (role) => {
     switch (role) {
@@ -257,6 +264,12 @@ export default function UsersPage() {
         const userId = record.id || record.userId || record.UserId;
         return (
           <Space>
+            <Button 
+              icon={<EyeOutlined />} 
+              size="small" 
+              onClick={() => handleView(userId)}
+              title="Xem chi tiết"
+            />
             <Button 
               icon={<EditOutlined />} 
               size="small" 

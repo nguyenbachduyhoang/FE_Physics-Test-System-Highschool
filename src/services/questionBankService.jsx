@@ -42,14 +42,16 @@ export const questionBankService = {
         chapterId: questionCriteria.chapterId,
         difficultyLevel: questionCriteria.difficultyLevel || 'medium',
         questionType: questionCriteria.questionType || 'multiple_choice',
-        specificTopic: questionCriteria.specificTopic || '',
-        saveToDatabase: questionCriteria.saveToDatabase || false
+        specificTopic: questionCriteria.topic || questionCriteria.specificTopic || '',
+        saveToDatabase: questionCriteria.saveToDatabase !== false // Default true
       };
-
-      const response = await questionAPI.post('/ai-question/generate', requestData);
-      
+      const response = await questionAPI.post('/questions/ai-generated', requestData);
       if (response.data.success) {
-        return response.data.data;
+        return {
+          success: true,
+          message: response.data.message,
+          data: response.data.data
+        };
       } else {
         throw new Error(response.data.message || 'AI question generation failed');
       }
@@ -62,7 +64,7 @@ export const questionBankService = {
   // Generate multiple questions in batch (sử dụng API thực tế)
   generateBatchQuestions: async (batchCriteria) => {
     try {
-      const response = await questionAPI.post('/ai-question/generate-batch', batchCriteria);
+      const response = await questionAPI.post('/questions/batch', batchCriteria);
       
       if (response.data.success) {
         return response.data.data;
@@ -77,26 +79,31 @@ export const questionBankService = {
 
   // Improve existing question using AI
   improveQuestion: async (questionId, improvementRequest) => {
-    const response = await questionAPI.post(`/ai-question/improve/${questionId}`, improvementRequest);
+    const response = await questionAPI.put(`/questions/${questionId}/improvements`, improvementRequest);
     return response.data.success ? response.data.data : response.data;
   },
 
   // Get AI-suggested topics for question generation
   suggestTopics: async (criteria) => {
-    const response = await questionAPI.post('/ai-question/suggest-topics', criteria);
+    const response = await questionAPI.get('/questions/topics/suggestions', {
+      params: {
+        chapterId: criteria.chapterId,
+        maxSuggestions: criteria.maxSuggestions || 5
+      }
+    });
     return response.data.success ? response.data.data : response.data;
   },
 
   // Validate question quality using AI
   validateQuestion: async (questionId) => {
-    const response = await questionAPI.post(`/ai-question/validate/${questionId}`);
+    const response = await questionAPI.get(`/questions/${questionId}/validation`);
     return response.data.success ? response.data.data : response.data;
   },
 
   // Test AI connection (sử dụng API thực tế)
   testAIConnection: async () => {
     try {
-      const response = await questionAPI.post('/ai-question/test-connection');
+      const response = await questionAPI.get('/questions/health/ai-connection');
       return response.data.success ? response.data.data : response.data;
     } catch (error) {
       console.error('AI connection test failed:', error);
@@ -106,7 +113,7 @@ export const questionBankService = {
 
   // Get AI configuration status
   getAIConfig: async () => {
-    const response = await questionAPI.get('/ai-question/config');
+    const response = await questionAPI.get('/questions/config');
     return response.data.success ? response.data.data : response.data;
   },
 
@@ -115,7 +122,7 @@ export const questionBankService = {
   // Get all chapters for question categorization
   getChapters: async () => {
     try {
-      const response = await questionAPI.get('/ai-question/chapters');
+      const response = await questionAPI.get('/questions/chapters');
       if (response.data.success && Array.isArray(response.data.data)) {
         return response;
       } else {
@@ -124,14 +131,14 @@ export const questionBankService = {
       }
     } catch (error) {
       console.error('Chapters API error:', error);
-      throw error; // Throw error để component có thể xử lý
+      throw error;
     }
   },
 
   // Get chapters by grade
   getChaptersByGrade: async (grade) => {
     try {
-      const response = await questionAPI.get('/ai-question/chapters', {
+      const response = await questionAPI.get('/questions/chapters', {
         params: { grade }
       });
       const data = response.data.success ? response.data.data : response.data;
@@ -145,7 +152,7 @@ export const questionBankService = {
   // Get unique grades from chapters
   getGrades: async () => {
     try {
-      const response = await questionAPI.get('/ai-question/chapters');
+      const response = await questionAPI.get('/questions/chapters');
       if (response.data.success && Array.isArray(response.data.data)) {
         // Lấy danh sách grade duy nhất và sắp xếp
         const grades = [...new Set(response.data.data.map(chapter => chapter.grade))];
@@ -163,7 +170,7 @@ export const questionBankService = {
   // Get all questions with filters
   getQuestions: async (params = {}) => {
     try {
-      const response = await questionAPI.get('/ai-question', { params });
+      const response = await questionAPI.get('/questions', { params });
       if (response.data.success) {
         return {
           data: {
@@ -187,13 +194,13 @@ export const questionBankService = {
 
   // Get question by ID
   getQuestionById: async (id) => {
-    const response = await questionAPI.get(`/ai-question/${id}`);
+    const response = await questionAPI.get(`/questions/${id}`);
     return response.data;
   },
 
   // Create new question manually
   createQuestion: async (questionData) => {
-    const response = await questionAPI.post('/ai-question/generate', {
+    const response = await questionAPI.post('/questions', {
       ...questionData,
       saveToDatabase: true
     });
@@ -202,15 +209,19 @@ export const questionBankService = {
 
   // Update question
   updateQuestion: async (id, questionData) => {
-    const response = await questionAPI.post(`/ai-question/improve/${id}`, questionData);
+    const updateRequest = {
+      questionText: questionData.questionText,
+      difficultyLevel: questionData.difficultyLevel,
+      explanation: questionData.explanation
+      // Note: answerChoices field sẽ được thêm khi có UI editor cho choices
+    };
+    const response = await questionAPI.put(`/questions/${id}`, updateRequest);
     return response.data;
   },
 
   // Delete question
   deleteQuestion: async (id) => {
-    const response = await questionAPI.post(`/ai-question/validate/${id}`, {
-      action: 'delete'
-    });
+    const response = await questionAPI.delete(`/questions/${id}`);
     return response.data;
   },
 

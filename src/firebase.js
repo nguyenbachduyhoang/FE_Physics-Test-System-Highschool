@@ -1,6 +1,7 @@
 import { initializeApp } from "firebase/app";
 import { getAuth, GoogleAuthProvider } from "firebase/auth";
 import { getFirestore } from "firebase/firestore";
+import { getMessaging, getToken, onMessage } from "firebase/messaging";
 
 const firebaseConfig = {
   apiKey: "AIzaSyDpdoGRmNpyOu2SLDwLkWTMZH8fmjxDRQE",
@@ -25,4 +26,14 @@ provider.setCustomParameters({
 
 const db = getFirestore(app);
 
-export { auth, provider, db, app };
+// Initialize Firebase Messaging
+let messaging = null;
+try {
+  if (typeof window !== 'undefined' && 'serviceWorker' in navigator) {
+    messaging = getMessaging(app);
+  }
+} catch (error) {
+  console.warn('Firebase Messaging not supported:', error);
+}
+
+export { auth, provider, db, app, messaging, getToken, onMessage };
