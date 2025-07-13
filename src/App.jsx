@@ -24,6 +24,8 @@ import AuthRedirect from "./components/AuthRedirect";
 // import DebugInfo from "./components/DebugInfo";
 import { Toaster } from "react-hot-toast";
 import { NotificationProvider } from "./contexts/NotificationContext";
+import FAQ from "./pages/FAQ";
+import Guide from "./pages/Guide";
 
 const router = createBrowserRouter([
   {
@@ -95,6 +97,14 @@ const router = createBrowserRouter([
       {
         path: "history",
         element: <History />,
+      },
+      {
+        path: "faq",
+        element: <FAQ />,
+      },
+      {
+        path: "guide",
+        element: <Guide />,
       },
     ],
   },
