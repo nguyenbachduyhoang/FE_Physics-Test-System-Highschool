@@ -1,15 +1,15 @@
 import React, { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
-import { 
-  Card, 
-  Button, 
-  Space, 
-  Tag, 
-  Descriptions, 
-  Spin, 
-  Alert, 
-  Modal, 
-  Form, 
+import {
+  Card,
+  Button,
+  Space,
+  Tag,
+  Descriptions,
+  Spin,
+  Alert,
+  Modal,
+  Form,
   Input,
   Select,
   Typography,
@@ -20,13 +20,12 @@ import {
   Avatar,
   Progress
 } from "antd";
-import { 
-  ArrowLeftOutlined, 
-  EditOutlined, 
-  DeleteOutlined, 
+import {
+  ArrowLeftOutlined,
+  EditOutlined,
+  DeleteOutlined,
   UserOutlined,
   MailOutlined,
-  PhoneOutlined,
   CalendarOutlined,
   TrophyOutlined,
   FileTextOutlined,
@@ -53,14 +52,14 @@ export default function UserDetailPage() {
   // Fetch user details
   const fetchUserDetail = async () => {
     if (!id) return;
-    
+
     setLoading(true);
     try {
       const response = await adminService.getUserById(id);
       if (response?.success || response?.data || response) {
         const userData = response.data || response;
         setUser(userData);
-        
+
         // Fetch user statistics
         try {
           const statsResponse = await analyticsService.getStudentProgress(id);
@@ -95,11 +94,10 @@ export default function UserDetailPage() {
     if (user) {
       form.setFieldsValue({
         username: user.username,
-        fullName: user.fullName,
+        fullName: user.full_name,
         email: user.email,
-        phoneNumber: user.phoneNumber,
         role: user.role,
-        isActive: user.isActive
+        isActive: user.is_active
       });
       setEditModalVisible(true);
     }
@@ -110,16 +108,15 @@ export default function UserDetailPage() {
     try {
       const values = await form.validateFields();
       const updateData = {
-        username: values.username,
-        fullName: values.fullName,
+        full_name: values.fullName,
         email: values.email,
-        phoneNumber: values.phoneNumber,
-        role: values.role,
-        isActive: values.isActive
+        is_active: values.isActive
       };
 
       const response = await adminService.updateUser(id, updateData);
-      if (response?.success || response?.data?.success) {
+
+      // adminService.updateUser bây giờ trả về toàn bộ response
+      if (response?.success) {
         toast.success('Cập nhật người dùng thành công!');
         setEditModalVisible(false);
         fetchUserDetail();
@@ -136,7 +133,9 @@ export default function UserDetailPage() {
   const handleDelete = async () => {
     try {
       const response = await adminService.deleteUser(id);
-      if (response?.success || response?.data?.success) {
+
+      // adminService.deleteUser bây giờ trả về toàn bộ response
+      if (response?.success) {
         toast.success('Xóa người dùng thành công!');
         navigate('/admin/users');
       } else {
@@ -204,9 +203,9 @@ export default function UserDetailPage() {
         const percentage = (record.score / record.maxScore * 100).toFixed(1);
         return (
           <div>
-            <Progress 
-              percent={percentage} 
-              size="small" 
+            <Progress
+              percent={percentage}
+              size="small"
               status={percentage >= 50 ? 'normal' : 'exception'}
             />
             <Text style={{ fontSize: '12px' }}>{percentage}%</Text>
@@ -257,8 +256,8 @@ export default function UserDetailPage() {
         <Row justify="space-between" align="middle">
           <Col>
             <Space>
-              <Button 
-                icon={<ArrowLeftOutlined />} 
+              <Button
+                icon={<ArrowLeftOutlined />}
                 onClick={() => navigate('/admin/users')}
               >
                 Quay lại
@@ -268,14 +267,14 @@ export default function UserDetailPage() {
           </Col>
           <Col>
             <Space>
-              <Button 
+              <Button
                 icon={<EditOutlined />}
                 onClick={handleEdit}
               >
                 Sửa
               </Button>
-              <Button 
-                danger 
+              <Button
+                danger
                 icon={<DeleteOutlined />}
                 onClick={() => setDeleteModalVisible(true)}
               >
@@ -290,28 +289,28 @@ export default function UserDetailPage() {
       <Card className="profile-card">
         <Row gutter={24} align="middle">
           <Col xs={24} md={6} style={{ textAlign: 'center' }}>
-            <Avatar 
-              size={120} 
+            <Avatar
+              size={120}
               icon={<UserOutlined />}
               src={user.avatarUrl}
               style={{ marginBottom: '16px' }}
             />
             <div>
-              <Title level={4} style={{ margin: 0 }}>{user.fullName}</Title>
+              <Title level={4} style={{ margin: 0 }}>{user.full_name}</Title>
               <Text type="secondary">@{user.username}</Text>
             </div>
           </Col>
           <Col xs={24} md={18}>
             <Descriptions column={2} bordered>
-              <Descriptions.Item label="ID" span={2}>{user.userId}</Descriptions.Item>
+              <Descriptions.Item label="ID" span={2}>{user.id}</Descriptions.Item>
               <Descriptions.Item label="Vai trò">
                 <Tag color={getRoleColor(user.role)}>
                   {getRoleText(user.role)}
                 </Tag>
               </Descriptions.Item>
               <Descriptions.Item label="Trạng thái">
-                <Tag color={getStatusColor(user.isActive)}>
-                  {getStatusText(user.isActive)}
+                <Tag color={getStatusColor(user.is_active)}>
+                  {getStatusText(user.is_active)}
                 </Tag>
               </Descriptions.Item>
               <Descriptions.Item label="Email" span={2}>
@@ -320,20 +319,10 @@ export default function UserDetailPage() {
                   <Text copyable>{user.email}</Text>
                 </Space>
               </Descriptions.Item>
-              <Descriptions.Item label="Số điện thoại">
-                {user.phoneNumber ? (
-                  <Space>
-                    <PhoneOutlined />
-                    <Text copyable>{user.phoneNumber}</Text>
-                  </Space>
-                ) : (
-                  <Text type="secondary">Chưa cập nhật</Text>
-                )}
-              </Descriptions.Item>
               <Descriptions.Item label="Ngày tạo">
                 <Space>
                   <CalendarOutlined />
-                  {user.createdAt ? new Date(user.createdAt).toLocaleString('vi-VN') : 'N/A'}
+                  {user.created_at ? new Date(user.created_at).toLocaleString('vi-VN') : 'N/A'}
                 </Space>
               </Descriptions.Item>
             </Descriptions>
@@ -451,16 +440,7 @@ export default function UserDetailPage() {
                 <Input placeholder="Nhập email..." />
               </Form.Item>
             </Col>
-            <Col span={12}>
-              <Form.Item
-                label="Số điện thoại"
-                name="phoneNumber"
-              >
-                <Input placeholder="Nhập số điện thoại..." />
-              </Form.Item>
-            </Col>
           </Row>
-
           <Row gutter={16}>
             <Col span={12}>
               <Form.Item
@@ -503,7 +483,7 @@ export default function UserDetailPage() {
       >
         <p>Bạn có chắc chắn muốn xóa người dùng này không?</p>
         <p><strong>Tên đăng nhập:</strong> {user.username}</p>
-        <p><strong>Họ và tên:</strong> {user.fullName}</p>
+        <p><strong>Họ và tên:</strong> {user.full_name}</p>
         <p>Hành động này không thể hoàn tác.</p>
       </Modal>
     </div>

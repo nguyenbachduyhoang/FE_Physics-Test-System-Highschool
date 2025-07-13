@@ -23,7 +23,10 @@ class AutoGradingService {
 
     // Interceptor để xử lý response
     this.apiClient.interceptors.response.use(
-      (response) => response.data,
+      (response) => {
+        // Handle ApiResponse format: { success: true, message: "...", data: {...} }
+        return response.data.success ? response.data.data : response.data;
+      },
       (error) => {
         console.error('Auto grading API error:', error);
         throw this.formatError(error);
@@ -174,6 +177,7 @@ class AutoGradingService {
 
   // 🎯 Helper: Chuyển đổi grade thành text tiếng Việt
   getGradeText(grade) {
+    // Nếu grade là letter (A, B, C, D, F)
     const gradeMap = {
       'A': 'Xuất sắc',
       'B': 'Giỏi', 
@@ -181,7 +185,30 @@ class AutoGradingService {
       'D': 'Trung bình',
       'F': 'Yếu'
     };
-    return gradeMap[grade] || 'Chưa xác định';
+    if (gradeMap[grade]) {
+      return gradeMap[grade];
+    }
+    
+    // Nếu grade là số (0-10 hoặc percentage)
+    const score = typeof grade === 'number' ? grade : parseFloat(grade);
+    if (!isNaN(score)) {
+      if (score >= 8.5) return 'Xuất sắc';
+      if (score >= 7.0) return 'Giỏi';
+      if (score >= 5.5) return 'Khá';
+      if (score >= 4.0) return 'Trung bình';
+      return 'Yếu';
+    }
+    
+    return 'Chưa xác định';
+  }
+
+  // 🎯 Helper: Convert score thành grade text (dành cho thang điểm 10)
+  getGradeFromScore(score) {
+    if (score >= 8.5) return 'Xuất sắc';
+    if (score >= 7.0) return 'Giỏi';
+    if (score >= 5.5) return 'Khá';
+    if (score >= 4.0) return 'Trung bình';
+    return 'Yếu';
   }
 
   // 🎯 Helper: Phân loại hiệu suất

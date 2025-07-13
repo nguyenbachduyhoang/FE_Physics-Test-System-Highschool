@@ -66,7 +66,7 @@ const handleExportPDF = (displayData, isRealData) => {
           text: [
             { text: '\nĐiểm số: ', bold: true },
             isRealData 
-              ? `${displayData.totalPointsEarned?.toFixed(1)} / ${displayData.maxPossiblePoints?.toFixed(1)}`
+              ? `${displayData.totalPointsEarned?.toFixed(2)} / ${displayData.maxPossiblePoints?.toFixed(2)}`
               : `${resultData.score} / ${resultData.total}`
           ]
         },
@@ -74,7 +74,7 @@ const handleExportPDF = (displayData, isRealData) => {
           text: [
             { text: '\nTỷ lệ: ', bold: true },
             isRealData 
-              ? `${displayData.percentageScore?.toFixed(1)}% - ${autoGradingService.getGradeText(displayData.grade)}`
+              ? `${displayData.percentageScore?.toFixed(2)}% - ${autoGradingService.getGradeText(displayData.grade)}`
               : ''
           ]
         },
@@ -328,7 +328,7 @@ const ResultContent = () => {
             ease: "power2.out",
             snap: { textContent: 1 },
             onUpdate: function() {
-              this.targets()[0].textContent = Number(this.targets()[0].textContent).toFixed(1);
+              this.targets()[0].textContent = Number(this.targets()[0].textContent).toFixed(2);
             }
           });
         }
@@ -545,17 +545,17 @@ const ResultContent = () => {
           <div className="stats-label">Điểm số</div>
           <div className="stats-value">
             {isRealData 
-              ? `${displayData.totalPointsEarned?.toFixed(1)} / ${displayData.maxPossiblePoints?.toFixed(1)}`
+              ? `${displayData.totalPointsEarned?.toFixed(2)} / 10.0`
               : "3.0 / 10.0"
             }
           </div>
           <div className={`stats-subtitle ${isRealData 
-            ? (displayData.percentageScore >= 80 ? 'success' : 
-               displayData.percentageScore >= 60 ? 'warning' : 'error')
+            ? (displayData.totalPointsEarned >= 8.5 ? 'success' : 
+               displayData.totalPointsEarned >= 5.5 ? 'warning' : 'error')
             : 'error'
           }`}>
             {isRealData 
-              ? `${displayData.percentageScore?.toFixed(1)}% - ${autoGradingService.getGradeText(displayData.grade)}`
+              ? `${displayData.percentageScore?.toFixed(2)}% - ${autoGradingService.getGradeFromScore(displayData.totalPointsEarned)}`
               : "30.0% - Yếu"
             }
           </div>
@@ -572,13 +572,13 @@ const ResultContent = () => {
           </div>
           <Progress 
             percent={isRealData 
-              ? Math.round((displayData.correctAnswers / displayData.totalQuestions) * 100)
+              ? Math.round((displayData.totalPointsEarned / 10) * 100)
               : 30
             } 
             showInfo={false} 
             strokeColor={isRealData 
-              ? (displayData.percentageScore >= 80 ? "#52c41a" : 
-                 displayData.percentageScore >= 60 ? "#faad14" : "#ff4d4f")
+              ? (displayData.totalPointsEarned >= 8.5 ? "#52c41a" : 
+                 displayData.totalPointsEarned >= 5.5 ? "#faad14" : "#ff4d4f")
               : "#19d6b4"
             } 
           />
@@ -779,7 +779,7 @@ const ResultContent = () => {
                         {result.isCorrect ? 'Đúng' : 'Sai'}
                       </Tag>
                       <span style={{ marginLeft: '8px' }}>
-                        {result.pointsEarned}/{result.maxPoints} điểm
+                        {result.pointsEarned?.toFixed(2)}/{result.maxPoints?.toFixed(2)} điểm
                       </span>
                     </div>
                   </div>

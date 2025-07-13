@@ -73,8 +73,8 @@ export default function QuestionDetailPage() {
   const fetchChapters = async () => {
     try {
       const response = await questionBankService.getChapters();
-      if (response?.data?.success && Array.isArray(response.data.data)) {
-        setChapters(response.data.data);
+      if (response?.success && Array.isArray(response.data)) {
+        setChapters(response.data);
       }
     } catch (error) {
       console.error('Error loading chapters:', error);

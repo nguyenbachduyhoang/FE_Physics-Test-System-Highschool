@@ -38,13 +38,13 @@ export const userService = {
   // Get current user profile
   getMyProfile: async () => {
     const response = await userAPI.get('/users/me');
-    return response.data.success ? response.data.data : response.data;
+    return response.data;
   },
 
   // Update current user profile
   updateMyProfile: async (userData) => {
     const response = await userAPI.put('/users/me', userData);
-    return response.data.success ? response.data.data : response.data;
+    return response.data;
   },
 
   // Change password
@@ -56,7 +56,7 @@ export const userService = {
   // Get user role
   getMyRole: async () => {
     const response = await userAPI.get('/auth/role');
-    return response.data.success ? response.data.data : response.data;
+    return response.data;
   },
 
   // =============== USER MANAGEMENT (Admin) APIs ===============
@@ -65,7 +65,7 @@ export const userService = {
   getAllUsers: async (params = {}) => {
     try {
       const response = await userAPI.get('/users', { params });
-      return response.data.success ? response.data.data : response.data;
+      return response.data;
     } catch (error) {
       console.error('Get users error:', error);
       throw error;
@@ -75,19 +75,19 @@ export const userService = {
   // Get user by ID
   getUserById: async (userId) => {
     const response = await userAPI.get(`/users/${userId}`);
-    return response.data.success ? response.data.data : response.data;
+    return response.data;
   },
 
   // Create new user
   createUser: async (userData) => {
     const response = await userAPI.post('/users', userData);
-    return response.data.success ? response.data.data : response.data;
+    return response.data;
   },
 
   // Update user
   updateUser: async (userId, userData) => {
     const response = await userAPI.put(`/users/${userId}`, userData);
-    return response.data.success ? response.data.data : response.data;
+    return response.data;
   },
 
   // Delete user
@@ -118,25 +118,25 @@ export const userService = {
         'Content-Type': 'multipart/form-data',
       },
     });
-    return response.data.success ? response.data.data : response.data;
+    return response.data;
   },
 
   // Update user roles and permissions
   updateUserRoles: async (userId, roles) => {
     const response = await userAPI.put(`/users/${userId}/roles`, { roles });
-    return response.data.success ? response.data.data : response.data;
+    return response.data;
   },
 
   // Get user permissions
   getUserPermissions: async (userId) => {
     const response = await userAPI.get(`/users/${userId}/permissions`);
-    return response.data.success ? response.data.data : response.data;
+    return response.data;
   },
 
   // Update user permissions
   updateUserPermissions: async (userId, permissions) => {
     const response = await userAPI.put(`/users/${userId}/permissions`, { permissions });
-    return response.data.success ? response.data.data : response.data;
+    return response.data;
   },
 
   // Export users data
@@ -158,19 +158,19 @@ export const userService = {
         'Content-Type': 'multipart/form-data',
       },
     });
-    return response.data.success ? response.data.data : response.data;
+    return response.data;
   },
 
   // Get user activity logs
   getUserActivityLogs: async (userId, params = {}) => {
     const response = await userAPI.get(`/users/${userId}/activity-logs`, { params });
-    return response.data.success ? response.data.data : response.data;
+    return response.data;
   },
 
   // Get user statistics
   getUserStats: async (userId) => {
     const response = await userAPI.get(`/users/${userId}/stats`);
-    return response.data.success ? response.data.data : response.data;
+    return response.data;
   },
 
   // =============== AUTHENTICATION VERIFY APIs ===============
@@ -178,13 +178,13 @@ export const userService = {
   // Verify current authentication
   verifyAuth: async () => {
     const response = await userAPI.get('/auth/verify');
-    return response.data.success ? response.data.data : response.data;
+    return response.data;
   },
 
   // Get admin users list (from AuthController)
   getAdminUsers: async () => {
     const response = await userAPI.get('/auth/admin/users');
-    return response.data.success ? response.data.data : response.data;
+    return response.data;
   },
 
   // =============== UTILITY FUNCTIONS ===============

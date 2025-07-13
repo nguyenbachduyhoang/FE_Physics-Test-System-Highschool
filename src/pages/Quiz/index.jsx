@@ -322,11 +322,30 @@ const PhysicsTestSystem = () => {
 
           if (essaySubmissions.length > 0) {
             const batchGradingResult = await essayService.batchGradeEssays({
-              submissions: essaySubmissions,
-              examId: examId
+              Submissions: essaySubmissions,  // PascalCase để match backend DTO
+              UseStrictGrading: false,
+              ProvideDetailedFeedback: true,
+              GradingStyle: "balanced"
             });
 
-            essayGradingResults = batchGradingResult.results || {};
+            // Backend returns { success: true, data: [...] }
+            const gradingResults = batchGradingResult.data || batchGradingResult;
+            
+            // Convert array to object with questionId as key
+            essayGradingResults = {};
+            if (Array.isArray(gradingResults)) {
+              gradingResults.forEach(result => {
+                essayGradingResults[result.QuestionId || result.questionId] = {
+                  totalScore: result.TotalScore || result.totalScore,
+                  overallFeedback: result.OverallFeedback || result.overallFeedback,
+                  criteriaScores: result.CriteriaScores || result.criteriaScores,
+                  strengths: result.Strengths || result.strengths,
+                  areasForImprovement: result.AreasForImprovement || result.areasForImprovement
+                };
+              });
+            }
+            
+            console.log('📝 Essay grading results:', essayGradingResults);
             // toast.success("Chấm điểm tự luận hoàn thành!", { id: "essay-grading" });
           }
         } catch (error) {

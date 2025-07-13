@@ -48,9 +48,9 @@ const NotificationBell = () => {
   };
 
   // Handle click notification item
-  const handleNotificationClick = (notification) => {
+  const handleNotificationClick = async (notification) => {
     if (!notification.read) {
-      markAsRead(notification.id);
+      await markAsRead(notification.id);
     }
     
     // Navigate to URL if provided
@@ -69,9 +69,9 @@ const NotificationBell = () => {
           type="text"
           size="small"
           icon={<EyeOutlined />}
-          onClick={(e) => {
+          onClick={async (e) => {
             e.stopPropagation();
-            if (!notification.read) markAsRead(notification.id);
+            if (!notification.read) await markAsRead(notification.id);
           }}
           title="Đánh dấu đã đọc"
         />,
@@ -79,9 +79,9 @@ const NotificationBell = () => {
           type="text"
           size="small"
           icon={<DeleteOutlined />}
-          onClick={(e) => {
+          onClick={async (e) => {
             e.stopPropagation();
-            removeNotification(notification.id);
+            await removeNotification(notification.id);
           }}
           title="Xóa thông báo"
           danger
@@ -151,7 +151,7 @@ const NotificationBell = () => {
               type="text"
               size="small"
               icon={<CheckOutlined />}
-              onClick={markAllAsRead}
+              onClick={async () => await markAllAsRead()}
               disabled={unreadCount === 0}
             >
               Đánh dấu tất cả đã đọc

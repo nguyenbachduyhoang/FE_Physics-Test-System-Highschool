@@ -36,7 +36,7 @@ export const adminService = {
   // =============== DASHBOARD APIs ===============
   getDashboard: async () => {
     const response = await adminAPI.get('/analytics/dashboard');
-    return response.data.success ? response.data.data : response.data;
+    return response.data;
   },
 
   // =============== USER MANAGEMENT APIs ===============
@@ -58,26 +58,28 @@ export const adminService = {
         sortDirection
       }
     });
-    return response.data.success ? response.data.data : response.data;
+    return response.data;
   },
 
   getUserById: async (id) => {
     const response = await adminAPI.get(`/users/${id}`);
-    return response.data.success ? response.data.data : response.data;
+    return response.data;
   },
 
   createUser: async (userData) => {
     const response = await adminAPI.post('/users', userData);
-    return response.data.success ? response.data.data : response.data;
+    return response.data;
   },
 
   updateUser: async (id, userData) => {
     const response = await adminAPI.put(`/users/${id}`, userData);
-    return response.data.success ? response.data.data : response.data;
+    // Trả về toàn bộ response để frontend có thể kiểm tra success flag
+    return response.data;
   },
 
   deleteUser: async (id) => {
     const response = await adminAPI.delete(`/users/${id}`);
+    // Trả về toàn bộ response để frontend có thể kiểm tra success flag
     return response.data;
   },
 
@@ -115,18 +117,18 @@ export const adminService = {
   // =============== ANALYTICS APIs ===============
   getStudentProgress: async (userId) => {
     const response = await adminAPI.get(`/analytics/student-progress/${userId}`);
-    return response.data.success ? response.data.data : response.data;
+    return response.data;
   },
 
   getExamStatistics: async (examId) => {
     const response = await adminAPI.get(`/analytics/exam-statistics/${examId}`);
-    return response.data.success ? response.data.data : response.data;
+    return response.data;
   },
 
   getChapterAnalytics: async (grade = null) => {
     const params = grade ? { grade } : {};
     const response = await adminAPI.get('/analytics/chapter-analytics', { params });
-    return response.data.success ? response.data.data : response.data;
+    return response.data;
   },
 
   // =============== QUESTION MANAGEMENT APIs ===============
@@ -143,17 +145,16 @@ export const adminService = {
 
   getChapters: async () => {
     const response = await adminAPI.get('/questions/chapters');
-    return response.data.success ? response.data.data : response.data;
+    return response.data;
   },
 
   generateQuestion: async (questionData) => {
     const response = await adminAPI.post('/questions/ai-generated', questionData);
-    return response.data.success ? response.data.data : response.data;
+    return response.data;
   },
 
   // eslint-disable-next-line no-unused-vars
   createQuestion: async (questionData) => {
-    // Tạm thời throw error vì chưa có API create question
     throw new Error('API tạo câu hỏi chưa được implement');
   },
 
@@ -172,17 +173,17 @@ export const adminService = {
   // =============== SMART EXAM APIs ===============
   getSmartExamConfig: async () => {
     const response = await adminAPI.get('/smart-exam/config');
-    return response.data.success ? response.data.data : response.data;
+    return response.data;
   },
 
   updateSmartExamConfig: async (configData) => {
     const response = await adminAPI.put('/smart-exam/config', configData);
-    return response.data.success ? response.data.data : response.data;
+    return response.data;
   },
 
   generateSmartExam: async (criteria) => {
     const response = await adminAPI.post('/smart-exam/generate', criteria);
-    return response.data.success ? response.data.data : response.data;
+    return response.data;
   },
 
   // =============== UTILITY FUNCTIONS ===============

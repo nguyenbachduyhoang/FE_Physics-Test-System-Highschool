@@ -45,31 +45,12 @@ export const examService = {
     const response = await examAPI.get('/exams', { 
       params: {
         page: params.page || 1,
-        pageSize: params.pageSize || 10
+        pageSize: params.pageSize || 10,
+        search: params.search || ''
       }
     });
     
-    // Kiểm tra và format response
-    if (response.data.success) {
-      return {
-        data: response.data.data,
-        total: response.data.total || response.data.data.length
-      };
-    }
-    
-    // Nếu response là array trực tiếp
-    if (Array.isArray(response.data)) {
-      return {
-        data: response.data,
-        total: response.data.length
-      };
-    }
-    
-    // Fallback
-    return {
-      data: [],
-      total: 0
-    };
+    return response.data.success ? response.data.data : response.data;
   },
 
   // Get exam by ID
@@ -81,54 +62,25 @@ export const examService = {
   // Create new exam
   createExam: async (examData) => {
     const response = await examAPI.post('/exams', examData);
-    return response.data; // Return full response để frontend có thể check success
+    return response.data.success ? response.data.data : response.data;
   },
 
   // Update exam
   updateExam: async (examId, examData) => {
     const response = await examAPI.put(`/exams/${examId}`, examData);
-    return response.data; // Return full response để frontend có thể check success
+    return response.data.success ? response.data.data : response.data;
   },
 
   // Delete exam  
   deleteExam: async (examId) => {
-    try {
-      const response = await examAPI.delete(`/exams/${examId}`);
-      console.log('Delete exam response:', response.data);
-      
-      // Handle different response formats
-      if (response.data && response.data.success === true) {
-        return {
-          success: true,
-          message: response.data.message || 'Xóa đề thi thành công!',
-          data: response.data.data
-        };
-      }
-      
-      // If no success field but status is 200, consider it successful
-      if (response.status === 200) {
-        return {
-          success: true,
-          message: response.data.message || 'Xóa đề thi thành công!',
-          data: response.data
-        };
-      }
-      
-      return response.data;
-    } catch (error) {
-      console.error('Delete exam error:', error);
-      throw {
-        success: false,
-        message: error.response?.data?.message || error.message || 'Lỗi khi xóa đề thi',
-        error: error.response?.data || error
-      };
-    }
+    const response = await examAPI.delete(`/exams/${examId}`);
+    return response.data.success ? response.data.data : response.data;
   },
 
   // Generate exam from criteria
   generateExam: async (generateData) => {
     const response = await examAPI.post('/exams/generate', generateData);
-    return response.data; // Return full response để frontend có thể check success
+    return response.data.success ? response.data : response.data;
   },
 
   // =============== SMART EXAM APIs ===============
@@ -139,10 +91,9 @@ export const examService = {
     return response.data.success ? response.data.data : response.data;
   },
 
-  // Generate smart exam from criteria (creates matrix and exam in one call)
   generateSmartExam: async (criteria) => {
     const response = await examAPI.post('/exams/generate-smart', criteria);
-    return response.data.success ? response.data.data : response.data;
+    return response.data.success ? response.data : response.data;
   },
 
   // Get all exam matrices
@@ -178,7 +129,7 @@ export const examService = {
   submitExamAnswers: async (examId, answers) => {
     // This endpoint doesn't exist yet in backend, but preparing for future
     const response = await examAPI.post(`/exams/${examId}/submit`, { answers });
-    return response.data.success ? response.data.data : response.data;
+    return response.data;
   },
 
   // Get student's exam result (for future implementation)
@@ -186,7 +137,7 @@ export const examService = {
     // This endpoint doesn't exist yet in backend, but preparing for future
     const endpoint = studentId ? `/exams/${examId}/results/${studentId}` : `/exams/${examId}/my-result`;
     const response = await examAPI.get(endpoint);
-    return response.data.success ? response.data.data : response.data;
+    return response.data;
   },
 
   // Get student's exam history
@@ -200,23 +151,7 @@ export const examService = {
       }
 
       const response = await examAPI.get(`/exams/history/${currentUser.userId}`);
-      
-      if (Array.isArray(response.data)) {
-        return response.data;
-      }
-      
-      // Nếu có wrapper, extract data
-      if (response.data && response.data.success && Array.isArray(response.data.data)) {
-        return response.data.data;
-      }
-      
-      // Nếu có data nhưng không có success wrapper
-      if (response.data && Array.isArray(response.data.data)) {
-        return response.data.data;
-      }
-      
-      console.warn('Unexpected response format:', response.data);
-      return [];
+      return response.data.success ? response.data.data : response.data;
     } catch (error) {
       if (error.message === 'Unauthorized - Please login again' || error.response?.status === 401) {
         // Thử verify token với backend trước khi logout
@@ -242,14 +177,14 @@ export const examService = {
   autoGradeExam: async (examId, answers) => {
     // This endpoint doesn't exist yet in backend, but preparing for future
     const response = await examAPI.post(`/exams/${examId}/auto-grade`, { answers });
-    return response.data.success ? response.data.data : response.data;
+    return response.data;
   },
 
   // Manual grade exam (for future implementation)
   manualGradeExam: async (examId, gradingData) => {
     // This endpoint doesn't exist yet in backend, but preparing for future
     const response = await examAPI.post(`/exams/${examId}/manual-grade`, gradingData);
-    return response.data.success ? response.data.data : response.data;
+    return response.data;
   },
 
   // =============== UTILITY FUNCTIONS ===============

@@ -290,16 +290,16 @@ export const essayService = {
     }
   },
 
-  // Create essay submission object
+  // Create essay submission object (matching backend DTO format)
   createEssaySubmission(questionId, studentId, studentAnswer) {
     const wordCount = studentAnswer.trim().split(/\s+/).filter(word => word.length > 0).length;
     
     return {
-      questionId,
-      studentId,
-      studentAnswer,
-      submittedAt: new Date().toISOString(),
-      wordCount
+      QuestionId: questionId,
+      StudentId: studentId,
+      StudentAnswer: studentAnswer,
+      SubmittedAt: new Date().toISOString(),
+      WordCount: wordCount
     };
   }
 }; 

@@ -50,25 +50,25 @@ export default function QuestionsPage() {
       };
       const response = await questionBankService.getQuestions(params);
       
-      if (response?.data?.success) {
-        const questionsData = response.data.data;
+      if (response?.success && response.data) {
+        // Backend returns: { success: true, data: { questions: [...], pagination: {...} } }
+        const responseData = response.data;
+        const questionsArray = responseData.questions || [];
+        const paginationInfo = responseData.pagination || {};
         
-        if (Array.isArray(questionsData) && questionsData.length > 0) {
-          setQuestions(questionsData);
-          setPagination({
-            current: response.data.currentPage || page,
-            pageSize: response.data.pageSize || pageSize,
-            total: response.data.totalCount || questionsData.length
-          });
-        } else {
-          console.warn('No questions data found');
-          toast.error('Không có dữ liệu câu hỏi');
-          setQuestions([]);
-          setPagination(prev => ({ ...prev, total: 0 }));
+        setQuestions(questionsArray);
+        setPagination({
+          current: paginationInfo.currentPage || page,
+          pageSize: paginationInfo.pageSize || pageSize,
+          total: paginationInfo.totalCount || questionsArray.length
+        });
+        
+        if (questionsArray.length === 0) {
+          toast.info('Không có câu hỏi nào được tìm thấy');
         }
       } else {
         console.error('API response not successful:', response);
-        toast.error('Không thể tải danh sách câu hỏi');
+        toast.error(response?.message || 'Không thể tải danh sách câu hỏi');
         setQuestions([]);
         setPagination(prev => ({ ...prev, total: 0 }));
       }
@@ -92,24 +92,18 @@ export default function QuestionsPage() {
   const fetchChapters = async () => {
     try {
       const response = await questionBankService.getChapters();
-
       
-      let chaptersData = [];
-      
-      // Try multiple response formats
-      if (response?.data?.success && Array.isArray(response.data.data)) {
-        // Format: {data: {success: true, data: [...]}}
-        chaptersData = response.data.data;
-      } else if (Array.isArray(response)) {
-        // Format: [...]
-        chaptersData = response;
+      if (response?.success && Array.isArray(response.data)) {
+        // Backend returns: { success: true, data: [Chapter...] }
+        setChapters(response.data);
+        
+        if (response.data.length === 0) {
+          toast.warning('Không có dữ liệu chương học');
+        }
       } else {
-        console.warn('🎯 Unknown format, setting empty');
-      }
-      setChapters(chaptersData);
-      
-      if (chaptersData.length === 0) {
-        toast.warning('Không có dữ liệu chương học');
+        console.error('Invalid chapters response format:', response);
+        toast.error(response?.message || 'Không thể tải danh sách chương học');
+        setChapters([]);
       }
     } catch (error) {
       console.error('Error loading chapters:', error);
@@ -598,7 +592,7 @@ const columns = [
           showQuickJumper: true,
           showTotal: (total, range) => 
             `${range[0]}-${range[1]} của ${total} câu hỏi`,
-          pageSizeOptions: ['10', '20', '50', '100']
+          pageSizeOptions: ['10', '20', '50', '100','150','200']
         }}
         onChange={handleTableChange}
         className="questions-table"
