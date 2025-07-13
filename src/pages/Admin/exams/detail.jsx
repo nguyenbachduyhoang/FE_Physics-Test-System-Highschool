@@ -57,11 +57,10 @@ export default function ExamDetailPage() {
     setLoading(true);
     try {
       const response = await examService.getExamById(id);
-      if (response?.success || response?.data || response) {
-        const examData = response.data || response;
-        setExam(examData);
+      if (response?.success) {
+        setExam(response.data);
       } else {
-        throw new Error('Không thể tải thông tin đề thi');
+        throw new Error(response?.message || 'Không thể tải thông tin đề thi');
       }
     } catch (error) {
       console.error('Error fetching exam detail:', error);
@@ -128,8 +127,8 @@ export default function ExamDetailPage() {
       };
 
       const response = await examService.updateExam(id, updateData);
-      if (response?.success || response?.data?.success) {
-        toast.success('Cập nhật đề thi thành công!');
+      if (response?.success) {
+        toast.success(response.message || 'Cập nhật đề thi thành công!');
         setEditModalVisible(false);
         fetchExamDetail();
       } else {
@@ -145,8 +144,8 @@ export default function ExamDetailPage() {
   const handleDelete = async () => {
     try {
       const response = await examService.deleteExam(id);
-      if (response?.success || response?.data?.success) {
-        toast.success('Xóa đề thi thành công!');
+      if (response?.success) {
+        toast.success(response.message || 'Xóa đề thi thành công!');
         navigate('/admin/exams');
       } else {
         throw new Error(response?.message || 'Xóa thất bại');
@@ -183,41 +182,48 @@ export default function ExamDetailPage() {
   const questionColumns = [
     {
       title: 'STT',
-      dataIndex: 'order',
       key: 'order',
       width: 60,
       render: (_, __, index) => index + 1
     },
     {
       title: 'Nội dung câu hỏi',
-      dataIndex: 'questionText',
       key: 'questionText',
-      render: (text) => text?.length > 100 ? text.substring(0, 100) + '...' : text
+      render: (_, record) => {
+        const text = record.question?.questionText || 'Chưa có nội dung';
+        return text.length > 100 ? text.substring(0, 100) + '...' : text;
+      }
     },
     {
       title: 'Loại',
-      dataIndex: 'questionType',
       key: 'questionType',
       width: 120,
-      render: (type) => <Tag>{type}</Tag>
+      render: (_, record) => {
+        const type = record.question?.questionType || 'unknown';
+        const displayType = type === 'multiple_choice' ? 'Trắc nghiệm' : 
+                           type === 'essay' ? 'Tự luận' : 
+                           type === 'true_false' ? 'Đúng/Sai' : type;
+        return <Tag>{displayType}</Tag>;
+      }
     },
     {
       title: 'Độ khó',
-      dataIndex: 'difficultyLevel',
       key: 'difficultyLevel',
       width: 100,
-      render: (level) => (
-        <Tag color={level === 'easy' ? 'green' : level === 'medium' ? 'orange' : 'red'}>
-          {level === 'easy' ? 'Dễ' : level === 'medium' ? 'TB' : 'Khó'}
-        </Tag>
-      )
+      render: (_, record) => {
+        const level = record.question?.difficulty || 'medium';
+        return (
+          <Tag color={level === 'easy' ? 'green' : level === 'medium' ? 'orange' : 'red'}>
+            {level === 'easy' ? 'Dễ' : level === 'medium' ? 'TB' : 'Khó'}
+          </Tag>
+        );
+      }
     },
     {
       title: 'Điểm',
-      dataIndex: 'points',
       key: 'points',
       width: 80,
-      render: (points) => points || '1'
+      render: (_, record) => record.pointsWeight || '1'
     }
   ];
 
@@ -250,7 +256,7 @@ export default function ExamDetailPage() {
 
   const examCode = generateExamCode(exam.examId, exam.examType);
   const questionCount = exam.questions?.length || 0;
-  const totalPoints = exam.questions?.reduce((sum, q) => sum + (q.points || 1), 0) || 0;
+  const totalPoints = exam.questions?.reduce((sum, q) => sum + (q.pointsWeight || 1), 0) || 0;
 
   return (
     <div className="exam-detail-page">
@@ -402,7 +408,7 @@ export default function ExamDetailPage() {
               <Card size="small" title="Phân bố độ khó">
                 <div className="difficulty-distribution">
                   {['easy', 'medium', 'hard'].map(level => {
-                    const count = exam.questions?.filter(q => q.difficultyLevel === level).length || 0;
+                    const count = exam.questions?.filter(q => q.question?.difficulty === level).length || 0;
                     const percentage = questionCount > 0 ? (count / questionCount * 100).toFixed(1) : 0;
                     return (
                       <div key={level} style={{ marginBottom: '8px' }}>
@@ -425,7 +431,7 @@ export default function ExamDetailPage() {
               <Card size="small" title="Phân bố loại câu hỏi">
                 <div className="type-distribution">
                   {['multiple_choice', 'true_false', 'essay'].map(type => {
-                    const count = exam.questions?.filter(q => q.questionType === type).length || 0;
+                    const count = exam.questions?.filter(q => q.question?.questionType === type).length || 0;
                     const percentage = questionCount > 0 ? (count / questionCount * 100).toFixed(1) : 0;
                     return (
                       <div key={type} style={{ marginBottom: '8px' }}>
@@ -553,7 +559,6 @@ export default function ExamDetailPage() {
           dataSource={exam.questions || []}
           rowKey={(record, index) => record.questionId || index}
           pagination={false}
-          scroll={{ y: 400 }}
           size="small"
         />
       </Modal>

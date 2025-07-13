@@ -1,8 +1,8 @@
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { Tag, Button, Space, Modal, Form, Input, Select, InputNumber, Spin, Card, Divider } from "antd";
+import { Tag, Button, Space, Modal, Form, Input, Select, InputNumber, Spin, Card, Divider, Row, Col, Collapse } from "antd";
 import SafeTable from "../../../components/uiBasic/SafeTable";
-import { PlusOutlined, EditOutlined, DeleteOutlined, EyeOutlined, ReloadOutlined, RobotOutlined, SearchOutlined } from "@ant-design/icons";
+import { PlusOutlined, EditOutlined, DeleteOutlined, EyeOutlined, ReloadOutlined, RobotOutlined, SearchOutlined, MinusCircleOutlined } from "@ant-design/icons";
 import { examService, questionBankService } from "../../../services";
 import toast from "react-hot-toast";
 import notificationService from "../../../services/notificationService";
@@ -12,6 +12,7 @@ import "./index.scss";
 const { Option } = Select;
 const { TextArea } = Input;
 const { Search } = Input;
+const { Panel } = Collapse;
 
 export default function ExamsPage() {
   const navigate = useNavigate();
@@ -21,6 +22,10 @@ export default function ExamsPage() {
   const [editingExam, setEditingExam] = useState(null);
   const [form] = Form.useForm();
   const [searchTerm, setSearchTerm] = useState('');
+  
+  // Mini Question Editor states
+  const [questionCount, setQuestionCount] = useState(0);
+  const [questions, setQuestions] = useState([]);
   
   // Pagination state
   const [pagination, setPagination] = useState({
@@ -50,16 +55,20 @@ export default function ExamsPage() {
         search: params.search || searchTerm
       });
 
-      setExams(response.data || []);
-      setPagination({
-        ...pagination,
-        current: params.current || pagination.current,
-        pageSize: params.pageSize || pagination.pageSize,
-        total: response.total || 0
-      });
+      if (response?.success) {
+        setExams(response.data || []);
+        setPagination({
+          ...pagination,
+          current: params.current || pagination.current,
+          pageSize: params.pageSize || pagination.pageSize,
+          total: response.pagination?.totalItems || 0
+        });
+      } else {
+        throw new Error(response?.message || 'Lỗi tải danh sách đề thi');
+      }
     } catch (err) {
       console.error('Fetch exams error:', err);
-      const errorMessage = examService.formatError(err);
+      const errorMessage = err.response?.data?.message || err.message || 'Lỗi không xác định';
       toast.error(`Lỗi tải danh sách đề thi: ${errorMessage}`);
       setExams([]);
     } finally {
@@ -81,29 +90,13 @@ export default function ExamsPage() {
   const fetchChapters = async () => {
     try {
       const response = await questionBankService.getChapters();
-      console.log('🎯 Raw response:', response);
-      console.log('🎯 Response type:', typeof response);
-      console.log('🎯 Is array?', Array.isArray(response));
-      console.log('🎯 Has data?', !!response?.data);
-      console.log('🎯 Data success?', !!response?.data?.success);
       
-      let chaptersData = [];
-      
-      // Try multiple response formats
-      if (response?.data?.success && Array.isArray(response.data.data)) {
-        // Home.jsx format: {data: {success: true, data: [...]}}
-        chaptersData = response.data.data;
-        console.log('🎯 Using Home.jsx format');
-      } else if (Array.isArray(response)) {
-        // Direct array format: [...]
-        chaptersData = response;
-        console.log('🎯 Using direct array format');
+      if (response?.success) {
+        setChapters(response.data || []);
       } else {
-        console.warn('🎯 Unknown format, setting empty');
+        console.warn('Failed to fetch chapters:', response?.message);
+        setChapters([]);
       }
-      
-      console.log('🎯 Final chapters:', chaptersData.length, 'items');
-      setChapters(chaptersData);
     } catch (err) {
       console.error('Fetch chapters error:', err);
       setChapters([]);
@@ -132,12 +125,52 @@ export default function ExamsPage() {
     try {
       const values = await form.validateFields();
       
+      // Validate questions nếu có
+      let questionsData = [];
+      if (questions.length > 0) {
+        // Validate each question
+        for (let i = 0; i < questions.length; i++) {
+          const q = questions[i];
+          if (!q.questionText.trim()) {
+            throw new Error(`Câu hỏi ${i + 1}: Vui lòng nhập nội dung câu hỏi`);
+          }
+          
+          if (q.questionType === 'multiple_choice') {
+            const validChoices = q.answerChoices.filter(c => c.text.trim());
+            if (validChoices.length < 2) {
+              throw new Error(`Câu hỏi ${i + 1}: Cần ít nhất 2 lựa chọn`);
+            }
+            const hasCorrectAnswer = q.answerChoices.some(c => c.isCorrect);
+            if (!hasCorrectAnswer) {
+              throw new Error(`Câu hỏi ${i + 1}: Chưa chọn đáp án đúng`);
+            }
+          }
+          
+          questionsData.push({
+            questionId: q.id,
+            questionOrder: i + 1,
+            pointsWeight: 1,
+            // Thêm thông tin chi tiết của question
+            questionData: {
+              questionText: q.questionText,
+              questionType: q.questionType,
+              difficultyLevel: q.difficultyLevel,
+              answerChoices: q.answerChoices.map(choice => ({
+                choiceLabel: choice.label,
+                choiceText: choice.text,
+                isCorrect: choice.isCorrect
+              }))
+            }
+          });
+        }
+      }
+
       const examData = {
         examName: values.examName,
         description: values.description,
         durationMinutes: values.durationMinutes,
         examType: values.examType,
-        questions: [] // Empty for now, can be added later
+        questions: questionsData
       };
 
       if (editingExam) {
@@ -169,8 +202,22 @@ export default function ExamsPage() {
           // Push notification for new exam creation
           systemNotificationService.notifyExamCreated({
             examName: examData.examName,
-            questionCount: examData.questions?.length || 0
+            questionCount: questionsData.length
           });
+
+          // Nếu có questions thì không cần hỏi, nếu không có thì hỏi
+          const examId = response.data?.examId;
+          if (examId && questionsData.length === 0) {
+            Modal.confirm({
+              title: '🎉 Tạo đề thi thành công!',
+              content: 'Bạn có muốn thêm câu hỏi cho đề thi này ngay bây giờ không?',
+              okText: 'Có, thêm câu hỏi',
+              cancelText: 'Để sau',
+              onOk: () => {
+                navigate(`/admin/exams/${examId}`);
+              }
+            });
+          }
         } else {
           throw new Error(response.message || 'Tạo mới thất bại');
         }
@@ -179,6 +226,8 @@ export default function ExamsPage() {
       setIsModalVisible(false);
       setEditingExam(null);
       form.resetFields();
+      setQuestions([]);
+      setQuestionCount(0);
       fetchExams();
     } catch (err) {
       console.error('Save exam error:', err);
@@ -193,7 +242,7 @@ export default function ExamsPage() {
     setDeleteModalVisible(true);
   };
 
-  // Confirm delete exam
+    // Confirm delete exam
   const confirmDelete = async () => {
     if (!examToDelete) return;
     
@@ -203,14 +252,9 @@ export default function ExamsPage() {
     setDeleting(true);
     try {
       const response = await examService.deleteExam(examToDelete);
-      console.log('Delete response:', response);
       
-      // Check for different response formats
-      const success = response?.success || response?.data?.success || response?.status === 'success';
-      const message = response?.message || response?.data?.message || "Xóa đề thi thành công!";
-      
-      if (success !== false) { // Consider success if not explicitly false
-        notificationService.showSuccess(message);
+      if (response?.success) {
+        notificationService.showSuccess(response.message || "Xóa đề thi thành công!");
         
         // Send system notification to all users about exam deletion
         if (examToDeleteInfo) {
@@ -221,7 +265,7 @@ export default function ExamsPage() {
         
         fetchExams();
       } else {
-        throw new Error(message || 'Xóa thất bại');
+        throw new Error(response?.message || 'Xóa thất bại');
       }
     } catch (err) {
       console.error('Delete exam error:', err);
@@ -257,6 +301,55 @@ export default function ExamsPage() {
     setEditingExam(null);
     setIsModalVisible(true);
     form.resetFields();
+    setQuestionCount(0);
+    setQuestions([]);
+  };
+
+  // Initialize questions when question count changes
+  const initializeQuestions = (count) => {
+    const newQuestions = [];
+    for (let i = 0; i < count; i++) {
+      newQuestions.push({
+        id: `q_${Date.now()}_${i}`,
+        questionText: '',
+        questionType: 'multiple_choice',
+        difficultyLevel: 'medium',
+        answerChoices: [
+          { label: 'A', text: '', isCorrect: false },
+          { label: 'B', text: '', isCorrect: false },
+          { label: 'C', text: '', isCorrect: false },
+          { label: 'D', text: '', isCorrect: false }
+        ]
+      });
+    }
+    setQuestions(newQuestions);
+  };
+
+  // Handle question count change
+  const handleQuestionCountChange = (count) => {
+    setQuestionCount(count);
+    initializeQuestions(count);
+  };
+
+  // Update question
+  const updateQuestion = (index, field, value) => {
+    const newQuestions = [...questions];
+    if (field.includes('choice_')) {
+      const [_, choiceIndex, choiceField] = field.split('_');
+      newQuestions[index].answerChoices[choiceIndex][choiceField] = value;
+    } else {
+      newQuestions[index][field] = value;
+    }
+    setQuestions(newQuestions);
+  };
+
+  // Set correct answer
+  const setCorrectAnswer = (questionIndex, choiceIndex) => {
+    const newQuestions = [...questions];
+    newQuestions[questionIndex].answerChoices.forEach((choice, i) => {
+      choice.isCorrect = i === choiceIndex;
+    });
+    setQuestions(newQuestions);
   };
 
   // Handle AI Smart Exam Generation
@@ -281,33 +374,28 @@ export default function ExamsPage() {
         chapterId: values.chapterId
       };
 
-      const response = await examService.generateExam(smartExamData); // ✅ Gọi đúng API
-      console.log('🎯 Full AI exam response:', response); // ✅ Debug response
+      const response = await examService.generateExam(smartExamData);
       
-              // ✅ Check multiple response formats
-        if (response.success || response.data?.success) {
-          const generatedExam = response.data || response;
-          toast.success(`Tạo đề thi AI thành công! Exam ID: ${generatedExam.examId}`);
-          
-          // Push notification for AI-generated exam
-          const examName = generatedExam.examName || values.examName || 'Đề thi AI';
-          const questionCount = generatedExam.questionCount || values.questionCount || 0;
-          
-          if (examName && examName.trim()) {
-            systemNotificationService.notifyExamCreated({
-              examName: examName.trim(),
-              questionCount: questionCount
-            });
-          } else {
-            console.warn('⚠️ Skipping notification - examName is empty');
-          }
-          
-          setIsAIModalVisible(false);
-          aiForm.resetFields();
-          await fetchExams(); // Refresh exam list
-        } else {
-          throw new Error(response.message || response.data?.message || 'Tạo đề thi thất bại');
+      if (response?.success) {
+        toast.success(response.message || 'Tạo đề thi AI thành công!');
+        
+        // Push notification for AI-generated exam
+        const examName = response.data?.examName || values.examName || 'Đề thi AI';
+        const questionCount = response.data?.questions?.length || values.questionCount || 0;
+        
+        if (examName && examName.trim()) {
+          systemNotificationService.notifyExamCreated({
+            examName: examName.trim(),
+            questionCount: questionCount
+          });
         }
+        
+        setIsAIModalVisible(false);
+        aiForm.resetFields();
+        await fetchExams(); // Refresh exam list
+      } else {
+        throw new Error(response?.message || 'Tạo đề thi thất bại');
+      }
     } catch (err) {
       console.error('AI generate exam error:', err);
       const errorMessage = err.response?.data?.message || err.message || 'Lỗi không xác định';
@@ -514,18 +602,18 @@ export default function ExamsPage() {
               <span className="stat-label">Tổng số đề thi:</span>
               <span className="stat-value">{Array.isArray(exams) ? exams.length : 0}</span>
             </div>
-            <div className="stat-item">
+            {/* <div className="stat-item">
               <span className="stat-label">Đã xuất bản:</span>
               <span className="stat-value">
                 {Array.isArray(exams) ? exams.filter(exam => exam.isPublished).length : 0}
               </span>
-            </div>
-            <div className="stat-item">
+            </div> */}
+            {/* <div className="stat-item">
               <span className="stat-label">Nháp:</span>
               <span className="stat-value">
                 {Array.isArray(exams) ? exams.filter(exam => !exam.isPublished).length : 0}
               </span>
-            </div>
+            </div> */}
           </div>
         </Card>
       </div>
@@ -558,6 +646,8 @@ export default function ExamsPage() {
           setIsModalVisible(false);
           setEditingExam(null);
           form.resetFields();
+          setQuestions([]);
+          setQuestionCount(0);
         }}
         destroyOnClose
         width={700}
@@ -630,6 +720,129 @@ export default function ExamsPage() {
                 <Option value={true}>Đã xuất bản</Option>
               </Select>
             </Form.Item>
+          )}
+
+          {/* Mini Question Editor - chỉ hiện khi tạo mới */}
+          {!editingExam && (
+            <>
+              <Divider>📝 Câu hỏi (Tùy chọn)</Divider>
+              
+              <Form.Item label="Số câu hỏi muốn tạo">
+                <Row gutter={16} align="middle">
+                  <Col span={12}>
+                    <InputNumber
+                      min={0}
+                      max={20}
+                      value={questionCount}
+                      onChange={handleQuestionCountChange}
+                      placeholder="Nhập số câu hỏi"
+                      style={{ width: '100%' }}
+                    />
+                  </Col>
+                </Row>
+              </Form.Item>
+
+              {questions.length > 0 && (
+                <Form.Item label="Danh sách câu hỏi">
+                  <Card size="small" style={{ maxHeight: '400px', overflow: 'auto' }}>
+                    <Collapse size="small">
+                      {questions.map((question, index) => (
+                        <Panel 
+                          header={
+                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                              <span>Câu {index + 1}: {question.questionText || 'Chưa có nội dung'}</span>
+                              <Tag color={question.questionType === 'multiple_choice' ? 'blue' : 'green'}>
+                                {question.questionType === 'multiple_choice' ? 'Trắc nghiệm' : 'Tự luận'}
+                              </Tag>
+                            </div>
+                          }
+                          key={question.id}
+                        >
+                          <Space direction="vertical" style={{ width: '100%' }}>
+                            {/* Question Text */}
+                            <div>
+                              <label style={{ fontWeight: 'bold', marginBottom: '4px', display: 'block' }}>
+                                Nội dung câu hỏi:
+                              </label>
+                              <TextArea
+                                rows={2}
+                                value={question.questionText}
+                                onChange={(e) => updateQuestion(index, 'questionText', e.target.value)}
+                                placeholder="Nhập nội dung câu hỏi..."
+                              />
+                            </div>
+
+                            {/* Question Type & Difficulty */}
+                            <Row gutter={16}>
+                              <Col span={12}>
+                                <label style={{ fontWeight: 'bold', marginBottom: '4px', display: 'block' }}>
+                                  Loại câu hỏi:
+                                </label>
+                                <Select
+                                  value={question.questionType}
+                                  onChange={(value) => updateQuestion(index, 'questionType', value)}
+                                  style={{ width: '100%' }}
+                                >
+                                  <Option value="multiple_choice">Trắc nghiệm</Option>
+                                  <Option value="essay">Tự luận</Option>
+                                </Select>
+                              </Col>
+                              <Col span={12}>
+                                <label style={{ fontWeight: 'bold', marginBottom: '4px', display: 'block' }}>
+                                  Độ khó:
+                                </label>
+                                <Select
+                                  value={question.difficultyLevel}
+                                  onChange={(value) => updateQuestion(index, 'difficultyLevel', value)}
+                                  style={{ width: '100%' }}
+                                >
+                                  <Option value="easy">Dễ</Option>
+                                  <Option value="medium">Trung bình</Option>
+                                  <Option value="hard">Khó</Option>
+                                </Select>
+                              </Col>
+                            </Row>
+
+                            {/* Answer Choices for Multiple Choice */}
+                            {question.questionType === 'multiple_choice' && (
+                              <div>
+                                <label style={{ fontWeight: 'bold', marginBottom: '8px', display: 'block' }}>
+                                  Các lựa chọn:
+                                </label>
+                                {question.answerChoices.map((choice, choiceIndex) => (
+                                  <Row key={choiceIndex} gutter={8} align="middle" style={{ marginBottom: '8px' }}>
+                                    <Col span={2}>
+                                      <Button
+                                        size="small"
+                                        type={choice.isCorrect ? "primary" : "default"}
+                                        onClick={() => setCorrectAnswer(index, choiceIndex)}
+                                        style={{ width: '100%' }}
+                                      >
+                                        {choice.label}
+                                      </Button>
+                                    </Col>
+                                    <Col span={22}>
+                                      <Input
+                                        value={choice.text}
+                                        onChange={(e) => updateQuestion(index, `choice_${choiceIndex}_text`, e.target.value)}
+                                        placeholder={`Nhập nội dung đáp án ${choice.label}...`}
+                                      />
+                                    </Col>
+                                  </Row>
+                                ))}
+                                <div style={{ fontSize: '12px', color: '#666', marginTop: '4px' }}>
+                                  💡 Click vào nút A, B, C, D để chọn đáp án đúng
+                                </div>
+                              </div>
+                            )}
+                          </Space>
+                        </Panel>
+                      ))}
+                    </Collapse>
+                  </Card>
+                </Form.Item>
+              )}
+            </>
           )}
         </Form>
       </Modal>

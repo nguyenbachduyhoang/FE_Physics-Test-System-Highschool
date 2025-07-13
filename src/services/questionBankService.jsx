@@ -46,15 +46,7 @@ export const questionBankService = {
         saveToDatabase: questionCriteria.saveToDatabase !== false // Default true
       };
       const response = await questionAPI.post('/questions/ai-generated', requestData);
-      if (response.data.success) {
-        return {
-          success: true,
-          message: response.data.message,
-          data: response.data.data
-        };
-      } else {
-        throw new Error(response.data.message || 'AI question generation failed');
-      }
+      return response.data.success ? response.data.data : response.data;
     } catch (error) {
       console.error('Question generation error:', error);
       throw error;
@@ -65,12 +57,7 @@ export const questionBankService = {
   generateBatchQuestions: async (batchCriteria) => {
     try {
       const response = await questionAPI.post('/questions/batch', batchCriteria);
-      
-      if (response.data.success) {
-        return response.data.data;
-      } else {
-        throw new Error(response.data.message || 'Batch question generation failed');
-      }
+      return response.data.success ? response.data.data : response.data;
     } catch (error) {
       console.error('Batch question generation error:', error);
       throw error;
@@ -97,14 +84,14 @@ export const questionBankService = {
   // Validate question quality using AI
   validateQuestion: async (questionId) => {
     const response = await questionAPI.get(`/questions/${questionId}/validation`);
-    return response.data.success ? response.data.data : response.data;
+    return response.data;
   },
 
   // Test AI connection (sử dụng API thực tế)
   testAIConnection: async () => {
     try {
       const response = await questionAPI.get('/questions/health/ai-connection');
-      return response.data.success ? response.data.data : response.data;
+      return response.data;
     } catch (error) {
       console.error('AI connection test failed:', error);
       throw error;
@@ -114,7 +101,7 @@ export const questionBankService = {
   // Get AI configuration status
   getAIConfig: async () => {
     const response = await questionAPI.get('/questions/config');
-    return response.data.success ? response.data.data : response.data;
+    return response.data;
   },
 
   // =============== CHAPTER & TOPIC MANAGEMENT ===============
@@ -123,12 +110,7 @@ export const questionBankService = {
   getChapters: async () => {
     try {
       const response = await questionAPI.get('/questions/chapters');
-      if (response.data.success && Array.isArray(response.data.data)) {
-        return response;
-      } else {
-        console.warn('Invalid chapters data format:', response.data);
-        throw new Error('Dữ liệu chapters không hợp lệ');
-      }
+      return response.data.success ? response.data : response.data;
     } catch (error) {
       console.error('Chapters API error:', error);
       throw error;
@@ -141,8 +123,7 @@ export const questionBankService = {
       const response = await questionAPI.get('/questions/chapters', {
         params: { grade }
       });
-      const data = response.data.success ? response.data.data : response.data;
-      return Array.isArray(data) ? data : [];
+      return response.data.success ? response.data.data : response.data;
     } catch (error) {
       console.warn('Chapters API not available:', error.message);
       return [];
@@ -153,12 +134,7 @@ export const questionBankService = {
   getGrades: async () => {
     try {
       const response = await questionAPI.get('/questions/chapters');
-      if (response.data.success && Array.isArray(response.data.data)) {
-        // Lấy danh sách grade duy nhất và sắp xếp
-        const grades = [...new Set(response.data.data.map(chapter => chapter.grade))];
-        return grades.sort((a, b) => a - b);
-      }
-      return [];
+      return response.data;
     } catch (error) {
       console.error('Get grades error:', error.message);
       return [];
@@ -171,21 +147,7 @@ export const questionBankService = {
   getQuestions: async (params = {}) => {
     try {
       const response = await questionAPI.get('/questions', { params });
-      if (response.data.success) {
-        return {
-          data: {
-            success: true,
-            message: response.data.message,
-            data: response.data.data.questions || [],
-            currentPage: response.data.data.currentPage || 1,
-            pageSize: response.data.data.pageSize || 10,
-            totalCount: response.data.data.totalCount || 0
-          }
-        };
-      } else {
-        console.warn('Invalid questions data format:', response.data);
-        throw new Error('Dữ liệu câu hỏi không hợp lệ');
-      }
+      return response.data;
     } catch (err) {
       console.error('Questions API error:', err);
       throw err;
@@ -233,7 +195,7 @@ export const questionBankService = {
     const response = await questionAPI.get('/questions/search', {
       params: { q: searchText, ...filters }
     });
-    return response.data.success ? response.data.data : response.data;
+    return response.data;
   },
 
   // Get questions by chapter
@@ -242,7 +204,7 @@ export const questionBankService = {
     const response = await questionAPI.get('/questions/by-chapter', {
       params: { chapterId }
     });
-    return response.data.success ? response.data.data : response.data;
+    return response.data;
   },
 
   // Get questions by difficulty level
@@ -251,7 +213,7 @@ export const questionBankService = {
     const response = await questionAPI.get('/questions/by-difficulty', {
       params: { difficulty }
     });
-    return response.data.success ? response.data.data : response.data;
+    return response.data;
   },
 
   // =============== QUESTION QUALITY & FEEDBACK ===============
@@ -260,14 +222,14 @@ export const questionBankService = {
   submitQuestionFeedback: async (questionId, feedback) => {
     // This endpoint doesn't exist yet in backend, preparing for future
     const response = await questionAPI.post(`/questions/${questionId}/feedback`, feedback);
-    return response.data.success ? response.data.data : response.data;
+    return response.data;
   },
 
   // Get question statistics and analytics
   getQuestionStatistics: async (questionId) => {
     // This endpoint doesn't exist yet in backend, preparing for future
     const response = await questionAPI.get(`/questions/${questionId}/statistics`);
-    return response.data.success ? response.data.data : response.data;
+    return response.data;
   },
 
   // =============== BULK OPERATIONS ===============
@@ -281,7 +243,7 @@ export const questionBankService = {
     const response = await questionAPI.post('/questions/import', formData, {
       headers: { 'Content-Type': 'multipart/form-data' }
     });
-    return response.data.success ? response.data.data : response.data;
+    return response.data;
   },
 
   // Export questions to file
@@ -307,7 +269,7 @@ export const questionBankService = {
   bulkUpdateQuestions: async (updates) => {
     // This endpoint doesn't exist yet in backend, preparing for future
     const response = await questionAPI.put('/questions/bulk-update', updates);
-    return response.data.success ? response.data.data : response.data;
+    return response.data;
   },
 
   // =============== UTILITY FUNCTIONS ===============

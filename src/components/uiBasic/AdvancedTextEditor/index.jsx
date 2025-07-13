@@ -1,8 +1,9 @@
 import React, { useState, useRef } from 'react';
 import MDEditor from '@uiw/react-md-editor';
-import { Button, message } from 'antd';
-import { CloudUploadOutlined } from '@ant-design/icons';
+import { Button, message, Switch } from 'antd';
+import { CloudUploadOutlined, SettingOutlined } from '@ant-design/icons';
 import { smartUpload } from '../../../quiz-uploads/firebaseStorage';
+import { smartUploadWithCloudinary, validateCloudinaryConfig } from '../../../services/cloudinaryService';
 import './index.scss';
 
 const AdvancedTextEditor = ({ 
@@ -12,6 +13,11 @@ const AdvancedTextEditor = ({
   disabled = false
 }) => {
   const [uploading, setUploading] = useState(false);
+  const [useCloudinary, setUseCloudinary] = useState(() => {
+    // Check if Cloudinary is configured
+    const config = validateCloudinaryConfig();
+    return config.isConfigured;
+  });
   const fileInputRef = useRef(null);
 
   const handleImageUpload = async (event) => {
@@ -36,18 +42,34 @@ const AdvancedTextEditor = ({
     console.log('Starting upload...'); // Debug
     
     try {
-      const imageUrl = await smartUpload(file, 'essay-images');
-      console.log('Upload successful:', imageUrl); // Debug
+      // Show loading message
+      const serviceName = useCloudinary ? 'Cloudinary' : 'Firebase';
+      const loadingMessage = message.loading(`Đang upload qua ${serviceName}...`, 0);
+      
+      let imageUrl;
+      if (useCloudinary) {
+        imageUrl = await smartUploadWithCloudinary(file, { 
+          folder: 'essay-images',
+          transformation: 'q_auto,f_auto,c_limit,w_1200,h_800'
+        });
+      } else {
+        imageUrl = await smartUpload(file, 'essay-images');
+      }
+      
+      console.log(`✅ Upload successful via ${serviceName}:`, imageUrl);
+      
+      // Dismiss loading message
+      loadingMessage();
       
       // Chèn markdown image vào vị trí cursor
       const imageMarkdown = `![${file.name}](${imageUrl})`;
       const newValue = value + '\n\n' + imageMarkdown + '\n\n';
       onChange?.(newValue);
       
-      message.success('Upload ảnh thành công!');
+      message.success(`🎉 Upload ảnh thành công qua ${serviceName}!`);
     } catch (error) {
-      console.error('Upload error:', error);
-      message.error(`Upload ảnh thất bại: ${error.message}`);
+      console.error('❌ Upload error:', error);
+      message.error(`❌ Upload ảnh thất bại: ${error.message}`);
     } finally {
       setUploading(false);
       // Reset file input
@@ -58,7 +80,11 @@ const AdvancedTextEditor = ({
   };
 
   const handleUploadClick = () => {
-    console.log('Upload button clicked'); // Debug
+    console.log('📂 Upload button clicked');
+    if (disabled) {
+      message.warning('Không thể upload trong chế độ xem!');
+      return;
+    }
     fileInputRef.current?.click();
   };
 
@@ -86,8 +112,23 @@ const AdvancedTextEditor = ({
         </Button>
         
         <span style={{ fontSize: '12px', color: '#666' }}>
-          Chọn ảnh để chèn vào nội dung
+          {uploading ? '⏳ Đang xử lý...' : '📷 Chọn ảnh để chèn vào nội dung'}
         </span>
+
+        {/* Cloudinary Toggle */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: '4px', marginLeft: 'auto' }}>
+          <SettingOutlined style={{ fontSize: '12px', color: '#666' }} />
+          <Switch 
+            size="small"
+            checked={useCloudinary}
+            onChange={setUseCloudinary}
+            checkedChildren="☁️"
+            unCheckedChildren="🔥"
+          />
+          <span style={{ fontSize: '10px', color: '#999' }}>
+            {useCloudinary ? 'Cloudinary' : 'Firebase'}
+          </span>
+        </div>
         
         <input
           ref={fileInputRef}
@@ -133,6 +174,7 @@ const AdvancedTextEditor = ({
       }}>
         <small style={{ color: '#666' }}>
           💡 Hỗ trợ Markdown: **đậm**, *nghiêng*, ## tiêu đề, ![ảnh](url), [link](url), - danh sách
+          {!disabled && ' | 📷 Click "Upload ảnh" để thêm hình ảnh'}
         </small>
       </div>
     </div>

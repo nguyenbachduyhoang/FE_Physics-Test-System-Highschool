@@ -39,11 +39,27 @@ export default function UsersPage() {
         search: search || searchTerm
       });
       
-      if (response && response.items && Array.isArray(response.items)) {
-        setUsers(response.items.map(user => ({
-          ...user,
-          id: user.userId || user.UserId || user.id
-        })));
+      if (response?.success && response.data) {
+        const responseData = response.data;
+        if (responseData.items && Array.isArray(responseData.items)) {
+          setUsers(responseData.items);
+          setPagination({
+            ...pagination,
+            current: responseData.currentPage || current,
+            pageSize: responseData.pageSize || pageSize,
+            total: responseData.totalCount || responseData.items.length
+          });
+        } else if (Array.isArray(responseData)) {
+          setUsers(responseData);
+          setPagination(prev => ({
+            ...prev,
+            current,
+            pageSize,
+            total: responseData.length
+          }));
+        }
+      } else if (response && response.items && Array.isArray(response.items)) {
+        setUsers(response.items);
         setPagination({
           ...pagination,
           current: response.currentPage || current,
@@ -51,10 +67,7 @@ export default function UsersPage() {
           total: response.totalCount || response.items.length
         });
       } else if (Array.isArray(response)) {
-        setUsers(response.map(user => ({
-          ...user,
-          id: user.userId || user.UserId || user.id
-        })));
+        setUsers(response);
         setPagination(prev => ({
           ...prev,
           current,
@@ -100,12 +113,20 @@ export default function UsersPage() {
         // Update user
         const response = await userService.updateUser(editingUser.id, values);
         console.log('Update response:', response); // Debug log
-        toast.success("Cập nhật người dùng thành công!");
+        if (response?.success) {
+          toast.success("Cập nhật người dùng thành công!");
+        } else {
+          throw new Error(response?.message || 'Cập nhật thất bại');
+        }
       } else {
         // Create user
         const response = await userService.createUser(values);
         console.log('Create response:', response); // Debug log
-        toast.success("Thêm người dùng thành công!");
+        if (response?.success) {
+          toast.success("Thêm người dùng thành công!");
+        } else {
+          throw new Error(response?.message || 'Thêm thất bại');
+        }
       }
       
       setIsModalVisible(false);
@@ -142,20 +163,23 @@ export default function UsersPage() {
     if (confirmDelete) {
       setLoading(true);
       try {
-        await userService.deleteUser(userId);
-        toast.success("Xóa người dùng thành công!");
-        
-        // Cập nhật state users ngay lập tức
-        setUsers(prevUsers => {
-          const newUsers = prevUsers.filter(user => {
-            const currentId = user.userId || user.UserId || user.id;
-            return currentId !== userId;
+        const response = await userService.deleteUser(userId);
+        if (response?.success) {
+          toast.success("Xóa người dùng thành công!");
+          
+          // Cập nhật state users ngay lập tức
+          setUsers(prevUsers => {
+            const newUsers = prevUsers.filter(user => {
+              const currentId = user.userId || user.UserId || user.id;
+              return currentId !== userId;
+            });
+            return newUsers;
           });
-          return newUsers;
-        });
-        
-        // Sau đó fetch lại dữ liệu từ server để đồng bộ
-        await fetchUsers(pagination.current, pagination.pageSize, searchTerm, sortBy, sortDirection);
+          
+          await fetchUsers(pagination.current, pagination.pageSize, searchTerm, sortBy, sortDirection);
+        } else {
+          throw new Error(response?.message || 'Xóa thất bại');
+        }
       } catch (err) {
         console.error('Delete user error:', err);
         const errorMessage = userService.formatError(err);
@@ -175,7 +199,7 @@ export default function UsersPage() {
       email: user.email,
       full_name: user.full_name,
       role: user.role,
-      isActive: user.isActive
+      isActive: user.is_active
     });
   };
 
@@ -249,8 +273,8 @@ export default function UsersPage() {
     },
     {
       title: "Trạng thái",
-      dataIndex: "isActive",
-      key: "isActive",
+      dataIndex: "is_active",
+      key: "is_active",
       render: (isActive) => (
         <Tag color={isActive ? "green" : "red"}>
           {isActive ? "Hoạt động" : "Không hoạt động"}
@@ -336,7 +360,7 @@ export default function UsersPage() {
           showQuickJumper: true,
           showTotal: (total, range) => 
             `${range[0]}-${range[1]} của ${total} người dùng`,
-          pageSizeOptions: ['10', '20', '50', '100']
+          pageSizeOptions: ['10', '20', '50', '100','150','200']
         }}
         onChange={handleTableChange}
         className="users-table"

@@ -39,6 +39,7 @@ export const analyticsService = {
   getDashboard: async () => {
     try {
       const response = await analyticsAPI.get('/analytics/dashboard');
+      // Handle ApiResponse format: { success: true, message: "...", data: {...} }
       return response.data.success ? response.data.data : response.data;
     } catch (error) {
       console.warn('Dashboard API not available, returning fallback data:', error.message);
@@ -58,9 +59,66 @@ export const analyticsService = {
       const response = await analyticsAPI.get('/analytics/recent-activities', {
         params: { limit }
       });
+      // Handle ApiResponse format: { success: true, message: "...", data: [...] }
       return response.data.success ? response.data.data : response.data;
     } catch (error) {
       console.warn('Recent activities API not available:', error.message);
+      return [];
+    }
+  },
+
+  // Get recent users
+  getRecentUsers: async (limit = 10) => {
+    try {
+      const response = await analyticsAPI.get('/users', {
+        params: { 
+          page: 1,
+          pageSize: limit,
+          sortBy: 'createdAt',
+          sortDirection: 'desc'
+        }
+      });
+      return response.data?.success ? response.data.data : response.data;
+    } catch (error) {
+      console.warn('Recent users API not available:', error.message);
+      return {
+        items: [],
+        totalCount: 0
+      };
+    }
+  },
+
+  // Get chart data for dashboard
+  getChartData: async (period = '7days') => {
+    try {
+      const response = await analyticsAPI.get('/analytics/chart-data', {
+        params: { period }
+      });
+      return response.data;
+    } catch (error) {
+      console.warn('Chart data API not available, returning mock data:', error.message);
+      // Return mock data for chart
+      return [
+        { name: 'T1', users: 400, questions: 2400, exams: 240 },
+        { name: 'T2', users: 300, questions: 1398, exams: 221 },
+        { name: 'T3', users: 200, questions: 9800, exams: 229 },
+        { name: 'T4', users: 278, questions: 3908, exams: 200 },
+        { name: 'T5', users: 189, questions: 4800, exams: 218 },
+        { name: 'T6', users: 239, questions: 3800, exams: 250 },
+        { name: 'T7', users: 349, questions: 4300, exams: 210 },
+      ];
+    }
+  },
+
+  // Get recent attempts
+  getRecentAttempts: async (limit = 10) => {
+    try {
+      const response = await analyticsAPI.get('/analytics/recent-attempts', {
+        params: { limit }
+      });
+      return response.data;
+    } catch (error) {
+      console.warn('Recent attempts API not available:', error.message);
       return [];
     }
   },
@@ -69,7 +127,7 @@ export const analyticsService = {
   getExamStats: async () => {
     try {
       const response = await analyticsAPI.get('/analytics/exam-stats');
-      return response.data.success ? response.data.data : response.data;
+      return response.data;
     } catch (error) {
       console.warn('Exam stats API not available:', error.message);
       return {
@@ -93,9 +151,7 @@ export const analyticsService = {
           limit: filters.limit || 10
         }
       });
-      
-      const sampleExams = response.data.success ? response.data.data : response.data;
-      return Array.isArray(sampleExams) ? sampleExams : [];
+      return response.data.success ? response.data.data : response.data;
     } catch (error) {
       console.warn('Sample exams API not available:', error.message);
       return [];
@@ -107,7 +163,7 @@ export const analyticsService = {
     const response = await analyticsAPI.get('/analytics/dashboard', {
       params: { startDate, endDate }
     });
-    return response.data.success ? response.data.data : response.data;
+    return response.data;
   },
 
   // =============== STUDENT PROGRESS ANALYTICS ===============
@@ -115,12 +171,14 @@ export const analyticsService = {
   // Get individual student progress
   getStudentProgress: async (userId) => {
     const response = await analyticsAPI.get(`/analytics/student-progress/${userId}`);
+    // Handle ApiResponse format: { success: true, message: "...", data: {...} }
     return response.data.success ? response.data.data : response.data;
   },
 
   // Get my own progress (for students)
   getMyProgress: async () => {
     const response = await analyticsAPI.get('/analytics/my-progress');
+    // Handle ApiResponse format: { success: true, message: "...", data: {...} }
     return response.data.success ? response.data.data : response.data;
   },
 
@@ -128,6 +186,7 @@ export const analyticsService = {
   getClassProgress: async (classId = null) => {
     const params = classId ? { classId } : {};
     const response = await analyticsAPI.get('/analytics/class-progress', { params });
+    // Handle ApiResponse format: { success: true, message: "...", data: {...} }
     return response.data.success ? response.data.data : response.data;
   },
 
@@ -136,6 +195,7 @@ export const analyticsService = {
   // Get detailed exam statistics
   getExamStatistics: async (examId) => {
     const response = await analyticsAPI.get(`/analytics/exam-statistics/${examId}`);
+    // Handle ApiResponse format: { success: true, message: "...", data: {...} }
     return response.data.success ? response.data.data : response.data;
   },
 
@@ -144,6 +204,7 @@ export const analyticsService = {
     const response = await analyticsAPI.get(`/analytics/exam-trends/${examId}`, {
       params: { period }
     });
+    // Handle ApiResponse format: { success: true, message: "...", data: {...} }
     return response.data.success ? response.data.data : response.data;
   },
 
@@ -152,7 +213,98 @@ export const analyticsService = {
     const response = await analyticsAPI.get('/analytics/exam-completion-rates', {
       params: filters
     });
+    // Handle ApiResponse format: { success: true, message: "...", data: {...} }
     return response.data.success ? response.data.data : response.data;
+  },
+
+  // Get system health and platform features
+  getSystemHealth: async () => {
+    try {
+      const response = await analyticsAPI.get('/analytics/system-health');
+      // Handle ApiResponse format: { success: true, message: "...", data: {...} }
+      return response.data.success ? response.data.data : response.data;
+    } catch (error) {
+      console.warn('System health API not available:', error.message);
+      return {
+        systemHealth: {
+          status: 'unknown',
+          message: 'Không thể kiểm tra trạng thái hệ thống',
+          lastChecked: new Date()
+        },
+        platformFeatures: [
+          {
+            id: 'ai_generation',
+            title: 'AI Generation',
+            description: 'Tạo đề thi tự động bằng trí tuệ nhân tạo với độ chính xác cao',
+            status: 'active',
+            usageCount: 0,
+            icon: 'robot'
+          },
+          {
+            id: 'smart_exam',
+            title: 'Smart Exam',
+            description: 'Đề thi thích ứng - AI tự động điều chỉnh độ khó theo năng lực',
+            status: 'active',
+            usageCount: 0,
+            icon: 'brain'
+          },
+          {
+            id: 'analytics_ai',
+            title: 'Analytics AI',
+            description: 'Phân tích chi tiết kết quả học tập bằng machine learning',
+            status: 'active',
+            usageCount: 0,
+            icon: 'chart'
+          },
+          {
+            id: 'realtime',
+            title: 'Real-time',
+            description: 'Tạo đề thi ngay lập tức, không cần chờ đợi',
+            status: 'active',
+            usageCount: 0,
+            icon: 'flash'
+          },
+          {
+            id: 'auto_grading',
+            title: 'Auto Grading',
+            description: 'Chấm điểm tự động cho cả trắc nghiệm và tự luận',
+            status: 'beta',
+            usageCount: 0,
+            icon: 'check'
+          },
+          {
+            id: 'adaptive_learning',
+            title: 'Adaptive Learning',
+            description: 'Học tập thích ứng theo từng học sinh',
+            status: 'coming_soon',
+            usageCount: 0,
+            icon: 'graduation'
+          }
+        ],
+        statistics: {
+          totalExams: 0,
+          totalUsers: 0,
+          totalQuestions: 0,
+          totalChapters: 0
+        }
+      };
+    }
+  },
+
+  // Get AI service status
+  getAIStatus: async () => {
+    try {
+      const response = await analyticsAPI.get('/analytics/ai-status');
+      // Handle ApiResponse format: { success: true, message: "...", data: {...} }
+      return response.data.success ? response.data.data : response.data;
+    } catch (error) {
+      console.warn('AI status API not available:', error.message);
+      return {
+        connected: false,
+        status: 'unavailable',
+        message: 'Không thể kiểm tra trạng thái AI'
+      };
+    }
   },
 
   // =============== CHAPTER & TOPIC ANALYTICS ===============
@@ -161,13 +313,14 @@ export const analyticsService = {
   getChapterAnalytics: async (grade = null) => {
     const params = grade ? { grade } : {};
     const response = await analyticsAPI.get('/analytics/chapter-analytics', { params });
-    return response.data.success ? response.data.data : response.data;
+    return response.data;
   },
 
   // Get topic difficulty analysis
   getTopicDifficultyAnalysis: async (chapterId = null) => {
     const params = chapterId ? { chapterId } : {};
     const response = await analyticsAPI.get('/analytics/topic-difficulty', { params });
+    // Handle ApiResponse format: { success: true, message: "...", data: {...} }
     return response.data.success ? response.data.data : response.data;
   },
 
@@ -175,6 +328,7 @@ export const analyticsService = {
   getWeakAreas: async (userId = null) => {
     const endpoint = userId ? `/analytics/weak-areas/${userId}` : '/analytics/my-weak-areas';
     const response = await analyticsAPI.get(endpoint);
+    // Handle ApiResponse format: { success: true, message: "...", data: {...} }
     return response.data.success ? response.data.data : response.data;
   },
 
@@ -186,6 +340,7 @@ export const analyticsService = {
       studentIds,
       ...criteria
     });
+    // Handle ApiResponse format: { success: true, message: "...", data: {...} }
     return response.data.success ? response.data.data : response.data;
   },
 
@@ -195,6 +350,7 @@ export const analyticsService = {
       classIds,
       ...criteria
     });
+    // Handle ApiResponse format: { success: true, message: "...", data: {...} }
     return response.data.success ? response.data.data : response.data;
   },
 
@@ -241,6 +397,7 @@ export const analyticsService = {
       userId,
       reportType
     });
+    // Handle ApiResponse format: { success: true, message: "...", data: {...} }
     return response.data.success ? response.data.data : response.data;
   },
 
@@ -250,6 +407,7 @@ export const analyticsService = {
       classId,
       reportType
     });
+    // Handle ApiResponse format: { success: true, message: "...", data: {...} }
     return response.data.success ? response.data.data : response.data;
   },
 
@@ -259,6 +417,7 @@ export const analyticsService = {
       params: { dataType, ...filters },
       responseType: 'blob'
     });
+    // For blob responses, return as is (file downloads)
     return response.data;
   },
 
@@ -345,24 +504,13 @@ export const analyticsService = {
     return error.message || 'Đã xảy ra lỗi không xác định';
   },
 
-  // Get recent users
-  getRecentUsers: async (limit = 5) => {
-    try {
-      const response = await analyticsAPI.get('/analytics/recent-users', {
-        params: { limit }
-      });
-      return response.data.success ? response.data.data : response.data;
-    } catch (error) {
-      console.warn('Recent users API not available:', error.message);
-      return [];
-    }
-  },
+
 
   // Get real-time stats
   getRealTimeStats: async () => {
     try {
       const response = await analyticsAPI.get('/analytics/real-time-stats');
-      return response.data.success ? response.data.data : response.data;
+      return response.data;
     } catch (error) {
       console.warn('Real-time stats API not available:', error.message);
       return {
@@ -374,29 +522,13 @@ export const analyticsService = {
     }
   },
 
-  // Get system health status
-  getSystemHealth: async () => {
-    try {
-      const response = await analyticsAPI.get('/analytics/system-health');
-      return response.data.success ? response.data.data : response.data;
-    } catch (error) {
-      console.warn('System health API not available:', error.message);
-      return {
-        status: 'unknown',
-        aiQuota: 0,
-        serverLoad: 0,
-        lastBackup: null
-      };
-    }
-  },
-
   // Get performance metrics
   getPerformanceMetrics: async (period = '24h') => {
     try {
       const response = await analyticsAPI.get('/analytics/performance-metrics', {
         params: { period }
       });
-      return response.data.success ? response.data.data : response.data;
+      return response.data;
     } catch (error) {
       console.warn('Performance metrics API not available:', error.message);
       return {
