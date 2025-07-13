@@ -1,6 +1,5 @@
 import React, { useState } from "react";
 import "./index.scss";
-import { FaQuestionCircle } from "react-icons/fa";
 
 const faqData = [
   {
@@ -98,16 +97,16 @@ const FAQ = () => {
               className={selected === idx ? "active" : ""}
               onClick={() => setSelected(idx)}
             >
-              <FaQuestionCircle className="faq-icon" /> {item.question}
+              {item.question}
             </li>
           ))}
         </ul>
       </div>
       <div className="faq-content">
-        <h1 className="faq-title">❓ Câu hỏi thường gặp</h1>
+        <h1 className="faq-title">Câu hỏi thường gặp</h1>
         <div className="faq-item">
           <h3 className="faq-question">
-            <FaQuestionCircle className="faq-icon" /> {faqData[selected].question}
+            {faqData[selected].question}
           </h3>
           <div className="faq-answer">{faqData[selected].answer}</div>
         </div>
