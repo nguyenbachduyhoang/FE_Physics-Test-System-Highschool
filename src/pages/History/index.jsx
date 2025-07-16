@@ -73,6 +73,7 @@ const HistoryContent = () => {
     accuracy: 0
   });
   const navigate = useNavigate();
+  const [visibleCount, setVisibleCount] = useState(5);
 
   useEffect(() => {
     const fetchHistory = async () => {
@@ -178,6 +179,17 @@ const HistoryContent = () => {
     return matchesSearch && matchesSubject && matchesTime;
   });
 
+  // Sắp xếp mới nhất lên trên
+  const sortedHistory = [...filteredHistory].sort((a, b) => {
+    // Giả sử item.date là string dạng 'HH:mm dd/MM/yyyy'
+    const dateA = parseVietnameseDate(a.date);
+    const dateB = parseVietnameseDate(b.date);
+    return (dateB?.getTime() || 0) - (dateA?.getTime() || 0);
+  });
+
+  // Lấy danh sách hiển thị theo visibleCount
+  const displayedHistory = sortedHistory.slice(0, visibleCount);
+
   // Xử lý xem lại bài thi
   const handleViewResult = (item) => {
     console.log('👁️ Viewing result for:', item);
@@ -194,25 +206,6 @@ const HistoryContent = () => {
     console.log('🔄 Retaking exam:', item);
     // Logic để làm lại bài thi - cần exam ID
     // navigate(`/quiz/${examId}`);
-  };
-
-  // Xử lý chia sẻ
-  const handleShareResult = (item) => {
-    console.log('📤 Sharing result:', item);
-    // Logic chia sẻ kết quả
-    if (navigator.share) {
-      navigator.share({
-        title: `Kết quả bài thi: ${item.subject}`,
-        text: `Tôi đã đạt ${item.score}/${item.total} điểm trong bài thi ${item.subject}`,
-        url: window.location.href,
-      });
-    } else {
-      // Fallback: copy to clipboard
-      navigator.clipboard.writeText(
-        `Kết quả bài thi: ${item.subject} - Điểm: ${item.score}/${item.total} - Độ chính xác: ${item.accuracy.toFixed(1)}%`
-      );
-      toast.success('Đã sao chép kết quả vào clipboard');
-    }
   };
 
   // Stats configuration với dữ liệu thực
@@ -317,7 +310,7 @@ const HistoryContent = () => {
 
       {/* History List */}
       <div className="list">
-        {filteredHistory.length === 0 ? (
+        {displayedHistory.length === 0 ? (
           <div style={{ textAlign: 'center', padding: '60px 20px' }}>
             {historyList.length === 0 ? (
               <Empty
@@ -356,105 +349,127 @@ const HistoryContent = () => {
             )}
           </div>
         ) : (
-          filteredHistory.map((item) => (
-            <div className="item" key={item.id}>
-              <div className="item-header">
-                <div className="item-left">
-                  <div
-                    className={`score score-${
-                      item.score >= 9
-                        ? "excellent"
-                        : item.score >= 7
-                        ? "good"
-                        : "average"
-                    }`}
-                  >
-                    {item.score}/{item.total}
+          <>
+            {displayedHistory.map((item) => (
+              <div className="item" key={item.id}>
+                <div className="item-header">
+                  <div className="item-left">
+                    <div
+                      className={`score score-${
+                        item.score >= 9
+                          ? "excellent"
+                          : item.score >= 7
+                          ? "good"
+                          : "average"
+                      }`}
+                    >
+                      {item.score}/{item.total}
+                    </div>
+                    <div className="item-info">
+                      <h3 className="subject">{item.subject}</h3>
+                      <div className="item-badges">
+                        <span
+                          className={`difficulty difficulty-${
+                            item.difficulty === "Dễ"
+                              ? "easy"
+                              : item.difficulty === "Trung bình"
+                              ? "medium"
+                              : "hard"
+                          }`}
+                        >
+                          {item.difficulty}
+                        </span>
+                        <span className="accuracy">
+                          {item.accuracy.toFixed(1)}% độ chính xác
+                        </span>
+                      </div>
+                    </div>
                   </div>
-                  <div className="item-info">
-                    <h3 className="subject">{item.subject}</h3>
-                    <div className="item-badges">
-                      <span
-                        className={`difficulty difficulty-${
-                          item.difficulty === "Dễ"
-                            ? "easy"
-                            : item.difficulty === "Trung bình"
-                            ? "medium"
-                            : "hard"
-                        }`}
-                      >
-                        {item.difficulty}
-                      </span>
-                      <span className="accuracy">
-                        {item.accuracy.toFixed(1)}% độ chính xác
-                      </span>
+
+                  <div className="item-right">
+                    <div className="correct">
+                      {item.correct}/{item.totalQuestions} câu đúng
+                    </div>
+                    <div className="date">
+                      <FaCalendarAlt />
+                      {item.date}
                     </div>
                   </div>
                 </div>
 
-                <div className="item-right">
-                  <div className="correct">
-                    {item.correct}/{item.totalQuestions} câu đúng
+                {/* Progress Bar */}
+                <div className="progress-section">
+                  <div className="progress-header">
+                    <span>Tiến độ hoàn thành</span>
+                    <span>{item.accuracy.toFixed(1)}%</span>
                   </div>
-                  <div className="date">
-                    <FaCalendarAlt />
-                    {item.date}
+                  <div className="progress-bar">
+                    <div
+                      className="progress-fill"
+                      style={{ width: `${item.accuracy}%` }}
+                    ></div>
                   </div>
                 </div>
-              </div>
 
-              {/* Progress Bar */}
-              <div className="progress-section">
-                <div className="progress-header">
-                  <span>Tiến độ hoàn thành</span>
-                  <span>{item.accuracy.toFixed(1)}%</span>
+                {/* Meta Info */}
+                <div className="item-meta">
+                  <div className="time">
+                    <FaClock />
+                    <span>{item.time}</span>
+                  </div>
+                  <div className="score-info">
+                    <FaTrophy />
+                    <span>Điểm: {item.score}</span>
+                  </div>
                 </div>
-                <div className="progress-bar">
-                  <div
-                    className="progress-fill"
-                    style={{ width: `${item.accuracy}%` }}
-                  ></div>
-                </div>
-              </div>
 
-              {/* Meta Info */}
-              <div className="item-meta">
-                <div className="time">
-                  <FaClock />
-                  <span>{item.time}</span>
-                </div>
-                <div className="score-info">
-                  <FaTrophy />
-                  <span>Điểm: {item.score}</span>
+                {/* Actions */}
+                <div className="actions">
+                  <button 
+                    className="btn btn-view"
+                    onClick={() => handleViewResult(item)}
+                  >
+                    <FaEye />
+                    <span>Xem lại</span>
+                  </button>
+                  <button 
+                    className="btn btn-retry"
+                    onClick={() => handleRetakeExam(item)}
+                  >
+                    <FaRedo />
+                    <span>Làm lại</span>
+                  </button>
+                  {/* <button 
+                    className="btn btn-share"
+                    onClick={() => handleShareResult(item)}
+                  >
+                    <FaShare />
+                    <span>Chia sẻ</span>
+                  </button> */}
                 </div>
               </div>
-
-              {/* Actions */}
-              <div className="actions">
-                <button 
-                  className="btn btn-view"
-                  onClick={() => handleViewResult(item)}
+            ))}
+            {visibleCount < sortedHistory.length && (
+              <div style={{ textAlign: 'center', margin: '24px 0' }}>
+                <button
+                  className="btn btn-primary"
+                  onClick={() => setVisibleCount((prev) => prev + 5)}
+                  style={{
+                    background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+                    border: 'none',
+                    padding: '10px 24px',
+                    borderRadius: '8px',
+                    color: 'white',
+                    cursor: 'pointer',
+                    fontWeight: 600,
+                    fontSize: 16
+                  }}
                 >
-                  <FaEye />
-                  <span>Xem lại</span>
-                </button>
-                <button 
-                  className="btn btn-retry"
-                  onClick={() => handleRetakeExam(item)}
-                >
-                  <FaRedo />
-                  <span>Làm lại</span>
-                </button>
-                <button 
-                  className="btn btn-share"
-                  onClick={() => handleShareResult(item)}
-                >
-                  <FaShare />
-                  <span>Chia sẻ</span>
+                  Xem thêm
                 </button>
               </div>
-            </div>
-          ))
+            )}
+          </>
         )}
       </div>
     </div>

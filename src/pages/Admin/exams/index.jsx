@@ -45,6 +45,11 @@ export default function ExamsPage() {
   const [examToDelete, setExamToDelete] = useState(null);
   const [deleting, setDeleting] = useState(false);
 
+  // Sorting state
+  const [sortBy, setSortBy] = useState('createdAt');
+  const [sortDirection, setSortDirection] = useState('desc');
+  const [latestFilter, setLatestFilter] = useState(true); // true: mới nhất, false: cũ nhất
+
   // Fetch exams from API
   const fetchExams = async (params = {}) => {
     setLoading(true);
@@ -52,7 +57,9 @@ export default function ExamsPage() {
       const response = await examService.getAllExams({
         page: params.current || pagination.current,
         pageSize: params.pageSize || pagination.pageSize,
-        search: params.search || searchTerm
+        search: params.search || searchTerm,
+        sortBy: params.sortBy || sortBy,
+        sortDirection: params.sortDirection || sortDirection
       });
 
       if (response?.success) {
@@ -83,6 +90,20 @@ export default function ExamsPage() {
       current: 1,
       pageSize: pagination.pageSize,
       search: value
+    });
+  };
+
+  // Thay đổi filter mới nhất
+  const handleLatestFilter = (isLatest) => {
+    setLatestFilter(isLatest);
+    setSortBy('createdAt');
+    setSortDirection(isLatest ? 'desc' : 'asc');
+    fetchExams({
+      current: 1,
+      pageSize: pagination.pageSize,
+      search: searchTerm,
+      sortBy: 'createdAt',
+      sortDirection: isLatest ? 'desc' : 'asc'
     });
   };
 
@@ -575,6 +596,14 @@ export default function ExamsPage() {
             onSearch={handleSearch}
             style={{ width: 300, marginRight: 16 }}
           />
+          <Select
+            value={latestFilter ? 'desc' : 'asc'}
+            style={{ width: 160, marginRight: 8 }}
+            onChange={val => handleLatestFilter(val === 'desc')}
+          >
+            <Option value="desc">Mới nhất gần đây</Option>
+            <Option value="asc">Cũ nhất trước</Option>
+          </Select>
           <Button 
             icon={<ReloadOutlined />} 
             onClick={fetchExams}

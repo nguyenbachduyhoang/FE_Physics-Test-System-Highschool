@@ -35,7 +35,7 @@ export const essayService = {
   // Tạo câu hỏi tự luận
   async generateEssayQuestion(requestData) {
     try {
-      const response = await essayAPI.post('/essay/generate', requestData);
+      const response = await essayAPI.post('/essay/generations', requestData);
       return response.data;
     } catch (error) {
       console.error('Lỗi khi tạo câu hỏi tự luận:', error);
@@ -46,7 +46,7 @@ export const essayService = {
   // Chấm điểm bài tự luận
   async gradeEssay(submissionData) {
     try {
-      const response = await essayAPI.post('/essay/grade', submissionData);
+      const response = await essayAPI.post('/essay/grades', submissionData);
       return response.data;
     } catch (error) {
       console.error('Lỗi khi chấm điểm bài tự luận:', error);
@@ -57,7 +57,7 @@ export const essayService = {
   // Chấm điểm hàng loạt
   async batchGradeEssays(batchRequest) {
     try {
-      const response = await essayAPI.post('/essay/batch-grade', batchRequest);
+      const response = await essayAPI.post('/essay/grades-batch', batchRequest);
       return response.data;
     } catch (error) {
       console.error('Lỗi khi chấm điểm hàng loạt:', error);
@@ -68,7 +68,7 @@ export const essayService = {
   // Phân tích bài viết
   async analyzeEssay(text) {
     try {
-      const response = await essayAPI.post('/essay/analyze', { text });
+      const response = await essayAPI.post('/essay/analyses', { text });
       return response.data;
     } catch (error) {
       console.error('Lỗi khi phân tích bài viết:', error);
@@ -79,7 +79,7 @@ export const essayService = {
   // Tạo phản hồi chi tiết
   async generateFeedback(feedbackRequest) {
     try {
-      const response = await essayAPI.post('/essay/feedback', feedbackRequest);
+      const response = await essayAPI.post('/essay/feedbacks', feedbackRequest);
       return response.data;
     } catch (error) {
       console.error('Lỗi khi tạo phản hồi:', error);
@@ -90,11 +90,11 @@ export const essayService = {
   // Kiểm tra tính hợp lệ
   async validateEssayAnswer(validationRequest) {
     try {
-      const response = await essayAPI.post('/essay/validate', validationRequest);
+      const response = await essayAPI.post('/essay/validations', validationRequest);
       return response.data;
     } catch (error) {
       console.error('Lỗi khi validate câu trả lời:', error);
-      throw this.formatError(error);
+      throw this.formatError(error);  
     }
   },
 

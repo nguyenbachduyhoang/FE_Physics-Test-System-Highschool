@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { Tag, Button, Space, Modal, Form, Input, Select, Card, Empty, Alert, Spin } from "antd";
+import { Tag, Button, Space, Modal, Form, Input, Select, Card, Empty, Alert, Spin, Dropdown, Menu } from "antd";
 import SafeTable from "../../../components/uiBasic/SafeTable";
 import { PlusOutlined, EditOutlined, DeleteOutlined, EyeOutlined, ReloadOutlined, SearchOutlined, BulbOutlined } from "@ant-design/icons";
 import { questionBankService } from "../../../services";
@@ -36,6 +36,7 @@ export default function QuestionsPage() {
   const [deleteModalVisible, setDeleteModalVisible] = useState(false);
   const [questionToDelete, setQuestionToDelete] = useState(null);
   const [deleting, setDeleting] = useState(false);
+  const [latestFilter, setLatestFilter] = useState(true); // true: mới nhất, false: cũ nhất
 
   // Fetch questions from API with pagination
   const fetchQuestions = async (page = 1, pageSize = 10, search = '', sort = 'createdAt', direction = 'desc') => {
@@ -64,7 +65,7 @@ export default function QuestionsPage() {
         });
         
         if (questionsArray.length === 0) {
-          toast.info('Không có câu hỏi nào được tìm thấy');
+          // toast.info('Không có câu hỏi nào được tìm thấy');
         }
       } else {
         console.error('API response not successful:', response);
@@ -428,6 +429,14 @@ export default function QuestionsPage() {
     return `QS${chapterId || '00'}_${timestamp}_${questionId?.slice(-4) || '0000'}`;
   };
 
+  // Thay đổi filter mới nhất
+  const handleLatestFilter = (isLatest) => {
+    setLatestFilter(isLatest);
+    setSortBy('createdAt');
+    setSortDirection(isLatest ? 'desc' : 'asc');
+    fetchQuestions(1, pagination.pageSize, searchTerm, 'createdAt', isLatest ? 'desc' : 'asc');
+  };
+
 const columns = [
   {
     title: "Mã câu hỏi",
@@ -529,6 +538,14 @@ const columns = [
             onSearch={handleSearch}
             style={{ width: 300, marginRight: 16 }}
           />
+          <Select
+            value={latestFilter ? 'desc' : 'asc'}
+            style={{ width: 160, marginRight: 8 }}
+            onChange={val => handleLatestFilter(val === 'desc')}
+          >
+            <Option value="desc">Mới nhất gần đây</Option>
+            <Option value="asc">Cũ nhất trước</Option>
+          </Select>
           <Button 
             icon={<ReloadOutlined />} 
             onClick={() => fetchQuestions(pagination.current, pagination.pageSize, searchTerm, sortBy, sortDirection)}

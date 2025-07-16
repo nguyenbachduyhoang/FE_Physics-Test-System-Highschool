@@ -204,7 +204,7 @@ const NotificationBell = () => {
       placement="bottomRight"
       overlayClassName="notification-dropdown-overlay"
     >
-      <Badge count={unreadCount} size="small" offset={[-2, 2]}>
+      <Badge count={unreadCount} size="small" offset={[20, 0]}>
         <Button
           type="text"
           icon={<BellOutlined />}

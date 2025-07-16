@@ -51,7 +51,7 @@ class NotificationApiService {
       const params = new URLSearchParams();
       if (userId) params.append('userId', userId);
 
-      const response = await fetch(`${this.baseUrl}/notifications/unread-count?${params}`, {
+      const response = await fetch(`${this.baseUrl}/notifications/unread-counts?${params}`, {
         method: 'GET',
         headers: {
           'Content-Type': 'application/json',
@@ -99,7 +99,7 @@ class NotificationApiService {
       const params = new URLSearchParams();
       if (userId) params.append('userId', userId);
 
-      const response = await fetch(`${this.baseUrl}/notifications/${notificationId}/mark-read?${params}`, {
+      const response = await fetch(`${this.baseUrl}/notifications/${notificationId}/read-status?${params}`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',

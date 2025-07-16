@@ -45,8 +45,8 @@ export const questionBankService = {
         specificTopic: questionCriteria.topic || questionCriteria.specificTopic || '',
         saveToDatabase: questionCriteria.saveToDatabase !== false // Default true
       };
-      const response = await questionAPI.post('/questions/ai-generated', requestData);
-      return response.data.success ? response.data.data : response.data;
+      const response = await questionAPI.post('/questions/ai-generations', requestData);
+      return response.data; 
     } catch (error) {
       console.error('Question generation error:', error);
       throw error;
@@ -56,7 +56,7 @@ export const questionBankService = {
   // Generate multiple questions in batch (sử dụng API thực tế)
   generateBatchQuestions: async (batchCriteria) => {
     try {
-      const response = await questionAPI.post('/questions/batch', batchCriteria);
+      const response = await questionAPI.post('/questions/batches', batchCriteria);
       return response.data.success ? response.data.data : response.data;
     } catch (error) {
       console.error('Batch question generation error:', error);
@@ -83,14 +83,14 @@ export const questionBankService = {
 
   // Validate question quality using AI
   validateQuestion: async (questionId) => {
-    const response = await questionAPI.get(`/questions/${questionId}/validation`);
+    const response = await questionAPI.get(`/questions/${questionId}/validations`);
     return response.data;
   },
 
   // Test AI connection (sử dụng API thực tế)
   testAIConnection: async () => {
     try {
-      const response = await questionAPI.get('/questions/health/ai-connection');
+      const response = await questionAPI.get('/questions/health/ai-connections');
       return response.data;
     } catch (error) {
       console.error('AI connection test failed:', error);

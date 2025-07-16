@@ -95,11 +95,12 @@ $primary-gradient: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
   .admin-user-info {
     display: flex;
     align-items: center;
-    gap: 16px;
+    gap: 30px;
+    color: white;
 
     span {
       color: #666;
-      font-weight: 500;
+      font-weight: 600;
     }
 
     .logout-btn {

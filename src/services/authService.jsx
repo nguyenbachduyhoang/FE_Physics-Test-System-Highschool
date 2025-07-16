@@ -17,8 +17,8 @@ authAPI.interceptors.request.use((config) => {
     // Debug token before sending
     console.debug('🔑 Token found in localStorage:', token);
     
-    // Use token as is, backend will add Bearer prefix if needed
-    config.headers.Authorization = token;
+    // ✅ Sửa: Luôn thêm "Bearer " prefix cho token
+    config.headers.Authorization = `Bearer ${token}`;
     
     // Debug final headers
     console.debug('📨 Request headers:', {
@@ -220,6 +220,7 @@ export const authService = {
       // Save to localStorage
       localStorage.setItem('token', access_token);
       localStorage.setItem('user', JSON.stringify(normalizedUser));
+      localStorage.setItem('userId', normalizedUser.userId);
       
       // Set default headers
       authAPI.defaults.headers.common['Authorization'] = access_token;

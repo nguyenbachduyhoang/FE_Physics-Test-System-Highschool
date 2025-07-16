@@ -50,36 +50,36 @@ export const examService = {
       }
     });
     
-    return response.data.success ? response.data.data : response.data;
+    return response.data;
   },
 
   // Get exam by ID
   getExamById: async (examId) => {
     const response = await examAPI.get(`/exams/${examId}`);
-    return response.data.success ? response.data.data : response.data;
+    return response.data;
   },
 
   // Create new exam
   createExam: async (examData) => {
     const response = await examAPI.post('/exams', examData);
-    return response.data.success ? response.data.data : response.data;
+    return response.data;
   },
 
   // Update exam
   updateExam: async (examId, examData) => {
     const response = await examAPI.put(`/exams/${examId}`, examData);
-    return response.data.success ? response.data.data : response.data;
+    return response.data;
   },
 
   // Delete exam  
   deleteExam: async (examId) => {
     const response = await examAPI.delete(`/exams/${examId}`);
-    return response.data.success ? response.data.data : response.data;
+    return response.data;
   },
 
   // Generate exam from criteria
   generateExam: async (generateData) => {
-    const response = await examAPI.post('/exams/generate', generateData);
+    const response = await examAPI.post('/exams/generations', generateData);
     return response.data.success ? response.data : response.data;
   },
 
@@ -88,7 +88,7 @@ export const examService = {
   // Create exam matrix for smart exam generation
   createExamMatrix: async (matrixData) => {
     const response = await examAPI.post('/smart-exam/create-matrix', matrixData);
-    return response.data.success ? response.data.data : response.data;
+    return response.data;
   },
 
   generateSmartExam: async (criteria) => {
@@ -99,13 +99,13 @@ export const examService = {
   // Get all exam matrices
   getExamMatrices: async () => {
     const response = await examAPI.get('/smart-exam/matrices');
-    return response.data.success ? response.data.data : response.data;
+    return response.data;
   },
 
   // Get smart exam templates
   getSmartExamTemplates: async () => {
     const response = await examAPI.get('/smart-exam/templates');
-    return response.data.success ? response.data.data : response.data;
+    return response.data;
   },
 
   // =============== ANALYTICS & STATISTICS APIs ===============
@@ -113,14 +113,14 @@ export const examService = {
   // Get exam statistics
   getExamStatistics: async (examId) => {
     const response = await examAPI.get(`/analytics/exam-statistics/${examId}`);
-    return response.data.success ? response.data.data : response.data;
+    return response.data;
   },
 
   // Get chapter analytics
   getChapterAnalytics: async (grade = null) => {
     const params = grade ? { grade } : {};
     const response = await examAPI.get('/analytics/chapter-analytics', { params });
-    return response.data.success ? response.data.data : response.data;
+    return response.data;
   },
 
   // =============== STUDENT EXAM TAKING APIs ===============
@@ -150,8 +150,8 @@ export const examService = {
         throw new Error('Unauthorized - Please login again');
       }
 
-      const response = await examAPI.get(`/exams/history/${currentUser.userId}`);
-      return response.data.success ? response.data.data : response.data;
+      const response = await examAPI.get(`/exams/histories/${currentUser.userId}`);
+      return response.data;
     } catch (error) {
       if (error.message === 'Unauthorized - Please login again' || error.response?.status === 401) {
         // Thử verify token với backend trước khi logout
@@ -258,7 +258,7 @@ export const examService = {
   // Clone exam
   cloneExam: async (examId, newName) => {
     const response = await examAPI.post(`/exams/${examId}/clone`, { newName });
-    return response.data.success ? response.data.data : response.data;
+    return response.data;
   },
 
   // Export exam
@@ -280,55 +280,55 @@ export const examService = {
         'Content-Type': 'multipart/form-data',
       },
     });
-    return response.data.success ? response.data.data : response.data;
+    return response.data;
   },
 
   // Get exam statistics
   getExamStats: async (examId) => {
     const response = await examAPI.get(`/exams/${examId}/stats`);
-    return response.data.success ? response.data.data : response.data;
+    return response.data;
   },
 
   // Get exam attempts
   getExamAttempts: async (examId, params = {}) => {
     const response = await examAPI.get(`/exams/${examId}/attempts`, { params });
-    return response.data.success ? response.data.data : response.data;
+    return response.data;
   },
 
   // Get exam results
   getExamResults: async (examId, params = {}) => {
     const response = await examAPI.get(`/exams/${examId}/results`, { params });
-    return response.data.success ? response.data.data : response.data;
+    return response.data;
   },
 
   // Publish exam
   publishExam: async (examId) => {
     const response = await examAPI.post(`/exams/${examId}/publish`);
-    return response.data.success ? response.data.data : response.data;
+    return response.data;
   },
 
   // Unpublish exam
   unpublishExam: async (examId) => {
     const response = await examAPI.post(`/exams/${examId}/unpublish`);
-    return response.data.success ? response.data.data : response.data;
+    return response.data;
   },
 
   // Get exam templates
   getExamTemplates: async () => {
     const response = await examAPI.get('/exams/templates');
-    return response.data.success ? response.data.data : response.data;
+    return response.data;
   },
 
   // Create exam from template
   createFromTemplate: async (templateId, examData) => {
     const response = await examAPI.post(`/exams/templates/${templateId}`, examData);
-    return response.data.success ? response.data.data : response.data;
+    return response.data;
   },
 
   // Get exam history for a specific user
   getExamHistory: async (userId) => {
     try {
-      const response = await examAPI.get(`/exams/history/${userId}`);
+      const response = await examAPI.get(`/exams/histories/${userId}`);
       return response.data;
     } catch (error) {
       console.error('Error fetching exam history:', error);

@@ -129,7 +129,7 @@ export const deleteFromCloudinary = async (publicId) => {
     const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 
       (window.location.hostname === 'localhost' ? 'http://localhost:5298' : 'https://be-phygens-production.up.railway.app');
     
-    const response = await fetch(`${API_BASE_URL}/upload/cloudinary/delete`, {
+    const response = await fetch(`${API_BASE_URL}/upload/cloudinary/deletions`, {
       method: 'DELETE',
       headers: {
         'Content-Type': 'application/json'

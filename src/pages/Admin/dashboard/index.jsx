@@ -333,7 +333,7 @@ const AdminDashboard = () => {
         <Tag color={getStatusColor(status)}>
           {status === 'completed' ? 'Hoàn thành' : 
            status === 'in_progress' ? 'Đang làm' : 
-           status === 'failed' ? 'Thất bại' : status}
+           status === 'failed' ? 'Thất bại' : status}x
         </Tag>
       )
     },
@@ -481,7 +481,7 @@ const AdminDashboard = () => {
                   <th>Tên</th>
                   <th>Email</th>
                   <th>Vai trò</th>
-                  <th>Trạng thái</th>
+                  {/* <th>Trạng thái</th> */}
                   {/* <th>Ngày tham gia</th> */}
                 </tr>
               </thead>
@@ -492,11 +492,11 @@ const AdminDashboard = () => {
                       <td className="user-name">{user.name}</td>
                       <td className="user-email">{user.email}</td>
                       <td>{user.role}</td>
-                      <td>
+                      {/* <td>
                         <span className={`status-badge status-${user.status}`}>
                           {user.status === 'active' ? 'Hoạt động' : 'Không hoạt động'}
                         </span>
-                      </td>
+                      </td> */}
                       {/* <td>{user.joinDate}</td> */}
                     </tr>
                   ))
