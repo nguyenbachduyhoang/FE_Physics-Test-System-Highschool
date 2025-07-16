@@ -24,7 +24,6 @@ const NotificationBell = () => {
   
   const [visible, setVisible] = useState(false);
 
-  // Format thời gian hiển thị
   const formatTime = (timestamp) => {
     const now = new Date();
     const time = new Date(timestamp);
@@ -36,7 +35,6 @@ const NotificationBell = () => {
     return `${Math.floor(diffInMinutes / 1440)} ngày trước`;
   };
 
-  // Lấy màu cho type notification
   const getTypeColor = (type) => {
     switch (type) {
       case 'success': return '#52c41a';
@@ -47,19 +45,15 @@ const NotificationBell = () => {
     }
   };
 
-  // Handle click notification item
   const handleNotificationClick = async (notification) => {
     if (!notification.read) {
       await markAsRead(notification.id);
     }
     
-    // Navigate to URL if provided
     if (notification.url) {
       window.location.href = notification.url;
     }
   };
-
-  // Render notification item
   const renderNotificationItem = (notification) => (
     <List.Item
       key={notification.id}
@@ -128,7 +122,6 @@ const NotificationBell = () => {
     </List.Item>
   );
 
-  // Dropdown menu content
   const dropdownContent = (
     <div className="notification-dropdown">
       <div className="notification-header">

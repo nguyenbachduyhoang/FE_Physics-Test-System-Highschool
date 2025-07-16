@@ -215,11 +215,8 @@
       }
     }
   }
-
-  // Animation cho khi component mount
   animation: slideIn 0.3s ease-out;
 
-  // Responsive design
   @media (max-width: 768px) {
     padding: 16px;
 
@@ -246,7 +243,7 @@
 
     .essay-textarea {
       min-height: 140px;
-      font-size: 16px; // Prevent zoom on iOS
+      font-size: 16px; 
     }
   }
 
@@ -263,7 +260,6 @@
   }
 }
 
-// Utility classes cho các states khác nhau
 .essay-question--disabled {
   opacity: 0.6;
   pointer-events: none;

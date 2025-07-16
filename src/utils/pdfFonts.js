@@ -10,7 +10,6 @@ class StudentExamPdfExporter {
 
     const docDefinition = {
       content: [
-        // Header
         {
           columns: [
             {
@@ -57,7 +56,6 @@ class StudentExamPdfExporter {
           style: 'infoText'
         },
 
-        // Questions
         ...exam.questions.flatMap((q, idx) => {
           const answerChoices = q.question.answerChoices || [];
           return [
@@ -77,7 +75,6 @@ class StudentExamPdfExporter {
           ];
         }),
 
-        // Footer
         { text: '\n\n', pageBreak: 'after' },
         {
           columns: [

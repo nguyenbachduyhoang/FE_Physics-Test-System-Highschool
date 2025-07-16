@@ -156,7 +156,6 @@
   }
 }
 
-// Badge styling
 .ant-badge {
   .ant-badge-count {
     min-width: 12px;
@@ -169,7 +168,6 @@
   }
 }
 
-// Scrollbar styling for notification list
 .notification-list {
   &::-webkit-scrollbar {
     width: 6px;
@@ -190,7 +188,6 @@
   }
 }
 
-// Responsive
 @media (max-width: 768px) {
   .notification-dropdown {
     width: 320px;

@@ -1,4 +1,3 @@
-// 🧪 Test Cloudinary Configuration
 import { validateCloudinaryConfig, uploadToCloudinary } from '../services/cloudinaryService';
 
 /**
@@ -19,8 +18,6 @@ export const testCloudinaryConfig = () => {
   });
 
   if (config.isConfigured) {
-    console.log('✅ Cloudinary is configured and ready!');
-    console.log('🌐 Upload URL:', `https://api.cloudinary.com/v1_1/${config.cloudName}/image/upload`);
     console.log('📁 Default folder:', config.folder);
   } else {
     console.log('⚠️ Cloudinary needs setup:');
@@ -53,10 +50,8 @@ export const testCloudinaryUpload = async () => {
   try {
     console.log('🧪 Testing Cloudinary upload...');
     
-    // Create a tiny test image (1x1 pixel PNG)
     const testImageData = 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNkYPhfDwAChwGA60e6kgAAAABJRU5ErkJggg==';
     
-    // Convert data URL to blob
     const response = await fetch(testImageData);
     const blob = await response.blob();
     const testFile = new File([blob], 'test-image.png', { type: 'image/png' });
@@ -89,42 +84,25 @@ export const runCloudinaryTests = async () => {
   console.log('🚀 Starting Cloudinary Test Suite...\n');
   
   try {
-    // Test 1: Configuration
-    console.log('=== Test 1: Configuration ===');
     const config = testCloudinaryConfig();
-    console.log('');
-    
     if (!config.isConfigured) {
-      console.log('⚠️ Configuration incomplete. Skipping upload test.');
       return { config, uploadTest: null };
     }
     
-    // Test 2: Upload
-    console.log('=== Test 2: Upload Test ===');
     const uploadResult = await testCloudinaryUpload();
-    console.log('');
-    
-    console.log('🎉 All tests passed!');
-    console.log('🌤️ Cloudinary is ready for production use!');
-    
     return { config, uploadTest: uploadResult };
     
   } catch (error) {
-    console.error('💥 Test suite failed:', error);
     return { config: null, uploadTest: null, error: error.message };
   }
 };
 
-// Export for global testing
 if (typeof window !== 'undefined') {
   window.testCloudinary = {
     config: testCloudinaryConfig,
     upload: testCloudinaryUpload,
     all: runCloudinaryTests
   };
-  
-  console.log('🧪 Cloudinary test utilities loaded!');
-  console.log('Run tests: window.testCloudinary.all()');
 }
 
 export default {

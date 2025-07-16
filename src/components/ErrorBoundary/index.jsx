@@ -8,12 +8,10 @@ class ErrorBoundary extends React.Component {
   }
 
   static getDerivedStateFromError() {
-    // Cập nhật state để hiển thị fallback UI
     return { hasError: true };
   }
 
   componentDidCatch(error, errorInfo) {
-    // Log error details
     console.error('Error caught by boundary:', error, errorInfo);
     
     this.setState({
@@ -21,8 +19,6 @@ class ErrorBoundary extends React.Component {
       errorInfo: errorInfo
     });
 
-    // Có thể gửi error tới service theo dõi như Sentry
-    // logErrorToService(error, errorInfo);
   }
 
   handleReset = () => {
@@ -31,7 +27,6 @@ class ErrorBoundary extends React.Component {
 
   render() {
     if (this.state.hasError) {
-      // Fallback UI
       return (
         <Result
           status="error"

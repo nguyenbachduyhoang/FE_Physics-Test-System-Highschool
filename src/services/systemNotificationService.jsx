@@ -6,19 +6,16 @@ class SystemNotificationService {
   }
 
   init() {
-    // Listen for storage events from other tabs/windows
     window.addEventListener('storage', this.handleStorageEvent.bind(this));
     
     console.log('🔔 SystemNotificationService initialized - ready for real events');
   }
 
-  // Subscribe to system notifications
   subscribe(callback) {
     this.listeners.add(callback);
     return () => this.listeners.delete(callback);
   }
 
-  // Broadcast notification to all subscribers
   broadcast(notification) {
     this.listeners.forEach(callback => {
       try {
@@ -29,7 +26,6 @@ class SystemNotificationService {
     });
   }
 
-  // Handle events from other browser tabs/windows
   handleStorageEvent(event) {
     if (event.key === 'system_notification') {
       try {
@@ -41,7 +37,6 @@ class SystemNotificationService {
     }
   }
 
-  // Send system-wide notification
   sendSystemNotification(notification) {
     const systemNotification = {
       ...notification,
@@ -50,13 +45,10 @@ class SystemNotificationService {
       source: 'system'
     };
 
-    // Broadcast to current window
     this.broadcast(systemNotification);
 
-    // Send to other tabs/windows via localStorage
     localStorage.setItem('system_notification', JSON.stringify(systemNotification));
     
-    // Clean up localStorage after a short delay
     setTimeout(() => {
       localStorage.removeItem('system_notification');
     }, 1000);
@@ -64,7 +56,6 @@ class SystemNotificationService {
 
 
 
-  // Notify when admin creates exam
   notifyExamCreated(examData) {
     this.sendSystemNotification({
       title: '📝 Đề thi mới đã có!',
@@ -75,7 +66,6 @@ class SystemNotificationService {
     });
   }
 
-  // Notify when admin updates exam
   notifyExamUpdated(examData) {
     this.sendSystemNotification({
       title: '📝 Đề thi đã được cập nhật',
@@ -86,7 +76,6 @@ class SystemNotificationService {
     });
   }
 
-  // Notify when admin deletes exam
   notifyExamDeleted(examData) {
     this.sendSystemNotification({
       title: '🗑️ Đề thi đã được xóa',
@@ -96,7 +85,6 @@ class SystemNotificationService {
     });
   }
 
-  // Notify system maintenance
   notifyMaintenance(message, startTime) {
     this.sendSystemNotification({
       title: '🔧 Bảo trì hệ thống',
@@ -106,7 +94,6 @@ class SystemNotificationService {
     });
   }
 
-  // Notify system error
   notifySystemError(error) {
     this.sendSystemNotification({
       title: '❌ Lỗi hệ thống',
@@ -116,7 +103,6 @@ class SystemNotificationService {
     });
   }
 
-  // Notify user achievement
   notifyAchievement(achievement) {
     this.sendSystemNotification({
       title: '🏆 Chúc mừng!',
@@ -126,7 +112,6 @@ class SystemNotificationService {
     });
   }
 
-  // Notify when user submits exam (for admin)
   notifyExamSubmission(userData) {
     this.sendSystemNotification({
       title: '📋 Có bài thi mới!',
@@ -137,7 +122,6 @@ class SystemNotificationService {
     });
   }
 
-  // Notify exam deadline approaching
   notifyExamDeadline(examData, timeLeft) {
     this.sendSystemNotification({
       title: '⏰ Sắp hết hạn!',
@@ -148,7 +132,6 @@ class SystemNotificationService {
     });
   }
 
-  // Notify new feature announcement
   notifyNewFeature(feature) {
     this.sendSystemNotification({
       title: '✨ Tính năng mới!',
@@ -159,7 +142,6 @@ class SystemNotificationService {
     });
   }
 
-  // Notify bulk message from admin
   notifyBulkMessage(adminMessage) {
     this.sendSystemNotification({
       title: `📢 Thông báo từ Admin`,
@@ -170,14 +152,12 @@ class SystemNotificationService {
     });
   }
 
-  // Clean up
   destroy() {
     window.removeEventListener('storage', this.handleStorageEvent.bind(this));
     this.listeners.clear();
   }
 }
 
-// Create singleton instance
 const systemNotificationService = new SystemNotificationService();
 
 export default systemNotificationService; 

@@ -1,4 +1,3 @@
-// components/AdminSidebar/AdminSidebar.jsx
 import React, { useState } from "react";
 import { Menu, Button } from "antd";
 import {
@@ -11,7 +10,7 @@ import {
   BellOutlined,
   MenuFoldOutlined,
   MenuUnfoldOutlined,
-  LogoutOutlined, // thêm dòng này
+  LogoutOutlined,
 } from "@ant-design/icons";
 import { useNavigate, useLocation } from "react-router-dom";
 import "./index.scss";
@@ -40,12 +39,6 @@ const AdminSidebar = () => {
       label: "Ngân hàng câu hỏi",
       path: "/admin/questions",
     },
-    // {
-    //   key: "essays",
-    //   icon: <EditOutlined />,
-    //   label: "Câu hỏi tự luận",
-    //   path: "/admin/essays",
-    // },
     {
       key: "exams",
       icon: <FileTextOutlined />,
@@ -67,9 +60,7 @@ const AdminSidebar = () => {
    
   ];
 
-  // Xác định key đang active dựa vào location
   const getActiveKey = () => {
-    // Sắp xếp path dài nhất trước để tránh /admin khớp hết mọi thứ
     const sorted = [...menuItems].sort((a, b) => b.path.length - a.path.length);
     const found = sorted.find((item) => location.pathname === item.path || location.pathname.startsWith(item.path + "/"));
     return found ? found.key : "dashboard";

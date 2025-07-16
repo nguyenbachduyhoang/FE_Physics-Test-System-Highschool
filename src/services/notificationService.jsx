@@ -16,15 +16,12 @@ class NotificationService {
     }
 
     try {
-      // Kiểm tra và yêu cầu permission
       this.permission = await Notification.requestPermission();
       
       if (this.permission === 'granted') {
-        // Lấy registration token
         this.token = await getToken(messaging, { vapidKey: this.vapidKey });
         console.log('Firebase registration token:', this.token);
         
-        // Lắng nghe message khi app đang active
         this.onMessageListener();
       } else {
         console.warn('Notification permission denied');
@@ -42,7 +39,6 @@ class NotificationService {
       
       const { notification, data } = payload;
       
-      // Hiển thị toast notification
       if (notification) {
         toast.success(`${notification.title}: ${notification.body}`, {
           duration: 5000,
@@ -50,7 +46,6 @@ class NotificationService {
         });
       }
       
-      // Tạo browser notification nếu cần
       if (this.permission === 'granted' && notification) {
         new Notification(notification.title, {
           body: notification.body,
@@ -61,7 +56,6 @@ class NotificationService {
     });
   }
 
-  // Gửi notification thành công
   showSuccess(message) {
     toast.success(message, {
       duration: 4000,
@@ -74,7 +68,6 @@ class NotificationService {
     });
   }
 
-  // Gửi notification lỗi
   showError(message) {
     toast.error(message, {
       duration: 5000,
@@ -87,7 +80,6 @@ class NotificationService {
     });
   }
 
-  // Gửi notification cảnh báo
   showWarning(message) {
     toast(message, {
       duration: 4000,
@@ -101,7 +93,6 @@ class NotificationService {
     });
   }
 
-  // Gửi notification thông tin
   showInfo(message) {
     toast(message, {
       duration: 4000,
@@ -115,7 +106,6 @@ class NotificationService {
     });
   }
 
-  // Gửi notification loading
   showLoading(message = 'Đang xử lý...') {
     return toast.loading(message, {
       position: 'top-right',
@@ -126,23 +116,19 @@ class NotificationService {
     });
   }
 
-  // Dismiss notification
   dismiss(toastId) {
     toast.dismiss(toastId);
   }
 
-  // Lấy registration token
   getToken() {
     return this.token;
   }
 
-  // Kiểm tra permission
   getPermission() {
     return this.permission;
   }
 }
 
-// Tạo instance singleton
 const notificationService = new NotificationService();
 
 export default notificationService; 

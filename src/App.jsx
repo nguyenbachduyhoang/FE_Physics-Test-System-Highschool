@@ -17,11 +17,9 @@ import Reports from "./pages/Admin/reports";
 import AdminDashboard from "./pages/Admin/dashboard";
 import AdminLayout from "./pages/Admin/AdminLayout";
 import TestAPIPage from "./pages/Admin/test-api";
-// import EssayManagement from "./pages/Admin/essays";
 import NotificationManagement from "./pages/Admin/notifications";
 import ProtectedRoute from "./components/ProtectedRoute";
 import AuthRedirect from "./components/AuthRedirect";
-// import DebugInfo from "./components/DebugInfo";
 import { Toaster } from "react-hot-toast";
 import { NotificationProvider } from "./contexts/NotificationContext";
 import FAQ from "./pages/FAQ";
@@ -58,7 +56,6 @@ const router = createBrowserRouter([
       { path: "users/:id", element: <UserDetail /> },
       { path: "questions", element: <Questions /> }, 
       { path: "questions/:id", element: <QuestionDetail /> },
-      // { path: "essays", element: <EssayManagement /> },
       { path: "exams", element: <Exams /> }, 
       { path: "exams/:id", element: <ExamDetail /> },
       { path: "reports", element: <Reports /> },

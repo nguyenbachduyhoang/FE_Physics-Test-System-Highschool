@@ -16,13 +16,11 @@ const EssayQuestion = ({
   const [validationMessage, setValidationMessage] = useState('');
   const [analysis, setAnalysis] = useState(null);
 
-  // Cấu hình mặc định cho essay
   const minWords = question.minWords || 1;
   const maxWords = question.maxWords || 500;
   const keyPoints = question.keyPoints || [];
   const gradingCriteria = question.gradingCriteria || [];
 
-  // Đếm từ và validate
   useEffect(() => {
     if (!value || value.trim() === '') {
       setWordCount(0);
@@ -32,7 +30,6 @@ const EssayQuestion = ({
       return;
     }
 
-    // Cải thiện cách đếm từ - loại bỏ ký tự đặc biệt và số
     const cleanText = value.trim().replace(/[^\w\sàáảãạăắằẳẵặâấầẩẫậèéẻẽẹêếềểễệìíỉĩịòóỏõọôốồổỗộơớờởỡợùúủũụưứừửữựỳýỷỹỵđĐ]/g, ' ');
     const words = cleanText.split(/\s+/).filter(word => word.length > 0);
     const count = words.length;
@@ -56,10 +53,8 @@ const EssayQuestion = ({
     onValidationChange?.(valid);
   }, [value, minWords, maxWords, onValidationChange]);
 
-  // Tính % hoàn thành
   const completionPercentage = Math.min((wordCount / minWords) * 100, 100);
 
-  // Phân tích cơ bản về nội dung
   useEffect(() => {
     if (value && value.length > 50) {
       const sentences = value.split(/[.!?]+/).filter(s => s.trim().length > 0);

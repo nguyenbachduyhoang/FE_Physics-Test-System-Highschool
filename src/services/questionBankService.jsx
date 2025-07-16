@@ -10,7 +10,6 @@ const questionAPI = axios.create({
   },
 });
 
-// Add token to requests
 questionAPI.interceptors.request.use((config) => {
   const token = localStorage.getItem('token');
   if (token) {
@@ -19,7 +18,6 @@ questionAPI.interceptors.request.use((config) => {
   return config;
 });
 
-// Handle auth errors
 questionAPI.interceptors.response.use(
   (response) => response,
   (error) => {
@@ -33,9 +31,7 @@ questionAPI.interceptors.response.use(
 );
 
 export const questionBankService = {
-  // =============== AI QUESTION GENERATION APIs ===============
   
-  // Generate single question using AI (sử dụng API thực tế)
   generateQuestion: async (questionCriteria) => {
     try {
       const requestData = {
@@ -53,7 +49,6 @@ export const questionBankService = {
     }
   },
 
-  // Generate multiple questions in batch (sử dụng API thực tế)
   generateBatchQuestions: async (batchCriteria) => {
     try {
       const response = await questionAPI.post('/questions/batches', batchCriteria);
@@ -64,13 +59,11 @@ export const questionBankService = {
     }
   },
 
-  // Improve existing question using AI
   improveQuestion: async (questionId, improvementRequest) => {
     const response = await questionAPI.put(`/questions/${questionId}/improvements`, improvementRequest);
     return response.data.success ? response.data.data : response.data;
   },
 
-  // Get AI-suggested topics for question generation
   suggestTopics: async (criteria) => {
     const response = await questionAPI.get('/questions/topics/suggestions', {
       params: {
@@ -81,13 +74,11 @@ export const questionBankService = {
     return response.data.success ? response.data.data : response.data;
   },
 
-  // Validate question quality using AI
   validateQuestion: async (questionId) => {
     const response = await questionAPI.get(`/questions/${questionId}/validations`);
     return response.data;
   },
 
-  // Test AI connection (sử dụng API thực tế)
   testAIConnection: async () => {
     try {
       const response = await questionAPI.get('/questions/health/ai-connections');
@@ -98,15 +89,12 @@ export const questionBankService = {
     }
   },
 
-  // Get AI configuration status
   getAIConfig: async () => {
     const response = await questionAPI.get('/questions/config');
     return response.data;
   },
 
-  // =============== CHAPTER & TOPIC MANAGEMENT ===============
   
-  // Get all chapters for question categorization
   getChapters: async () => {
     try {
       const response = await questionAPI.get('/questions/chapters');
@@ -117,7 +105,6 @@ export const questionBankService = {
     }
   },
 
-  // Get chapters by grade
   getChaptersByGrade: async (grade) => {
     try {
       const response = await questionAPI.get('/questions/chapters', {
@@ -130,7 +117,6 @@ export const questionBankService = {
     }
   },
 
-  // Get unique grades from chapters
   getGrades: async () => {
     try {
       const response = await questionAPI.get('/questions/chapters');
@@ -141,9 +127,7 @@ export const questionBankService = {
     }
   },
 
-  // =============== QUESTION CRUD (Future Implementation) ===============
   
-  // Get all questions with filters
   getQuestions: async (params = {}) => {
     try {
       const response = await questionAPI.get('/questions', { params });
@@ -154,13 +138,11 @@ export const questionBankService = {
     }
   },
 
-  // Get question by ID
   getQuestionById: async (id) => {
     const response = await questionAPI.get(`/questions/${id}`);
     return response.data;
   },
 
-  // Create new question manually
   createQuestion: async (questionData) => {
     const response = await questionAPI.post('/questions', {
       ...questionData,
@@ -169,74 +151,55 @@ export const questionBankService = {
     return response.data;
   },
 
-  // Update question
   updateQuestion: async (id, questionData) => {
     const updateRequest = {
       questionText: questionData.questionText,
       difficultyLevel: questionData.difficultyLevel,
       explanation: questionData.explanation
-      // Note: answerChoices field sẽ được thêm khi có UI editor cho choices
     };
     const response = await questionAPI.put(`/questions/${id}`, updateRequest);
     return response.data;
   },
 
-  // Delete question
   deleteQuestion: async (id) => {
     const response = await questionAPI.delete(`/questions/${id}`);
     return response.data;
   },
 
-  // =============== QUESTION SEARCH & FILTER ===============
-  
-  // Search questions by text
   searchQuestions: async (searchText, filters = {}) => {
-    // This endpoint doesn't exist yet in backend, preparing for future
     const response = await questionAPI.get('/questions/search', {
       params: { q: searchText, ...filters }
     });
     return response.data;
   },
 
-  // Get questions by chapter
   getQuestionsByChapter: async (chapterId) => {
-    // This endpoint doesn't exist yet in backend, preparing for future
     const response = await questionAPI.get('/questions/by-chapter', {
       params: { chapterId }
     });
     return response.data;
   },
 
-  // Get questions by difficulty level
   getQuestionsByDifficulty: async (difficulty) => {
-    // This endpoint doesn't exist yet in backend, preparing for future
     const response = await questionAPI.get('/questions/by-difficulty', {
       params: { difficulty }
     });
     return response.data;
   },
 
-  // =============== QUESTION QUALITY & FEEDBACK ===============
   
-  // Submit quality feedback for a question
   submitQuestionFeedback: async (questionId, feedback) => {
-    // This endpoint doesn't exist yet in backend, preparing for future
     const response = await questionAPI.post(`/questions/${questionId}/feedback`, feedback);
     return response.data;
   },
 
-  // Get question statistics and analytics
   getQuestionStatistics: async (questionId) => {
-    // This endpoint doesn't exist yet in backend, preparing for future
     const response = await questionAPI.get(`/questions/${questionId}/statistics`);
     return response.data;
   },
 
-  // =============== BULK OPERATIONS ===============
   
-  // Import questions from file (CSV, Excel)
   importQuestions: async (fileData) => {
-    // This endpoint doesn't exist yet in backend, preparing for future
     const formData = new FormData();
     formData.append('file', fileData);
     
@@ -246,9 +209,7 @@ export const questionBankService = {
     return response.data;
   },
 
-  // Export questions to file
   exportQuestions: async (filters = {}) => {
-    // This endpoint doesn't exist yet in backend, preparing for future
     const response = await questionAPI.get('/questions/export', {
       params: filters,
       responseType: 'blob'
@@ -256,25 +217,19 @@ export const questionBankService = {
     return response.data;
   },
 
-  // Bulk delete questions
   bulkDeleteQuestions: async (questionIds) => {
-    // This endpoint doesn't exist yet in backend, preparing for future
     const response = await questionAPI.delete('/questions/bulk-delete', {
       data: { questionIds }
     });
     return response.data;
   },
 
-  // Bulk update questions
   bulkUpdateQuestions: async (updates) => {
-    // This endpoint doesn't exist yet in backend, preparing for future
     const response = await questionAPI.put('/questions/bulk-update', updates);
     return response.data;
   },
 
-  // =============== UTILITY FUNCTIONS ===============
   
-  // Format question data for display
   formatQuestionData: (question) => {
     return {
       ...question,
@@ -287,7 +242,6 @@ export const questionBankService = {
     };
   },
 
-  // Format difficulty level for display
   formatDifficulty: (difficulty) => {
     const difficultyMap = {
       'easy': 'Dễ',
@@ -297,7 +251,6 @@ export const questionBankService = {
     return difficultyMap[difficulty] || difficulty;
   },
 
-  // Validate question data
   validateQuestionData: (questionData) => {
     const errors = [];
     
@@ -328,13 +281,11 @@ export const questionBankService = {
     };
   },
 
-  // Generate question preview text
   generatePreviewText: (questionData) => {
     const text = questionData.questionText || '';
     return text.length > 100 ? text.substring(0, 100) + '...' : text;
   },
 
-  // Format API response for consistent error handling
   handleApiResponse: (response) => {
     if (response.success || response.data) {
       return response.data || response;
@@ -342,7 +293,6 @@ export const questionBankService = {
     throw new Error(response.message || 'API call failed');
   },
 
-  // Format error for user display
   formatError: (error) => {
     if (error.response?.data?.message) {
       return error.response.data.message;
@@ -354,7 +304,6 @@ export const questionBankService = {
   }
 };
 
-// Helper function for difficulty formatting (outside of object to avoid reference error)
 const formatDifficulty = (difficulty) => {
   const difficultyMap = {
     'easy': 'Dễ',

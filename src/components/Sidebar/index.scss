@@ -1,4 +1,3 @@
-// components/AdminSidebar/index.scss
 
 .admin-sidebar-antd {
   display: flex;
@@ -24,7 +23,6 @@
     }
   }
 
-  // Logo Section
   .sidebar-logo {
     padding: 14px;
     border-bottom: 1px solid rgba(0, 0, 0, 0.1);
@@ -83,7 +81,6 @@
     }
   }
 
-  // Menu Section
   .sidebar-menu {
     flex: 1;
     overflow: hidden;
@@ -94,7 +91,6 @@
       background: transparent !important;
       font-size: 14px;
 
-      // Menu item styling
       .ant-menu-item {
         height: 44px !important;
         line-height: 44px !important;
@@ -150,7 +146,6 @@
           }
         }
 
-        // Icon styling
         .anticon {
           font-size: 18px;
           transition: all 0.2s ease;
@@ -165,7 +160,6 @@
         }
       }
 
-      // Collapsed menu styling
       &.ant-menu-inline-collapsed {
         .ant-menu-item {
           padding: 0 !important;
@@ -179,7 +173,6 @@
         }
       }
 
-      // Remove default Ant Design focus outline
       .ant-menu-item:active,
       .ant-menu-item:focus {
         background: transparent !important;
@@ -196,7 +189,6 @@
     }
   }
 
-  // Footer
   .sidebar-footer {
     padding: 20px;
     border-top: 1px solid rgba(0, 0, 0, 0.1);
@@ -217,7 +209,6 @@
     }
   }
 
-  // Custom scrollbar
   .sidebar-menu::-webkit-scrollbar {
     width: 4px;
   }
@@ -236,7 +227,6 @@
   }
 }
 
-// Dark mode support
 @media (prefers-color-scheme: dark) {
   .admin-sidebar-antd {
     background: rgba(17, 24, 39, 0.95);
@@ -306,7 +296,6 @@
   }
 }
 
-// Overlay for mobile
 .sidebar-overlay {
   position: fixed;
   top: 0;

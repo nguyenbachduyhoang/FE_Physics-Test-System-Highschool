@@ -26,7 +26,6 @@ const AdvancedTextEditor = ({
 
     console.log('Selected file:', file); // Debug
 
-    // Kiểm tra định dạng file
     if (!file.type.startsWith('image/')) {
       message.error('Vui lòng chọn file hình ảnh!');
       return;
@@ -42,7 +41,6 @@ const AdvancedTextEditor = ({
     console.log('Starting upload...'); // Debug
     
     try {
-      // Show loading message
       const serviceName = useCloudinary ? 'Cloudinary' : 'Firebase';
       const loadingMessage = message.loading(`Đang upload qua ${serviceName}...`, 0);
       
@@ -58,17 +56,14 @@ const AdvancedTextEditor = ({
       
       console.log(`✅ Upload successful via ${serviceName}:`, imageUrl);
       
-      // Dismiss loading message
       loadingMessage();
       
-      // Chèn markdown image vào vị trí cursor
       const imageMarkdown = `![${file.name}](${imageUrl})`;
       const newValue = value + '\n\n' + imageMarkdown + '\n\n';
       onChange?.(newValue);
       
       message.success(`🎉 Upload ảnh thành công qua ${serviceName}!`);
     } catch (error) {
-      console.error('❌ Upload error:', error);
       message.error(`❌ Upload ảnh thất bại: ${error.message}`);
     } finally {
       setUploading(false);

@@ -1,11 +1,9 @@
 function LayoutContent({ layoutType, content1, content2, content3, content4 }) {
-  //layout đơn
   if (layoutType === 1) {
     return (
       <section
         style={{
           width: "auto",
-          // height: "calc(100vh - 80px)",
           backgroundColor: "#fff",
           padding: "12px",
           margin: "12px",
@@ -16,7 +14,6 @@ function LayoutContent({ layoutType, content1, content2, content3, content4 }) {
         {content1}
       </section>
     );
-    //layout trái phải
   } else if (layoutType === 2) {
     return (
       <section
@@ -58,7 +55,6 @@ function LayoutContent({ layoutType, content1, content2, content3, content4 }) {
         </section>
       </section>
     );
-    //layout trên dưới
   } else if (layoutType === 3) {
     return (
       <div

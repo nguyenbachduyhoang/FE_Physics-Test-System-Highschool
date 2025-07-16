@@ -991,7 +991,6 @@ export default function ExamsPage() {
                   }}
                 >
                   {chapters.map(chapter => {
-                    console.log('🎯 Rendering chapter option:', chapter);
                     return (
                       <Option 
                         key={chapter.chapterId || chapter.ChapterId} 
