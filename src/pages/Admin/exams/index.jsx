@@ -2,12 +2,13 @@ import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { Tag, Button, Space, Modal, Form, Input, Select, InputNumber, Spin, Card, Divider, Row, Col, Collapse } from "antd";
 import SafeTable from "../../../components/uiBasic/SafeTable";
-import { PlusOutlined, EditOutlined, DeleteOutlined, EyeOutlined, ReloadOutlined, RobotOutlined, SearchOutlined, MinusCircleOutlined } from "@ant-design/icons";
+import { PlusOutlined, EditOutlined, DeleteOutlined, EyeOutlined, ReloadOutlined, RobotOutlined, SearchOutlined, MinusCircleOutlined, FileTextOutlined } from "@ant-design/icons";
 import { examService, questionBankService } from "../../../services";
 import toast from "react-hot-toast";
 import notificationService from "../../../services/notificationService";
 import systemNotificationService from "../../../services/systemNotificationService";
 import "./index.scss";
+import { getPdfExporter } from '../../../utils/pdfFonts';
 
 const { Option } = Select;
 const { TextArea } = Input;
@@ -426,6 +427,18 @@ export default function ExamsPage() {
     }
   };
 
+  // Thêm hàm xuất PDF
+  const handleExportStudentPdf = async (exam) => {
+    // Gọi API lấy chi tiết đề thi
+    const response = await examService.getExamById(exam.examId);
+    if (response?.success) {
+      const exporter = getPdfExporter('student');
+      exporter.export(response.data); // Truyền object đầy đủ, có answerChoices
+    } else {
+      toast.error('Không thể lấy chi tiết đề thi để xuất PDF');
+    }
+  };
+
   // // Get status color and text
   // const getStatusDisplay = (isPublished) => {
   //   if (isPublished) {
@@ -569,9 +582,15 @@ export default function ExamsPage() {
             onClick={() => handleDelete(record.examId)}
             title="Xóa"
           />
+          <Button 
+            icon={<FileTextOutlined />} 
+            size="small" 
+            onClick={() => handleExportStudentPdf(record)}
+            title="Xuất PDF cho học sinh"
+          />
         </Space>
       ),
-      width: 150,
+      width: 180,
     },
   ];
 

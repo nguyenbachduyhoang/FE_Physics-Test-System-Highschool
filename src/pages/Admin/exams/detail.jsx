@@ -191,7 +191,22 @@ export default function ExamDetailPage() {
       key: 'questionText',
       render: (_, record) => {
         const text = record.question?.questionText || 'Chưa có nội dung';
-        return text.length > 100 ? text.substring(0, 100) + '...' : text;
+        const answerChoices = record.question?.answerChoices || [];
+        const answerLabels = ['A', 'B', 'C', 'D'];
+        return (
+          <div>
+            <div>{text.length > 100 ? text.substring(0, 100) + '...' : text}</div>
+            {answerChoices.length > 0 && (
+              <ul style={{ margin: '4px 0 0 16px', padding: 0, listStyle: 'none' }}>
+                {answerChoices.map((ans, idx) => (
+                  <li key={ans.choiceId || idx}>
+                    <b>{answerLabels[idx] || ''}.</b> {ans.choiceText || ans.content || ''}
+                  </li>
+                ))}
+              </ul>
+            )}
+          </div>
+        );
       }
     },
     {
