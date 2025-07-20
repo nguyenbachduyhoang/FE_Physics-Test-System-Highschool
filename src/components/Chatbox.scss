@@ -1,0 +1,127 @@
+.chatbox-root {
+  position: fixed;
+  bottom: 32px;
+  right: 32px;
+  z-index: 9999;
+}
+
+.chatbox-toggle {
+  background: #21c8af;
+  color: #fff;
+  border: none;
+  border-radius: 50px;
+  padding: 12px 28px;
+  font-size: 18px;
+  font-weight: 600;
+  box-shadow: 0 4px 16px rgba(0,0,0,0.12);
+  cursor: pointer;
+  transition: background 0.2s;
+}
+.chatbox-toggle:hover {
+  background: #1890ff;
+}
+
+.chatbox-window {
+  width: 340px;
+  max-width: 95vw;
+  background: #fff;
+  border-radius: 16px;
+  box-shadow: 0 8px 32px rgba(0,0,0,0.18);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  animation: fadeInUp 0.2s;
+}
+
+@keyframes fadeInUp {
+  from { transform: translateY(40px); opacity: 0; }
+  to { transform: translateY(0); opacity: 1; }
+}
+
+.chatbox-header {
+  background: #21c8af;
+  color: #fff;
+  padding: 14px 18px;
+  font-size: 17px;
+  font-weight: 700;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+.chatbox-close {
+  background: none;
+  border: none;
+  color: #fff;
+  font-size: 22px;
+  cursor: pointer;
+  padding: 0 4px;
+}
+
+.chatbox-messages {
+  flex: 1;
+  padding: 16px 12px;
+  background: #f7f7f7;
+  overflow-y: auto;
+  max-height: 320px;
+  min-height: 120px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.chatbox-message {
+  max-width: 80%;
+  padding: 8px 14px;
+  border-radius: 16px;
+  font-size: 15px;
+  line-height: 1.5;
+  word-break: break-word;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.04);
+}
+.chatbox-message.user {
+  align-self: flex-end;
+  background: #21c8af;
+  color: #fff;
+  border-bottom-right-radius: 4px;
+}
+.chatbox-message.ai {
+  align-self: flex-start;
+  background: #fff;
+  color: #23272f;
+  border-bottom-left-radius: 4px;
+  border: 1px solid #e5e7eb;
+}
+
+.chatbox-input-row {
+  display: flex;
+  border-top: 1px solid #e5e7eb;
+  background: #fff;
+  padding: 10px 8px;
+  gap: 8px;
+}
+.chatbox-input-row input {
+  flex: 1;
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  padding: 8px 12px;
+  font-size: 15px;
+  outline: none;
+  transition: border 0.2s;
+}
+.chatbox-input-row input:focus {
+  border: 1.5px solid #21c8af;
+}
+.chatbox-input-row button {
+  background: #21c8af;
+  color: #fff;
+  border: none;
+  border-radius: 8px;
+  padding: 8px 16px;
+  font-size: 15px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+.chatbox-input-row button:hover {
+  background: #1890ff;
+} 

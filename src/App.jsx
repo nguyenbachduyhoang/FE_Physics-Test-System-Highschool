@@ -24,6 +24,7 @@ import { Toaster } from "react-hot-toast";
 import { NotificationProvider } from "./contexts/NotificationContext";
 import FAQ from "./pages/FAQ";
 import Guide from "./pages/Guide";
+import Chatbox from "./components/Chatbox";
 
 const router = createBrowserRouter([
   {
@@ -113,6 +114,7 @@ const App = () => {
       <RouterProvider router={router} />
       <Toaster />
       {/* <DebugInfo /> */}
+      <Chatbox />
     </NotificationProvider>
   );
 };
