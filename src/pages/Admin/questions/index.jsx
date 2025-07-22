@@ -437,7 +437,35 @@ export default function QuestionsPage() {
     fetchQuestions(1, pagination.pageSize, searchTerm, 'createdAt', isLatest ? 'desc' : 'asc');
   };
 
+  const getTotalByDifficulty = async (level) => {
+    const response = await questionBankService.getQuestions({
+      difficultyLevel: level,
+      page: 1,
+      pageSize: 1 // chỉ cần lấy totalCount
+    });
+    return response?.data?.pagination?.totalCount || 0;
+  };
+
+  const [stats, setStats] = useState({ easy: 0, medium: 0, hard: 0 });
+
+  useEffect(() => {
+    const fetchStats = async () => {
+      const easy = await getTotalByDifficulty('easy');
+      const medium = await getTotalByDifficulty('medium');
+      const hard = await getTotalByDifficulty('hard');
+      setStats({ easy, medium, hard });
+    };
+    fetchStats();
+  }, []);
+
 const columns = [
+  {
+    title: "STT",
+    key: "stt",
+    width: 80,
+    align: 'center',
+    render: (text, record, idx) => ((pagination.current - 1) * pagination.pageSize + idx + 1),
+  },
   {
     title: "Mã câu hỏi",
     dataIndex: "questionId",
@@ -572,25 +600,19 @@ const columns = [
           <div className="stats-row">
             <div className="stat-item">
               <span className="stat-label">Tổng số câu hỏi:</span>
-              <span className="stat-value">{Array.isArray(questions) ? questions.length : 0}</span>
+              <span className="stat-value">{pagination.total}</span>
             </div>
             <div className="stat-item">
               <span className="stat-label">Câu hỏi dễ:</span>
-              <span className="stat-value">
-                {Array.isArray(questions) ? questions.filter(q => q.difficultyLevel?.toLowerCase() === 'easy').length : 0}
-              </span>
+              <span className="stat-value">{stats.easy}</span>
             </div>
             <div className="stat-item">
               <span className="stat-label">Câu hỏi trung bình:</span>
-              <span className="stat-value">
-                {Array.isArray(questions) ? questions.filter(q => q.difficultyLevel?.toLowerCase() === 'medium').length : 0}
-              </span>
+              <span className="stat-value">{stats.medium}</span>
             </div>
             <div className="stat-item">
               <span className="stat-label">Câu hỏi khó:</span>
-              <span className="stat-value">
-                {Array.isArray(questions) ? questions.filter(q => q.difficultyLevel?.toLowerCase() === 'hard').length : 0}
-              </span>
+              <span className="stat-value">{stats.hard}</span>
             </div>
           </div>
         </Card>

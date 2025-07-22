@@ -446,10 +446,6 @@ const Home = () => {
     
     if (filterGrade) filterParams.append('grade', filterGrade);
     if (filterTopic) {
-      // Find chapter name by chapterId for display
-      const selectedChapter = filteredChaptersForFilter.find(chapter => chapter.chapterId === filterTopic);
-      const chapterName = selectedChapter ? selectedChapter.chapterName : filterTopic;
-      filterParams.append('topic', chapterName);
       filterParams.append('chapterId', filterTopic);
     }
     if (filterDifficulty) filterParams.append('difficulty', filterDifficulty);
@@ -457,6 +453,7 @@ const Home = () => {
     const queryString = filterParams.toString();
     const targetUrl = queryString ? `/thiMau?${queryString}` : '/thiMau';
     
+    console.log('🔍 Home - Navigating to sample exams with filters:', filterParams.toString());
     navigate(targetUrl);
   };
 

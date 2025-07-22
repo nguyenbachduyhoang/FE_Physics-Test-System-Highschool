@@ -302,7 +302,6 @@ export default function UserDetailPage() {
           </Col>
           <Col xs={24} md={18}>
             <Descriptions column={2} bordered>
-              <Descriptions.Item label="ID" span={2}>{user.id}</Descriptions.Item>
               <Descriptions.Item label="Vai trò">
                 <Tag color={getRoleColor(user.role)}>
                   {getRoleText(user.role)}

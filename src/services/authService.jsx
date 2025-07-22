@@ -1,7 +1,19 @@
 import axios from 'axios';
 
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 
-  (window.location.hostname === 'localhost' ? 'http://localhost:5298' : 'https://be-phygens-production.up.railway.app');
+let API_BASE_URL = 'https://be-phygens.onrender.com';
+
+async function checkBackend() {
+  try {
+    const res = await fetch(`${API_BASE_URL}/auth/verify`);
+    if (!res.ok) throw new Error('BE deploy lỗi');
+  } catch (e) {
+    console.log(e);
+    API_BASE_URL = 'http://localhost:5298';
+  }
+}
+
+// Gọi check khi khởi động app
+checkBackend();
 
 const authAPI = axios.create({
   baseURL: API_BASE_URL,
@@ -40,7 +52,7 @@ authAPI.interceptors.response.use(
     if (error.response?.status === 401) {
       localStorage.removeItem('token');
       localStorage.removeItem('user');
-      window.location.href = '/';
+      // window.location.href = '/';
     }
     return Promise.reject(error);
   }
