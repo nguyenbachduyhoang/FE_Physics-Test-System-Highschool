@@ -65,17 +65,15 @@ const PhysicsTestSystem = () => {
         setStartTime(new Date());
 
         if (examId) {
-          const data = await examService.getExamById(examId);
+          const response = await examService.getExamById(examId);
+          const data = response.data || response; // Đảm bảo lấy đúng object chứa questions
+          console.log('Exam data:', data);
           setExamData(data);
-          
           const duration = data.durationMinutes || 20; 
           setTimeLeft(duration * 60);
 
           let extractedQuestions = [];
-
-          const questionsArray = data.questions && data.questions.$values ?
-            data.questions.$values :
-            (Array.isArray(data.questions) ? data.questions : []);
+          const questionsArray = Array.isArray(data.questions) ? data.questions : (data.questions && data.questions.$values ? data.questions.$values : []);
           if (questionsArray && questionsArray.length > 0) {
             extractedQuestions = questionsArray.map(examQuestion => {
               if (examQuestion.question) {
@@ -85,8 +83,7 @@ const PhysicsTestSystem = () => {
                   questionOrder: examQuestion.questionOrder,
                   pointsWeight: examQuestion.pointsWeight
                 };
-              }
-              else {
+              } else {
                 return {
                   ...examQuestion,
                   questionId: examQuestion.questionId || `question-${examQuestion.questionOrder || Math.random()}`,
@@ -98,6 +95,7 @@ const PhysicsTestSystem = () => {
           } else {
             console.warn('No questions found in exam data:', data);
           }
+          console.log('Extracted questions:', extractedQuestions);
 
           const hasPlaceholderQuestions = extractedQuestions.some(q =>
             q.questionText === '[AI Generated Question - Content loaded from frontend]' ||
@@ -111,7 +109,6 @@ const PhysicsTestSystem = () => {
             setQuestions(extractedQuestions);
           }
         } else {
-          // No examId provided - redirect to exam selection
           setError("Vui lòng chọn đề thi để bắt đầu làm bài");
           setLoading(false);
           return;
