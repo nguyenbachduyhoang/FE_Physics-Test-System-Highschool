@@ -3,7 +3,7 @@ import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Tag, Button, Avatar, Space, Modal, Form, Input, Select, Switch, Pagination, Spin } from "antd";
 import SafeTable from "../../../components/uiBasic/SafeTable";
-import { UserOutlined, PlusOutlined, EditOutlined, DeleteOutlined, EyeOutlined, SearchOutlined } from "@ant-design/icons";
+import { UserOutlined, PlusOutlined, EditOutlined, DeleteOutlined, EyeOutlined, SearchOutlined, ReloadOutlined } from "@ant-design/icons";
 import { userService } from "../../../services";
 import toast from "react-hot-toast";
 import "./index.scss";
@@ -28,58 +28,35 @@ export default function UsersPage() {
   const [form] = Form.useForm();
 
   // Fetch users with pagination and filters
-  const fetchUsers = async (params = {}) => {
+  const fetchUsers = async (page = 1, pageSize = 10, search = '', sort = 'username', direction = 'asc') => {
     setLoading(true);
     try {
-      const { current, pageSize, search } = { ...pagination, ...params };
-      
-      const response = await userService.getAllUsers({
-        page: current,
+      const params = {
+        page,
         pageSize,
-        search: search || searchTerm
-      });
+        search: search || searchTerm,
+        sortBy: sort,
+        sortDirection: direction
+      };
       
+      const response = await userService.getAllUsers(params);
+      // Chuẩn hóa lấy dữ liệu phân trang từ backend
       if (response?.success && response.data) {
         const responseData = response.data;
-        if (responseData.items && Array.isArray(responseData.items)) {
-          setUsers(responseData.items);
-          setPagination({
-            ...pagination,
-            current: responseData.currentPage || current,
-            pageSize: responseData.pageSize || pageSize,
-            total: responseData.totalCount || responseData.items.length
-          });
-        } else if (Array.isArray(responseData)) {
-          setUsers(responseData);
-          setPagination(prev => ({
-            ...prev,
-            current,
-            pageSize,
-            total: responseData.length
-          }));
-        }
-      } else if (response && response.items && Array.isArray(response.items)) {
-        setUsers(response.items);
+        const usersArray = responseData.items || responseData.users || [];
+        setUsers(usersArray);
         setPagination({
-          ...pagination,
-          current: response.currentPage || current,
-          pageSize: response.pageSize || pageSize,
-          total: response.totalCount || response.items.length
+          current: responseData.currentPage || page,
+          pageSize: responseData.pageSize || pageSize,
+          total: responseData.totalCount || usersArray.length
         });
-      } else if (Array.isArray(response)) {
-        setUsers(response);
-        setPagination(prev => ({
-          ...prev,
-          current,
-          pageSize,
-          total: response.length
-        }));
+      } else {
+        setUsers([]);
+        setPagination(prev => ({ ...prev, total: 0 }));
       }
     } catch (err) {
-      console.error('Fetch users error:', err);
-      const errorMessage = userService.formatError(err);
-      toast.error(`Lỗi tải danh sách người dùng: ${errorMessage}`);
       setUsers([]);
+      setPagination(prev => ({ ...prev, total: 0 }));
     } finally {
       setLoading(false);
     }
@@ -92,15 +69,26 @@ export default function UsersPage() {
   // Handle search
   const handleSearch = (value) => {
     setSearchTerm(value);
-    fetchUsers({ current: 1, search: value });
+    fetchUsers(1, pagination.pageSize, value, sortBy, sortDirection);
   };
 
-  // Handle pagination change
-  const handleTableChange = (newPagination) => {
-    fetchUsers({
-      current: newPagination.current,
-      pageSize: newPagination.pageSize
-    });
+  // Handle table change (pagination, filters, sorter)
+  const handleTableChange = (paginationInfo, filters, sorter) => {
+    let newSortBy = sortBy;
+    let newSortDirection = sortDirection;
+    if (sorter && sorter.field) {
+      newSortBy = sorter.field;
+      newSortDirection = sorter.order === 'descend' ? 'desc' : 'asc';
+      setSortBy(newSortBy);
+      setSortDirection(newSortDirection);
+    }
+    fetchUsers(
+      paginationInfo.current, 
+      paginationInfo.pageSize, 
+      searchTerm,
+      newSortBy,
+      newSortDirection
+    );
   };
 
   // Add or update user
@@ -190,6 +178,10 @@ export default function UsersPage() {
     }
   };
 
+  const renderUserId = (user, idx) => {
+    if (user.id && user.id.startsWith('u') && user.id.length <= 5) return user.id;
+    return `u${String(idx + 1).padStart(3, '0')}`;
+  };
   // Open modal for edit
   const handleEdit = (user) => {
     setEditingUser(user);
@@ -228,19 +220,38 @@ export default function UsersPage() {
   const getRoleText = (role) => {
     switch (role) {
       case 'admin': return 'Quản trị viên';
-      case 'teacher': return 'Giáo viên';
+      // case 'teacher': return 'Giáo viên';
       case 'student': return 'Học sinh';
       default: return role;
     }
   };
 
+
   const columns = [
+    {
+      title: "STT",
+      key: "stt",
+      width: 60,
+      align: 'center',
+      render: (text, record, idx) => ((pagination.current - 1) * pagination.pageSize + idx + 1),
+    },
     {
       title: "",
       dataIndex: "avatarUrl",
       key: "avatarUrl",
       render: () => <Avatar icon={<UserOutlined />} />,
       width: 48,
+    },
+    {
+      title: "User ID",
+      dataIndex: "id",
+      key: "id",
+      render: (id, record, idx) => (
+        <Tag color="purple" style={{ fontFamily: 'monospace', fontSize: '11px' }}>
+          {renderUserId(record, idx)}
+        </Tag>
+      ),
+      width: 150,
     },
     {
       title: "Tên đăng nhập",
@@ -328,10 +339,17 @@ export default function UsersPage() {
             onSearch={handleSearch}
             style={{ width: 300, marginRight: 16 }}
           />
-        <Button type="primary" icon={<PlusOutlined />} onClick={handleAdd}>
-          Thêm người dùng
-        </Button>
-      </div>
+          <Button 
+            icon={<ReloadOutlined />} 
+            onClick={() => fetchUsers(pagination.current, pagination.pageSize, searchTerm, sortBy, sortDirection)}
+            style={{ marginRight: 8 }}
+          >
+            Làm mới
+          </Button>
+          <Button type="primary" icon={<PlusOutlined />} onClick={handleAdd}>
+            Thêm người dùng
+          </Button>
+        </div>
       </div>
 
       <div className="users-stats">
@@ -345,12 +363,30 @@ export default function UsersPage() {
             {users.length} / {pagination.total}
           </span>
         </div>
+        <div className="stat-item">
+          <span className="stat-label">Quản trị viên:</span>
+          <span className="stat-value">
+            {Array.isArray(users) ? users.filter(u => u.role === 'admin').length : 0}
+          </span>
+        </div>
+        <div className="stat-item">
+          <span className="stat-label">Giáo viên:</span>
+          <span className="stat-value">
+            {Array.isArray(users) ? users.filter(u => u.role === 'teacher').length : 0}
+          </span>
+        </div>
+        <div className="stat-item">
+          <span className="stat-label">Học sinh:</span>
+          <span className="stat-value">
+            {Array.isArray(users) ? users.filter(u => u.role === 'student').length : 0}
+          </span>
+        </div>
       </div>
 
       <SafeTable
         columns={columns}
         dataSource={users}
-        rowKey="id"
+        rowKey={(record) => record.id}
         loading={loading}
         pagination={{
           current: pagination.current,
@@ -364,7 +400,7 @@ export default function UsersPage() {
         }}
         onChange={handleTableChange}
         className="users-table"
-        scroll={{ x: 800 }}
+        scroll={{ x: 1000 }}
       />
 
       <Modal
