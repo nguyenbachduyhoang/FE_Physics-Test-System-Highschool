@@ -1,7 +1,19 @@
 import axios from 'axios';
 
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 
-  (window.location.hostname === 'localhost' ? 'http://localhost:5298' : 'https://be-phygens-production.up.railway.app');
+let API_BASE_URL = 'https://be-phygens.onrender.com';
+
+async function checkBackend() {
+  try {
+    const res = await fetch(`${API_BASE_URL}/auth/verify`);
+    if (!res.ok) throw new Error('BE deploy lỗi');
+  } catch (e) {
+    console.log(e);
+    API_BASE_URL = 'http://localhost:5298';
+  }
+}
+
+// Gọi check khi khởi động app
+checkBackend();
 
 const analyticsAPI = axios.create({
   baseURL: API_BASE_URL,
@@ -146,7 +158,7 @@ export const analyticsService = {
       const response = await analyticsAPI.get('/analytics/sample-exams', {
         params: {
           grade: filters.grade,
-          subject: filters.subject,
+          chapterId: filters.chapterId,
           difficulty: filters.difficulty,
           limit: filters.limit || 10
         }
@@ -558,10 +570,13 @@ export const analyticsService = {
   getExamById: async (examId) => {
     try {
       const response = await analyticsAPI.get(`/exams/${examId}`);
+      if (response.data.success && response.data.data) {
+        return response.data.data;
+      }
+      
       return response.data;
     } catch (error) {
       console.warn('Exam details API not available:', error.message);
-      // Fallback: trả về null để component tự tạo demo questions
       return null;
     }
   }

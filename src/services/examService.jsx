@@ -1,8 +1,20 @@
 import axios from 'axios';
 import { authService } from './authService';
 
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 
-  (window.location.hostname === 'localhost' ? 'http://localhost:5298' : 'https://be-phygens-production.up.railway.app');
+let API_BASE_URL = 'https://be-phygens.onrender.com';
+
+async function checkBackend() {
+  try {
+    const res = await fetch(`${API_BASE_URL}/auth/verify`);
+    if (!res.ok) throw new Error('BE deploy lỗi');
+  } catch (e) {
+    console.log(e);
+    API_BASE_URL = 'http://localhost:5298';
+  }
+}
+
+// Gọi check khi khởi động app
+checkBackend();
 
 const examAPI = axios.create({
   baseURL: API_BASE_URL,

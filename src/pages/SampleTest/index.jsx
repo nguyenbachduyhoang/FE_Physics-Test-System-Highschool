@@ -26,40 +26,64 @@ const ThiMau = () => {
       
       const searchParams = new URLSearchParams(location.search);
       const filters = {
-        grade: searchParams.get('grade') || '',
-        subject: searchParams.get('subject') || '',
+        grade: searchParams.get('grade') ? parseInt(searchParams.get('grade')) : null,
+        chapterId: searchParams.get('chapterId') || '',
         difficulty: searchParams.get('difficulty') || ''
       };
 
-      // BƯỚC 2: Thử API debug trước
+      console.log('🔍 SampleTest - Applying filters:', filters);
+
+      // Gọi API với filters
       let examsData = await analyticsService.getSampleExams(filters);
 
-      // BƯỚC 3: Nếu debug API không có dữ liệu, thử API gốc
-      if (!examsData || examsData.length === 0) {
-        examsData = await analyticsService.getSampleExams(filters);
-      }
+      console.log('📊 SampleTest - API Response:', examsData);
 
-      // BƯỚC 4: Nếu vẫn không có dữ liệu, thử lấy tất cả (không filter)
+      // Nếu không có dữ liệu với filter, thử lấy tất cả
       if (!examsData || examsData.length === 0) {
+        console.log('⚠️ SampleTest - No data with filters, trying without filters');
         examsData = await analyticsService.getSampleExams({});
       }
       
-      const transformedTests = (examsData || []).map(exam => ({
-        id: exam.examId,
-        title: exam.examName,
-        subject: exam.description || "Đề thi vật lý",
-        class: exam.grade || "10-12",
-        topic: exam.subject || "Vật lý", 
-        difficulty: exam.difficulty || "Trung bình",
-        attempts: 0,
-        stats: [
-          { label: "Câu hỏi", value: exam.questionCount || 0 },
-          { label: "Phút", value: exam.duration || 45 },
-          { label: "Điểm TB", value: 0 },
-          { label: "Lượt làm", value: 0 },
-        ],
-        questions: [] // Will be loaded when needed
-      }));
+      const transformedTests = (examsData || []).map(exam => {
+        // Map difficulty từ API sang tiếng Việt
+        const difficultyMap = {
+          'easy': 'Dễ',
+          'medium': 'Trung bình', 
+          'hard': 'Khó'
+        };
+        
+        // Lấy thông tin từ URL params để tạo tiêu đề động
+        const searchParams = new URLSearchParams(location.search);
+        const filterGrade = searchParams.get('grade');
+        const filterDifficulty = searchParams.get('difficulty');
+        
+        // Tạo tiêu đề động dựa trên filter
+        let dynamicTitle = "Đề thi AI";
+        if (filterGrade) {
+          dynamicTitle += ` - Lớp ${filterGrade}`;
+        }
+        if (filterDifficulty) {
+          const difficultyText = difficultyMap[filterDifficulty] || filterDifficulty;
+          dynamicTitle += ` (${difficultyText})`;
+        }
+        
+        return {
+          id: exam.examId,
+          title: dynamicTitle,
+          subject: exam.description || "Đề thi vật lý",
+          class: exam.grade ? `Lớp ${exam.grade}` : "10-12",
+          topic: exam.subject || "Vật lý", 
+          difficulty: difficultyMap[exam.difficulty] || exam.difficulty || "Trung bình",
+          attempts: 0,
+          stats: [
+            { label: "Câu hỏi", value: exam.questionCount || 0 },
+            { label: "Phút", value: exam.duration || 45 },
+            { label: "Điểm TB", value: 0 },
+            { label: "Lượt làm", value: 0 },
+          ],
+          questions: [] // Will be loaded when needed
+        };
+      });
       
       setTests(transformedTests);
     } catch (err) {
@@ -79,13 +103,19 @@ const ThiMau = () => {
 
     try {
       const examDetails = await analyticsService.getExamById(test.id);
-      console.log('🔍 SampleTest - API Response:', examDetails);
+      // Kiểm tra cấu trúc response - có thể là examDetails.questions hoặc examDetails.data.questions
+      let questions = null;
+      if (examDetails && examDetails.questions) {
+        questions = examDetails.questions;
+      } else if (examDetails && examDetails.data && examDetails.data.questions) {
+        questions = examDetails.data.questions;
+      }
+
       
-      if (examDetails && examDetails.questions && examDetails.questions.length > 0) {
-        console.log('✅ SampleTest - Found questions:', examDetails.questions.length);
+      if (questions && questions.length > 0) {
         
         // Map API response to component format
-        const mappedQuestions = examDetails.questions.map((examQuestion, index) => {
+        const mappedQuestions = questions.map((examQuestion, index) => {
           console.log(`📝 Question ${index + 1}:`, examQuestion.question);
           return {
             id: index + 1,
@@ -106,52 +136,20 @@ const ThiMau = () => {
           questions: mappedQuestions
         }));
       } else {
-        console.log('⚠️ SampleTest - No questions found, using demo');
-        // Fallback: Demo questions nếu API không có data
-        const demoQuestions = [
-          {
-            id: 1,
-            questionText: "Định luật I Newton phát biểu về:",
-            options: [
-              "A. Trạng thái cân bằng của vật",
-              "B. Mối quan hệ giữa lực và gia tốc", 
-              "C. Định luật tác dụng và phản tác dụng",
-              "D. Định luật bảo toàn động lượng"
-            ],
-            correctAnswer: "A"
-          },
-          {
-            id: 2, 
-            questionText: "Trong chuyển động thẳng đều, vận tốc của vật:",
-            options: [
-              "A. Tăng theo thời gian",
-              "B. Giảm theo thời gian",
-              "C. Không đổi theo thời gian", 
-              "D. Bằng 0"
-            ],
-            correctAnswer: "C"
-          },
-          {
-            id: 3,
-            questionText: "Đơn vị của gia tốc trong hệ SI là:",
-            options: [
-              "A. m/s",
-              "B. m/s²",
-              "C. kg.m/s²", 
-              "D. N"
-            ],
-            correctAnswer: "B"
-          }
-        ];
-        
+        console.log('⚠️ SampleTest - No questions found in response:', examDetails);
+        toast.error('Đề thi này chưa có câu hỏi');
         setSelectedTest(prev => ({
           ...prev,
-          questions: demoQuestions
+          questions: []
         }));
       }
     } catch (error) {
       console.error('Error loading exam details:', error);
       toast.error('Không thể tải chi tiết đề thi');
+      setSelectedTest(prev => ({
+        ...prev,
+        questions: []
+      }));
     } finally {
       setLoadingQuestions(false);
     }
@@ -228,17 +226,13 @@ const ThiMau = () => {
                     </div>
                     <div className="test-card-side">
                       <div className="test-card-stats">
-                        {[0, 1, 2, 3].map((idx) => (
+                        {test.stats.map((stat, idx) => (
                           <div className="stat-box" key={idx}>
                             <div className="stat-value">
-                              {test.stats && test.stats[idx]
-                                ? test.stats[idx].value
-                                : "--"}
+                              {stat.value}
                             </div>
                             <div className="stat-label">
-                              {test.stats && test.stats[idx]
-                                ? test.stats[idx].label
-                                : ""}
+                              {stat.label}
                             </div>
                           </div>
                         ))}
@@ -286,8 +280,8 @@ const ThiMau = () => {
             <Spin size="large" />
             <p style={{ marginTop: '16px' }}>Đang tải chi tiết đề thi...</p>
           </div>
-        ) : (
-          selectedTest?.questions?.map((question) => (
+        ) : selectedTest?.questions?.length > 0 ? (
+          selectedTest.questions.map((question) => (
             <div key={question.id} className="question-card">
               <h3>{`Câu ${question.id}: ${question.questionText}`}</h3>
               <p>Chọn đáp án đúng:</p>
@@ -304,6 +298,12 @@ const ThiMau = () => {
               </div>
             </div>
           ))
+        ) : (
+          <div style={{ textAlign: 'center', padding: '50px' }}>
+            <p style={{ color: '#999', fontSize: '16px' }}>
+              Đề thi này chưa có câu hỏi hoặc chưa được tạo hoàn chỉnh.
+            </p>
+          </div>
         )}
       </Modal>
     </>

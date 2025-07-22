@@ -480,6 +480,13 @@ export default function ExamsPage() {
 
   const columns = [
     {
+      title: "STT",
+      key: "stt",
+      width: 60,
+      align: 'center',
+      render: (text, record, idx) => ((pagination.current - 1) * pagination.pageSize + idx + 1),
+    },
+    {
       title: "Mã đề thi",
       dataIndex: "examId",
       key: "examCode",
@@ -648,7 +655,7 @@ export default function ExamsPage() {
           <div className="stats-row">
             <div className="stat-item">
               <span className="stat-label">Tổng số đề thi:</span>
-              <span className="stat-value">{Array.isArray(exams) ? exams.length : 0}</span>
+              <span className="stat-value">{pagination.total}</span>
             </div>
             {/* <div className="stat-item">
               <span className="stat-label">Đã xuất bản:</span>
