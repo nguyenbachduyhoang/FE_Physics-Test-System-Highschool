@@ -28,7 +28,7 @@ import Chatbox from "./components/Chatbox";
 
 const router = createBrowserRouter([
   {
-    path: "/",
+    path: "/login",
     element: (
       <AuthRedirect>
         <Login />
@@ -106,6 +106,27 @@ const router = createBrowserRouter([
       },
     ],
   },
+  {
+    path: "/admin",
+    element: (
+      <ProtectedRoute requiredRole="admin">
+        <AdminLayout />
+      </ProtectedRoute>
+    ),
+    children: [
+      { path: "", element: <AdminDashboard /> }, 
+      { path: "dashboard", element: <AdminDashboard /> }, 
+      { path: "users", element: <Users /> }, 
+      { path: "users/:id", element: <UserDetail /> },
+      { path: "questions", element: <Questions /> }, 
+      { path: "questions/:id", element: <QuestionDetail /> },
+      { path: "exams", element: <Exams /> }, 
+      { path: "exams/:id", element: <ExamDetail /> },
+      { path: "reports", element: <Reports /> },
+      { path: "notifications", element: <NotificationManagement /> },
+      { path: "test-api", element: <TestAPIPage /> }, 
+    ],
+  },
 ]);
 
 const App = () => {
@@ -113,7 +134,6 @@ const App = () => {
     <NotificationProvider>
       <RouterProvider router={router} />
       <Toaster />
-      {/* <DebugInfo /> */}
       <Chatbox />
     </NotificationProvider>
   );

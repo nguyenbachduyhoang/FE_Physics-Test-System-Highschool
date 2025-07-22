@@ -86,8 +86,15 @@ const HistoryContent = () => {
         }
 
         setLoading(true);
-        const historyData = await examService.getMyExamHistory();
-        
+        const response = await examService.getMyExamHistory();
+        let historyData = [];
+        if (Array.isArray(response?.data)) {
+          historyData = response.data;
+        } else if (Array.isArray(response?.data?.data)) {
+          historyData = response.data.data;
+        } else if (Array.isArray(response)) {
+          historyData = response;
+        }
         if (Array.isArray(historyData) && historyData.length > 0) {
           setHistoryList(historyData);
           
