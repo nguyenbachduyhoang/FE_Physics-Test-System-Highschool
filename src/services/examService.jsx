@@ -81,30 +81,30 @@ export const examService = {
   },
 
   generateExam: async (generateData) => {
-    const response = await examAPI.post('/exams/generations', generateData);
+    const response = await examAPI.post('/exams/generation', generateData);
     return response.data.success ? response.data : response.data;
   },
 
   
-  createExamMatrix: async (matrixData) => {
-    const response = await examAPI.post('/smart-exam/create-matrix', matrixData);
-    return response.data;
-  },
+  // createExamMatrix: async (matrixData) => {
+  //   const response = await examAPI.post('/smart-exam/create-matrix', matrixData);
+  //   return response.data;
+  // },
 
   generateSmartExam: async (criteria) => {
     const response = await examAPI.post('/exams/generate-smart', criteria);
     return response.data.success ? response.data : response.data;
   },
 
-  getExamMatrices: async () => {
-    const response = await examAPI.get('/smart-exam/matrices');
-    return response.data;
-  },
+  // getExamMatrices: async () => {
+  //   const response = await examAPI.get('/smart-exam/matrices');
+  //   return response.data;
+  // },
 
-  getSmartExamTemplates: async () => {
-    const response = await examAPI.get('/smart-exam/templates');
-    return response.data;
-  },
+  // getSmartExamTemplates: async () => {
+  //   const response = await examAPI.get('/smart-exam/templates');
+  //   return response.data;
+  // },
   getExamStatistics: async (examId) => {
     const response = await examAPI.get(`/analytics/exam-statistics/${examId}`);
     return response.data;

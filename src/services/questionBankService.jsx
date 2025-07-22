@@ -52,7 +52,7 @@ export const questionBankService = {
         specificTopic: questionCriteria.topic || questionCriteria.specificTopic || '',
         saveToDatabase: questionCriteria.saveToDatabase !== false // Default true
       };
-      const response = await questionAPI.post('/questions/ai-generations', requestData);
+      const response = await questionAPI.post('/questions/generation/ai', requestData);
       return response.data; 
     } catch (error) {
       console.error('Question generation error:', error);
@@ -71,7 +71,7 @@ export const questionBankService = {
   },
 
   improveQuestion: async (questionId, improvementRequest) => {
-    const response = await questionAPI.put(`/questions/${questionId}/improvements`, improvementRequest);
+    const response = await questionAPI.put(`/questions/${questionId}/improvement`, improvementRequest);
     return response.data.success ? response.data.data : response.data;
   },
 
@@ -86,7 +86,7 @@ export const questionBankService = {
   },
 
   validateQuestion: async (questionId) => {
-    const response = await questionAPI.get(`/questions/${questionId}/validations`);
+    const response = await questionAPI.get(`/questions/${questionId}/validation`);
     return response.data;
   },
 

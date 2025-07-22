@@ -170,7 +170,7 @@ class ExplanationService {
   async generateExplanationWithAI(questionId) {
     try {
       // Gọi AI service để tạo explanation tự động
-      const response = await explanationAPI.post(`/questions/${questionId}/explanations`);
+      const response = await explanationAPI.post(`/questions/${questionId}/explanation`);
       return {
         success: true,
         data: response.data

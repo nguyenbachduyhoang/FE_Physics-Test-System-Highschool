@@ -193,10 +193,10 @@ export const adminService = {
     return response.data;
   },
 
-  generateSmartExam: async (criteria) => {
-    const response = await adminAPI.post('/smart-exam/generate', criteria);
-    return response.data;
-  },
+  // generateSmartExam: async (criteria) => {
+  //   const response = await adminAPI.post('/smart-exam/generate', criteria);
+  //   return response.data;
+  // },
 
   // =============== UTILITY FUNCTIONS ===============
   // Format API response for consistent error handling

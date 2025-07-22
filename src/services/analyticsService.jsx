@@ -68,7 +68,7 @@ export const analyticsService = {
   // Get recent activities
   getRecentActivities: async (limit = 10) => {
     try {
-      const response = await analyticsAPI.get('/analytics/recent-activities', {
+      const response = await analyticsAPI.get('/analytics/recent', {
         params: { limit }
       });
       // Handle ApiResponse format: { success: true, message: "...", data: [...] }

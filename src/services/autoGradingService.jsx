@@ -160,7 +160,7 @@ class AutoGradingService {
   // 🎯 Chấm điểm hàng loạt nhiều câu hỏi
   async batchGradeQuestions(questions, studentUserId = null) {
     try {
-      const response = await this.apiClient.post('/questions/grades-batch', {
+      const response = await this.apiClient.post('/questions/grading/batch', {
         questions,
         studentUserId
       });
