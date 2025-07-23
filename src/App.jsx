@@ -134,7 +134,7 @@ const App = () => {
     <NotificationProvider>
       <RouterProvider router={router} />
       <Toaster />
-      <Chatbox />
+      {/* <Chatbox /> đã xóa, chỉ render ở Home */}
     </NotificationProvider>
   );
 };

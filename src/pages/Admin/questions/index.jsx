@@ -339,15 +339,9 @@ export default function QuestionsPage() {
   const handleAIGenerateSubmit = async () => {
     try {
       const values = await aiForm.validateFields();
-      console.log('🎯 AI form values:', values);
-      console.log('🎯 Available chapters:', chapters);
-      
       setAiGenerating(true);
-      
       // Find selected chapter for additional data
       const selectedChapter = chapters.find(c => c.chapterId === values.chapterId);
-      console.log('🎯 Selected chapter:', selectedChapter);
-      
       const criteria = {
         chapterId: values.chapterId || selectedChapter?.chapterId,
         topicId: selectedChapter?.topicId || 1,
@@ -357,8 +351,6 @@ export default function QuestionsPage() {
         chapterName: selectedChapter?.chapterName || 'Chương học',
         saveToDatabase: true
       };
-      
-      console.log('🎯 AI generation criteria:', criteria);
       
       // Validate required fields
       if (!criteria.topic?.trim()) {
@@ -371,8 +363,6 @@ export default function QuestionsPage() {
       
       // Generate single question
       const response = await questionBankService.generateQuestion(criteria);
-      console.log('🎯 AI generation response:', response);
-      
       if (response?.success) {
         const successMessage = response.message || 'Đã tạo câu hỏi AI thành công!';
         

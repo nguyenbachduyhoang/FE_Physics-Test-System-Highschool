@@ -22,6 +22,7 @@ import LayoutContent from "../../components/layoutContent";
 import { analyticsService, questionBankService, examService } from "../../services";
 import toast from "react-hot-toast";
 import ParticlesBackground from "../../components/ParticlesBackground";
+import Chatbox from "../../components/Chatbox";
 
 const mockData = {
   filters: {
@@ -1473,6 +1474,7 @@ const Home = () => {
           </Modal>
         )}
       </AnimatePresence>
+      <Chatbox />
     </div>
   );
 };
