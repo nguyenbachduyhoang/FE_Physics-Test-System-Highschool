@@ -90,7 +90,7 @@ export const essayService = {
   // Tạo phản hồi chi tiết
   async generateFeedback(feedbackRequest) {
     try {
-      const response = await essayAPI.post('/essay/feedbacks', feedbackRequest);
+      const response = await essayAPI.post('/essay/feedback', feedbackRequest);
       return response.data;
     } catch (error) {
       console.error('Lỗi khi tạo phản hồi:', error);
@@ -101,7 +101,7 @@ export const essayService = {
   // Kiểm tra tính hợp lệ
   async validateEssayAnswer(validationRequest) {
     try {
-      const response = await essayAPI.post('/essay/validations', validationRequest);
+      const response = await essayAPI.post('/essay/validation', validationRequest);
       return response.data;
     } catch (error) {
       console.error('Lỗi khi validate câu trả lời:', error);

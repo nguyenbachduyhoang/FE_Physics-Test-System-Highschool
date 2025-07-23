@@ -141,7 +141,7 @@ export const deleteFromCloudinary = async (publicId) => {
     
     // Gọi check khi khởi động app
     checkBackend();
-    const response = await fetch(`${API_BASE_URL}/upload/cloudinary/deletions`, {
+    const response = await fetch(`${API_BASE_URL}/upload/cloudinary/deletion`, {
       method: 'DELETE',
       headers: {
         'Content-Type': 'application/json'

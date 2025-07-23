@@ -125,7 +125,7 @@ export const analyticsService = {
   // Get recent attempts
   getRecentAttempts: async (limit = 10) => {
     try {
-      const response = await analyticsAPI.get('/analytics/recent-attempts', {
+      const response = await analyticsAPI.get('/analytics/attempts/recent', {
         params: { limit }
       });
       return response.data;
@@ -138,7 +138,7 @@ export const analyticsService = {
   // Get exam statistics
   getExamStats: async () => {
     try {
-      const response = await analyticsAPI.get('/analytics/exam-stats');
+      const response = await analyticsAPI.get('/analytics/exam-statistics');
       return response.data;
     } catch (error) {
       console.warn('Exam stats API not available:', error.message);
@@ -324,7 +324,7 @@ export const analyticsService = {
   // Get chapter performance analytics
   getChapterAnalytics: async (grade = null) => {
     const params = grade ? { grade } : {};
-    const response = await analyticsAPI.get('/analytics/chapter-analytics', { params });
+    const response = await analyticsAPI.get('/analytics/chapters', { params });
     return response.data;
   },
 

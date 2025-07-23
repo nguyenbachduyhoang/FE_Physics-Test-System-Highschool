@@ -58,7 +58,7 @@ class AutoGradingService {
   // 🎯 Chấm điểm một câu hỏi đơn lẻ
   async gradeSingleQuestion(questionId, studentChoiceId, studentUserId = null) {
     try {
-      const response = await this.apiClient.post('/questions/grades', {
+      const response = await this.apiClient.post('/questions/grading', {
         questionId,
         studentChoiceId,
         studentUserId
@@ -73,7 +73,7 @@ class AutoGradingService {
   // 🎯 Chấm điểm toàn bộ bài thi
   async gradeExam(examId, studentAnswers, studentUserId, timeTaken = null) {
     try {
-      const response = await this.apiClient.post('/exams/grades', {
+      const response = await this.apiClient.post('/exams/grading', {
         examId,
         studentUserId,
         studentAnswers,
@@ -89,7 +89,7 @@ class AutoGradingService {
   // 🎯 Chấm điểm dựa trên attempt có sẵn
   async gradeExamAttempt(attemptId) {
     try {
-      const response = await this.apiClient.post(`/attempts/${attemptId}/grades`);
+      const response = await this.apiClient.post(`/attempts/${attemptId}/grading`);
       return response;
     } catch (error) {
       console.error('Error grading exam attempt:', error);

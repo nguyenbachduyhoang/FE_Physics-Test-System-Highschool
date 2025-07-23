@@ -62,7 +62,7 @@ export const questionBankService = {
 
   generateBatchQuestions: async (batchCriteria) => {
     try {
-      const response = await questionAPI.post('/questions/batches', batchCriteria);
+      const response = await questionAPI.post('/questions/batch', batchCriteria);
       return response.data.success ? response.data.data : response.data;
     } catch (error) {
       console.error('Batch question generation error:', error);
