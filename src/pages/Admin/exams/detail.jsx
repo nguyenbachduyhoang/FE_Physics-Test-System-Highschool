@@ -40,6 +40,28 @@ const { Title, Text, Paragraph } = Typography;
 const { Option } = Select;
 const { TextArea } = Input;
 
+function toVNTime(dateString) {
+  if (!dateString) return 'N/A';
+  if (dateString.includes('Z') || /[+-]\d{2}:\d{2}$/.test(dateString)) {
+    const date = new Date(dateString);
+    return date.toLocaleString('vi-VN', { timeZone: 'Asia/Ho_Chi_Minh', hour12: false });
+  }
+  if (dateString.includes('T')) {
+    const [datePart, timePart] = dateString.split('T');
+    const [year, month, day] = datePart.split('-');
+    const [h, m, s] = timePart.split(':');
+    const date = new Date(Date.UTC(year, month - 1, day, h, m, s));
+    date.setUTCHours(date.getUTCHours());
+    return date.toLocaleString('vi-VN', { hour12: false });
+  }
+  const [time, dmy] = dateString.split(' ');
+  const [h, m, s] = time.split(':');
+  const [day, month, year] = dmy.split('/');
+  const date = new Date(Date.UTC(year, month - 1, day, h, m, s));
+  date.setUTCHours(date.getUTCHours() + 7);
+  return date.toLocaleString('vi-VN', { hour12: false });
+}
+
 export default function ExamDetailPage() {
   const { id } = useParams();
   const navigate = useNavigate();
@@ -59,6 +81,9 @@ export default function ExamDetailPage() {
       const response = await examService.getExamById(id);
       if (response?.success) {
         setExam(response.data);
+        // Log createdAt and updatedAt for debugging
+        console.log('exam.createdAt:', response.data.createdAt);
+        console.log('exam.updatedAt:', response.data.updatedAt);
       } else {
         throw new Error(response?.message || 'Không thể tải thông tin đề thi');
       }
@@ -395,10 +420,20 @@ export default function ExamDetailPage() {
           </Descriptions.Item> */}
           <Descriptions.Item label="Người tạo">{exam.createdBy || 'Hệ thống'}</Descriptions.Item>
           <Descriptions.Item label="Ngày tạo">
-            {exam.createdAt ? new Date(exam.createdAt).toLocaleString('vi-VN') : 'N/A'}
+            {exam.createdAt ? (
+              <>
+                {toVNTime(exam.createdAt)}
+                {console.log('Render exam.createdAt:', exam.createdAt)}
+              </>
+            ) : 'N/A'}
           </Descriptions.Item>
           <Descriptions.Item label="Cập nhật lần cuối">
-            {exam.updatedAt ? new Date(exam.updatedAt).toLocaleString('vi-VN') : 'N/A'}
+            {exam.updatedAt ? (
+              <>
+                {toVNTime(exam.updatedAt)}
+                {console.log('Render exam.updatedAt:', exam.updatedAt)}
+              </>
+            ) : 'N/A'}
           </Descriptions.Item>
           <Descriptions.Item label="Thời gian làm bài">
             {exam.durationMinutes} phút

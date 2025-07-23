@@ -35,6 +35,28 @@ const { Title, Text, Paragraph } = Typography;
 const { Option } = Select;
 const { TextArea } = Input;
 
+function toVNTime(dateString) {
+  if (!dateString) return 'N/A';
+  if (dateString.includes('Z') || /[+-]\d{2}:\d{2}$/.test(dateString)) {
+    const date = new Date(dateString);
+    return date.toLocaleString('vi-VN', { timeZone: 'Asia/Ho_Chi_Minh', hour12: false });
+  }
+  if (dateString.includes('T')) {
+    const [datePart, timePart] = dateString.split('T');
+    const [year, month, day] = datePart.split('-');
+    const [h, m, s] = timePart.split(':');
+    const date = new Date(Date.UTC(year, month - 1, day, h, m, s));
+    date.setUTCHours(date.getUTCHours());
+    return date.toLocaleString('vi-VN', { hour12: false });
+  }
+  const [time, dmy] = dateString.split(' ');
+  const [h, m, s] = time.split(':');
+  const [day, month, year] = dmy.split('/');
+  const date = new Date(Date.UTC(year, month - 1, day, h, m, s));
+  date.setUTCHours(date.getUTCHours());
+  return date.toLocaleString('vi-VN', { hour12: false });
+}
+
 export default function QuestionDetailPage() {
   const { id } = useParams();
   const navigate = useNavigate();
@@ -280,7 +302,7 @@ export default function QuestionDetailPage() {
           <Descriptions.Item label="Chủ đề">{question.topic || 'Chưa phân loại'}</Descriptions.Item>
           <Descriptions.Item label="Người tạo">{question.createdBy || 'Hệ thống'}</Descriptions.Item>
           <Descriptions.Item label="Ngày tạo">
-            {question.createdAt ? new Date(question.createdAt).toLocaleString('vi-VN') : 'N/A'}
+            {question.createdAt ? toVNTime(question.createdAt) : 'N/A'}
           </Descriptions.Item>
         </Descriptions>
       </Card>
