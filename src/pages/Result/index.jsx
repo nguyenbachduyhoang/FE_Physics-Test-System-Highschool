@@ -16,7 +16,7 @@ import {
   FaEyeSlash,
 } from "react-icons/fa";
 import { useNavigate, useLocation } from "react-router-dom";
-import { autoGradingService, explanationService } from "../../services";
+import { autoGradingService, explanationService, questionBankService } from "../../services";
 import { Modal, Spin, Alert, Collapse, Tag, Progress, Divider, Button, Tooltip } from "antd";
 import toast from "react-hot-toast";
 import gsap from 'gsap';
@@ -45,7 +45,78 @@ const resultData = {
         "Đây là định luật quán tính. Bạn nên ôn tập lại chủ đề 'Cơ học - Định luật Newton'.",
       isCorrect: false,
     },
-    // Thêm các câu hỏi khác nếu muốn
+    {
+      id: 2,
+      question: "Công thức tính lực điện trường là gì?",
+      yourAnswer: "F = k.q1.q2/r²",
+      correctAnswer: "F = k.q1.q2/r²",
+      analysis: "Bạn đã trả lời đúng! Đây là định luật Coulomb về lực tương tác giữa hai điện tích điểm.",
+      isCorrect: true,
+    },
+    {
+      id: 3,
+      question: "Một vật chuyển động thẳng đều có gia tốc bằng bao nhiêu?",
+      yourAnswer: "Gia tốc thay đổi theo thời gian",
+      correctAnswer: "Gia tốc bằng 0",
+      analysis: "Trong chuyển động thẳng đều, vận tốc không đổi nên gia tốc bằng 0. Bạn cần ôn lại khái niệm chuyển động thẳng đều.",
+      isCorrect: false,
+    },
+    {
+      id: 4,
+      question: "Đơn vị của công suất trong hệ SI là gì?",
+      yourAnswer: "Joule (J)",
+      correctAnswer: "Watt (W)",
+      analysis: "Công suất có đơn vị là Watt (W), không phải Joule (J). Joule là đơn vị của công.",
+      isCorrect: false,
+    },
+    {
+      id: 5,
+      question: "Hiện tượng nào sau đây là hiện tượng phản xạ toàn phần?",
+      yourAnswer: "Ánh sáng truyền từ không khí vào nước",
+      correctAnswer: "Ánh sáng truyền từ nước ra không khí với góc tới lớn",
+      analysis: "Phản xạ toàn phần xảy ra khi ánh sáng truyền từ môi trường chiết quang hơn sang môi trường chiết quang kém hơn với góc tới lớn hơn góc giới hạn.",
+      isCorrect: false,
+    },
+    {
+      id: 6,
+      question: "Công thức tính động năng của một vật là gì?",
+      yourAnswer: "Wđ = 1/2.m.v²",
+      correctAnswer: "Wđ = 1/2.m.v²",
+      analysis: "Chính xác! Động năng được tính bằng công thức Wđ = 1/2.m.v², trong đó m là khối lượng và v là vận tốc của vật.",
+      isCorrect: true,
+    },
+    {
+      id: 7,
+      question: "Một con lắc đơn dao động điều hòa với chu kỳ T. Nếu tăng chiều dài dây treo lên 4 lần thì chu kỳ mới sẽ là:",
+      yourAnswer: "T/2",
+      correctAnswer: "2T",
+      analysis: "Chu kỳ con lắc đơn tỷ lệ với căn bậc hai của chiều dài: T = 2π√(l/g). Khi l tăng 4 lần thì T tăng 2 lần.",
+      isCorrect: false,
+    },
+    {
+      id: 8,
+      question: "Điện trở tương đương của hai điện trở mắc nối tiếp R1 và R2 là:",
+      yourAnswer: "R1 + R2",
+      correctAnswer: "R1 + R2",
+      analysis: "Đúng rồi! Khi mắc nối tiếp, điện trở tương đương bằng tổng các điện trở thành phần.",
+      isCorrect: true,
+    },
+    {
+      id: 9,
+      question: "Một sóng cơ học có tần số 50Hz. Chu kỳ của sóng này là:",
+      yourAnswer: "0.02s",
+      correctAnswer: "0.02s",
+      analysis: "Chu kỳ T = 1/f = 1/50 = 0.02s. Bạn đã tính đúng!",
+      isCorrect: true,
+    },
+    {
+      id: 10,
+      question: "Lực từ tác dụng lên một dây dẫn có dòng điện đặt trong từ trường được xác định bởi:",
+      yourAnswer: "Quy tắc bàn tay trái",
+      correctAnswer: "Quy tắc bàn tay trái",
+      analysis: "Chính xác! Lực từ được xác định bằng quy tắc bàn tay trái của Fleming.",
+      isCorrect: true,
+    }
   ],
 };
 
@@ -143,6 +214,8 @@ const ResultContent = () => {
   const [showDetailedAnalysis, setShowDetailedAnalysis] = useState(false);
   const [explanations, setExplanations] = useState({});
   const [loadingExplanations, setLoadingExplanations] = useState({});
+  const [questionContents, setQuestionContents] = useState({});
+  const [loadingQuestions, setLoadingQuestions] = useState({});
   const [activeCollapseKeys, setActiveCollapseKeys] = useState([]);
   const [error, setError] = useState(null);
 
@@ -231,11 +304,13 @@ const ResultContent = () => {
 
         if (results) {
           console.log('🎉 Final results data:', results);
+          console.log('🔍 Question results structure:', results.questionResults?.[0]);
           setGradingData(results);
-          // Tự động load explanation cho tất cả câu hỏi
+          // Tự động load explanation và nội dung câu hỏi cho tất cả câu hỏi
           if (results.questionResults && results.questionResults.length > 0) {
             results.questionResults.forEach(async (result, index) => {
               if (result.questionId) {
+                // Load explanation
                 try {
                   const explanationResult = await explanationService.getExplanationByQuestion(result.questionId);
                   if (explanationResult.success) {
@@ -246,6 +321,19 @@ const ResultContent = () => {
                   }
                 } catch {
                   console.log(`Không thể tải explanation cho câu ${result.questionId}`);
+                }
+                
+                // Load nội dung câu hỏi
+                try {
+                  const questionResult = await questionBankService.getQuestionById(result.questionId);
+                  if (questionResult.success && questionResult.data) {
+                    setQuestionContents(prev => ({
+                      ...prev,
+                      [result.questionId]: questionResult.data
+                    }));
+                  }
+                } catch {
+                  console.log(`Không thể tải nội dung câu hỏi ${result.questionId}`);
                 }
               }
             });
@@ -443,7 +531,31 @@ const ResultContent = () => {
     }
   };
 
-  // Function để tạo explanation tự động bằng AI (nếu cần)
+  const handleGetQuestionContent = async (questionId) => {
+    if (questionContents[questionId] || loadingQuestions[questionId]) {
+      return; 
+    }
+
+    try {
+      setLoadingQuestions(prev => ({ ...prev, [questionId]: true }));
+      
+      const result = await questionBankService.getQuestionById(questionId);
+      
+      if (result.success && result.data) {
+        setQuestionContents(prev => ({
+          ...prev,
+          [questionId]: result.data
+        }));
+      } else {
+        console.warn(`Không thể tải nội dung câu hỏi ${questionId}:`, result);
+      }
+    } catch (error) {
+      console.error(`Lỗi khi lấy nội dung câu hỏi ${questionId}:`, error);
+    } finally {
+      setLoadingQuestions(prev => ({ ...prev, [questionId]: false }));
+    }
+  };
+
   const handleCreateExplanationWithAI = async (questionId) => {
     try {
       setLoadingExplanations(prev => ({ ...prev, [questionId]: true }));
@@ -768,13 +880,22 @@ const ResultContent = () => {
             onChange={setActiveCollapseKeys}
           >
             {displayData.questionResults.map((result, index) => {
+              // Debug log để xem cấu trúc dữ liệu
+              console.log(`🔍 Question ${index + 1} data:`, result);
               return (
               <Collapse.Panel 
                 key={result.questionId}
                 header={
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                    <span>Câu {index + 1}: {result.questionType === 'multiple_choice' ? 'Trắc nghiệm' : result.questionType}</span>
-                    <div>
+                    <div style={{ flex: 1 }}>
+                      <div style={{ fontWeight: 'bold', marginBottom: '4px' }}>
+                        Câu {index + 1}: {result.questionType === 'multiple_choice' ? 'Trắc nghiệm' : result.questionType}
+                      </div>
+                      <div style={{ fontSize: '14px', color: '#666', lineHeight: '1.4' }}>
+                        {questionContents[result.questionId]?.questionText || result.questionText || result.questionContent || result.question?.questionText || result.question?.content || result.question?.text || result.text || result.question?.question || result.question || "Không có nội dung câu hỏi"}
+                      </div>
+                    </div>
+                    <div style={{ marginLeft: '16px' }}>
                       <Tag color={result.isCorrect ? 'green' : 'red'}>
                         {result.isCorrect ? 'Đúng' : 'Sai'}
                       </Tag>
@@ -785,9 +906,8 @@ const ResultContent = () => {
                   </div>
                 }
               >
-                <div className="question-detailed">
                   <div className="question-answer">
-                    <span className="label">Câu trả lời của bạn:</span>
+                    <span className="label">Câu trả lời của bạn: </span>
                     <span className={result.isCorrect ? "correct" : "incorrect"}>
                       {result.questionType === 'essay' 
                         ? (result.studentChoiceText || result.studentTextAnswer || "Không có câu trả lời")
@@ -799,7 +919,7 @@ const ResultContent = () => {
                     </span>
                   </div>
                   <div className="question-answer">
-                    <span className="label">Đáp án đúng:</span>
+                    <span className="label">Đáp án đúng: </span>
                     <span className="correct">
                       {result.questionType === 'essay' 
                         ? (result.correctChoiceText || "Câu hỏi tự luận - xem hướng dẫn chi tiết")
@@ -810,11 +930,7 @@ const ResultContent = () => {
                       }
                     </span>
                   </div>
-                  {result.explanation && (
-                    <div className="question-analysis">
-                      <strong>Giải thích:</strong> {result.explanation}
-                    </div>
-                  )}
+
                   {explanations[result.questionId] && (
                     <div className="database-explanation" style={{ marginTop: '12px', padding: '12px', background: '#f0f8ff', borderRadius: '6px', border: '1px solid #d9ecff' }}>
                       <div style={{ display: 'flex', alignItems: 'center', marginBottom: '8px' }}>
@@ -853,6 +969,19 @@ const ResultContent = () => {
                         >
                           {explanations[result.questionId] ? 'Đã có giải thích' : 'Lấy giải thích từ DB'}
                         </Button>
+                        
+                        <Button 
+                          size="small"
+                          loading={loadingQuestions[result.questionId]}
+                          onClick={() => handleGetQuestionContent(result.questionId)}
+                          icon={<FaExclamationTriangle />}
+                          style={{ 
+                            borderColor: '#52c41a',
+                            color: questionContents[result.questionId] ? '#52c41a' : '#52c41a'
+                          }}
+                        >
+                          {questionContents[result.questionId] ? 'Đã có nội dung' : 'Lấy nội dung câu hỏi'}
+                        </Button>
                       </div>
                       
                       {detailedFeedback[result.questionId] && (
@@ -874,7 +1003,6 @@ const ResultContent = () => {
                       )}
                     </div>
                   )}
-                </div>
               </Collapse.Panel>
               );
             })}
@@ -882,17 +1010,20 @@ const ResultContent = () => {
         ) : (
           // Fallback cho dữ liệu mẫu
           resultData.questions.map((q) => (
-            <div className="question" key={q.id}>
-              <div className="question-title">Câu {q.id}: {q.question}</div>
-              <div className="question-answer">
-                <span className="label">Câu trả lời của bạn:</span>
-                <span className="incorrect">{q.yourAnswer}</span>
+            <div className="question" key={q.id} style={{ marginBottom: '16px', padding: '16px', border: '1px solid #e8e8e8', borderRadius: '8px', background: '#fff' }}>
+              <div className="question-title" style={{ fontWeight: 'bold', marginBottom: '12px', fontSize: '16px' }}>
+                Câu {q.id}: {q.question}
               </div>
-              <div className="question-answer">
-                <span className="label">Đáp án đúng:</span>
-                <span className="correct">{q.correctAnswer}</span>
+              <div className="question-answer" style={{ marginBottom: '8px' }}>
+                <span className="label" style={{ fontWeight: 'bold', marginRight: '8px' }}>Câu trả lời của bạn:</span>
+                <span className={q.isCorrect ? "correct" : "incorrect"} style={{ color: q.isCorrect ? '#52c41a' : '#ff4d4f' }}>
+                  {q.yourAnswer}
+                </span>
               </div>
-              <div className="question-analysis">{q.analysis}</div>
+              <div className="question-answer" style={{ marginBottom: '8px' }}>
+                <span className="label" style={{ fontWeight: 'bold', marginRight: '8px' }}>Đáp án đúng:</span>
+                <span className="correct" style={{ color: '#52c41a' }}>{q.correctAnswer}</span>
+              </div>
             </div>
           ))
         )}

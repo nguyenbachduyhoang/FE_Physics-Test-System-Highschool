@@ -4,9 +4,6 @@ import {
   FaChalkboardTeacher,
   FaSearch,
   FaClock,
-  FaEye,
-  FaRedo,
-  FaShare,
   FaFilter,
   FaTrophy,
   FaCalendarAlt,
@@ -96,6 +93,7 @@ const HistoryContent = () => {
           historyData = response;
         }
         if (Array.isArray(historyData) && historyData.length > 0) {
+          console.log('📊 History data structure:', historyData[0]);
           setHistoryList(historyData);
           
           // Tính toán thống kê
@@ -120,7 +118,9 @@ const HistoryContent = () => {
             ? `${totalHours}h${remainingMinutes > 0 ? ` ${remainingMinutes}m` : ''}`
             : `${totalMinutes}m`;
 
-          const accuracy = historyData.reduce((acc, curr) => acc + (curr.accuracy || 0), 0) / totalExams;
+          const accuracy = totalExams > 0 
+            ? (historyData.reduce((acc, curr) => acc + (curr.accuracy || 0), 0) / totalExams)
+            : 0;
 
           setStats({
             totalExams,
@@ -188,32 +188,40 @@ const HistoryContent = () => {
 
   // Sắp xếp mới nhất lên trên
   const sortedHistory = [...filteredHistory].sort((a, b) => {
-    // Giả sử item.date là string dạng 'HH:mm dd/MM/yyyy'
-    const dateA = parseVietnameseDate(a.date);
-    const dateB = parseVietnameseDate(b.date);
+    // Thử nhiều format date khác nhau
+    let dateA = parseVietnameseDate(a.date);
+    let dateB = parseVietnameseDate(b.date);
+    
+    // Nếu không parse được, thử format khác
+    if (!dateA && a.date) {
+      try {
+        dateA = new Date(a.date);
+      } catch {
+        console.warn('Cannot parse date A:', a.date);
+      }
+    }
+    
+    if (!dateB && b.date) {
+      try {
+        dateB = new Date(b.date);
+      } catch {
+        console.warn('Cannot parse date B:', b.date);
+      }
+    }
+    
+    // Sắp xếp theo thời gian tạo (createdAt) nếu có
+    if (a.createdAt && b.createdAt) {
+      return new Date(b.createdAt) - new Date(a.createdAt);
+    }
+    
+    // Fallback về date
     return (dateB?.getTime() || 0) - (dateA?.getTime() || 0);
   });
 
   // Lấy danh sách hiển thị theo visibleCount
   const displayedHistory = sortedHistory.slice(0, visibleCount);
 
-  // Xử lý xem lại bài thi
-  const handleViewResult = (item) => {
-    console.log('👁️ Viewing result for:', item);
-    // Navigate to result page with attempt ID
-    if (item.id) {
-      navigate(`/result/${item.id}`);
-    } else {
-      toast.error('Không thể xem kết quả bài thi này');
-    }
-  };
 
-  // Xử lý làm lại bài thi
-  const handleRetakeExam = (item) => {
-    console.log('🔄 Retaking exam:', item);
-    // Logic để làm lại bài thi - cần exam ID
-    // navigate(`/quiz/${examId}`);
-  };
 
   // Stats configuration với dữ liệu thực
   const statsConfig = [
@@ -387,7 +395,10 @@ const HistoryContent = () => {
                           {item.difficulty}
                         </span>
                         <span className="accuracy">
-                          {item.accuracy.toFixed(1)}% độ chính xác
+                          {item.correct && item.totalQuestions 
+                            ? ((item.correct / item.totalQuestions) * 100).toFixed(1)
+                            : (item.accuracy || 0).toFixed(1)
+                          }% độ chính xác
                         </span>
                       </div>
                     </div>
@@ -395,7 +406,7 @@ const HistoryContent = () => {
 
                   <div className="item-right">
                     <div className="correct">
-                      {item.correct}/{item.totalQuestions} câu đúng
+                      {item.correct || 0}/{item.totalQuestions || item.total || 0} câu đúng
                     </div>
                     <div className="date">
                       <FaCalendarAlt />
@@ -408,12 +419,20 @@ const HistoryContent = () => {
                 <div className="progress-section">
                   <div className="progress-header">
                     <span>Tiến độ hoàn thành</span>
-                    <span>{item.accuracy.toFixed(1)}%</span>
+                    <span>{item.correct && item.totalQuestions 
+                      ? ((item.correct / item.totalQuestions) * 100).toFixed(1)
+                      : (item.accuracy || 0).toFixed(1)
+                    }%</span>
                   </div>
                   <div className="progress-bar">
                     <div
                       className="progress-fill"
-                      style={{ width: `${item.accuracy}%` }}
+                      style={{ 
+                        width: `${item.correct && item.totalQuestions 
+                          ? (item.correct / item.totalQuestions) * 100
+                          : (item.accuracy || 0)
+                        }%` 
+                      }}
                     ></div>
                   </div>
                 </div>
@@ -430,30 +449,7 @@ const HistoryContent = () => {
                   </div>
                 </div>
 
-                {/* Actions */}
-                <div className="actions">
-                  <button 
-                    className="btn btn-view"
-                    onClick={() => handleViewResult(item)}
-                  >
-                    <FaEye />
-                    <span>Xem lại</span>
-                  </button>
-                  <button 
-                    className="btn btn-retry"
-                    onClick={() => handleRetakeExam(item)}
-                  >
-                    <FaRedo />
-                    <span>Làm lại</span>
-                  </button>
-                  {/* <button 
-                    className="btn btn-share"
-                    onClick={() => handleShareResult(item)}
-                  >
-                    <FaShare />
-                    <span>Chia sẻ</span>
-                  </button> */}
-                </div>
+
               </div>
             ))}
             {visibleCount < sortedHistory.length && (
